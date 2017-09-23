@@ -9,3 +9,7 @@ Open .sln and build.
 Requirements: glfw3
 
 Run make in directory with the makefile
+
+## Argument
+
+```exec file``` ```path to obj file```
