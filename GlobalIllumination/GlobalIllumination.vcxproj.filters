@@ -33,13 +33,13 @@
     <ClCompile Include="tiny_obj_loader.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PhongShader.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Renderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Scene.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Shader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -53,13 +53,13 @@
     <ClInclude Include="Camera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PhongShader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Renderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Scene.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Shader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

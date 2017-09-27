@@ -19,6 +19,7 @@ private:
     std::vector<Shape> list;
     glm::mat4 modelMat = glm::scale(glm::mat4(1.0f), glm::vec3(0.2, 0.2, 0.2));
 public:
+    GLuint nullTextureId;
     Camera cam = Camera(glm::vec3(5.0f));
     Scene();
     ~Scene();

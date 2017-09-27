@@ -36,7 +36,7 @@ public:
 	Shape();
     void buildVBO(const tinyobj::shape_t& shape, const tinyobj::attrib_t& attrib, const tinyobj::material_t & material);
     void generateGPUBuffers();
-    void render(const GLuint program, const std::map<std::string, GLuint>& textureMap) const;
+    void render(const GLuint program, const std::map<std::string, GLuint>& textureMap, GLuint nullTextureId) const;
 	~Shape();
 private:
 	std::unordered_map<Vertex, uint32_t> _uniqueVertices = {};

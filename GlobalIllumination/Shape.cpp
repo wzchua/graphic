@@ -62,40 +62,45 @@ void Shape::generateGPUBuffers()
     glBindVertexArray(0);
 }
 
-void Shape::render(const GLuint program, const std::map<std::string, GLuint>& textureMap) const {
+void Shape::render(const GLuint program, const std::map<std::string, GLuint>& textureMap, GLuint nullTextureId) const {
     GLuint texId;
     auto iter = textureMap.find(material.ambient_texname);
     std::stringstream str;
     str << name << ": ";
 
+    glActiveTexture(GL_TEXTURE0);
     if (iter != textureMap.end()) {
         texId = iter->second;
-        glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texId);
         str << material.ambient_texname << ", ";
     }
+    else {
+        glBindTexture(GL_TEXTURE_2D, nullTextureId);
+    }
+    glActiveTexture(GL_TEXTURE1);
     iter = textureMap.find(material.diffuse_texname);
     if (iter != textureMap.end()) {
         texId = iter->second;
-        glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, texId);
         str << material.diffuse_texname << ", ";
     }
+    else {
+        glBindTexture(GL_TEXTURE_2D, nullTextureId);
+    }
+    glActiveTexture(GL_TEXTURE2);
     iter = textureMap.find(material.alpha_texname);
     if (iter != textureMap.end()) {
         texId = iter->second;
-        glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_2D, texId);
-        glUniform1f(glGetUniformLocation(program, "useAlphaMap"), true);
         str << material.alpha_texname << ", ";
     }
     else {
-        glUniform1f(glGetUniformLocation(program, "useAlphaMap"), false);
+        glBindTexture(GL_TEXTURE_2D, nullTextureId);
     }
+    glActiveTexture(GL_TEXTURE3);
     iter = textureMap.find(material.bump_texname);
     if (iter != textureMap.end()) {
         texId = iter->second;
-        glActiveTexture(GL_TEXTURE3);
         glBindTexture(GL_TEXTURE_2D, texId);
         glUniform1f(glGetUniformLocation(program, "useBumpMap"), true);
         str << material.bump_texname << ", ";
@@ -103,16 +108,15 @@ void Shape::render(const GLuint program, const std::map<std::string, GLuint>& te
     else {
         glUniform1f(glGetUniformLocation(program, "useBumpMap"), false);
     }
+    glActiveTexture(GL_TEXTURE4);
     iter = textureMap.find(material.specular_texname);
     if (iter != textureMap.end()) {
         texId = iter->second;
-        glActiveTexture(GL_TEXTURE4);
         glBindTexture(GL_TEXTURE_2D, texId);
-        glUniform1f(glGetUniformLocation(program, "useSpecMap"), true);
         str << material.specular_texname << ", ";
     }
     else {
-        glUniform1f(glGetUniformLocation(program, "useSpecMap"), false);
+        glBindTexture(GL_TEXTURE_2D, nullTextureId);
     }
     //std::cout << str.str() << "\n";
     glUniform3fv(glGetUniformLocation(program, "Ambient"), 1, material.ambient);

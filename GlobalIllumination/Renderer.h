@@ -6,20 +6,21 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "Scene.h"
-#include "PhongShader.h"
+#include "Shader.h"
 
 class Renderer
 {
 private:
-    enum RenderType { PHONG };
+    enum RenderType { PHONG, VOXELIZE };
     RenderType type;
     GLFWwindow * window;
-    Scene scene; 
-    PhongShader phongShader;
+    Scene scene;
+    Shader phongShader = Shader("./Shaders/Phong.vert", "./Shaders/Phong.frag");
     void phongRender();
     unsigned int currentShaderProgram;
     unsigned int viewHeight;
     unsigned int viewWidth;
+    GLuint nullTextureId;
     void onCursorPosition(GLFWwindow* window, double xpos, double ypos);
     void onKey(GLFWwindow* window, int key, int scancode, int action, int mods);
     inline static void onKeyStatic(GLFWwindow* window, int key, int scancode, int action, int mods) {

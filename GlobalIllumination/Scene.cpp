@@ -33,7 +33,7 @@ bool Scene::LoadObjScene(std::string filename)
 void Scene::render(int programId)
 {
     for (int i = 0; i < list.size(); i++) {
-        list[i].render(programId, textureMap);
+        list[i].render(programId, textureMap, nullTextureId);
     }
 }
 

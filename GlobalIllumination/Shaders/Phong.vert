@@ -18,5 +18,5 @@ void main()
     ecPosition = vec3( ecPosition4 ) / ecPosition4.w;
     ecNormal = normalize( NormalMatrix * vNormal );
     fTexCoord = texCoord;
-    gl_Position = ModelViewProjMatrix * vPosition;
+    gl_Position = ModelViewProjMatrix * vPosition
 }

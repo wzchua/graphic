@@ -1,5 +1,19 @@
 #include "Renderer.h"
 
+void Renderer::setToPhongShader()
+{
+    type = RenderType::PHONG;
+    currentShaderProgram = phongShader.getProgramId();
+
+    glViewport(0, 0, viewWidth, viewHeight);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+
+    scene.updateLightToGPU(currentShaderProgram);
+}
+
 void Renderer::phongRender()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -15,7 +29,6 @@ void Renderer::phongRender()
     scene.render(currentShaderProgram);
 }
 
-
 Renderer::Renderer(GLFWwindow * window, unsigned int viewHeight, unsigned int viewWidth) : viewHeight(viewHeight), viewWidth(viewWidth)
 {
     this->window = window;
@@ -23,10 +36,19 @@ Renderer::Renderer(GLFWwindow * window, unsigned int viewHeight, unsigned int vi
     glfwSetKeyCallback(window, onKeyStatic);
     glfwSetCursorPosCallback(window, onCursorPositionStatic);
     setToPhongShader();
+    
+    int w = 1, h = 1;
+    unsigned char image[4] = { 255, 255, 255, 255 };
+    glGenTextures(1, &nullTextureId);
+    glBindTexture(GL_TEXTURE_2D, nullTextureId);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, &image);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    scene.nullTextureId = nullTextureId;
 }
 
 Renderer::~Renderer()
 {
+    glDeleteTextures(1, &nullTextureId);
 }
 
 void Renderer::startRenderLoop()
@@ -52,20 +74,6 @@ void Renderer::startRenderLoop()
 void Renderer::loadScene(std::string filename)
 {
     scene.LoadObjScene(filename);
-}
-
-void Renderer::setToPhongShader()
-{
-    type = RenderType::PHONG;
-    currentShaderProgram = phongShader.getProgramId();
-
-    glViewport(0, 0, viewWidth, viewHeight);
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0);
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
-
-    scene.updateLightToGPU(currentShaderProgram);
 }
 
 void Renderer::onCursorPosition(GLFWwindow* window, double xpos, double ypos) {

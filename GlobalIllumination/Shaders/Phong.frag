@@ -25,9 +25,7 @@ uniform vec3 Diffuse;
 uniform vec3 Specular;
 uniform float MatlShininess;
 
-uniform bool useAlphaMap;
 uniform bool useBumpMap;
-uniform bool useSpecMap;
 
 const vec2 size = vec2(2.0,0.0);
 const ivec3 off = ivec3(-1,0,1);
@@ -36,10 +34,8 @@ layout (location = 0) out vec4 FragColor;
 
 void main()
 {
-    if(useAlphaMap) {
-        if(texture(alphaTexture, fTexCoord).r < 0.5f) {
-            discard;
-        }
+    if(texture(alphaTexture, fTexCoord).r < 0.5f) {
+        discard;
     }
     vec3 viewVec = -normalize(ecPosition);
     vec3 necNormal = normalize(ecNormal);

@@ -1,4 +1,4 @@
-#include "PhongShader.h"
+#include "Shader.h"
 
 std::string getShaderLog(GLuint shaderId) {
     // Compile failed, get log
@@ -29,53 +29,23 @@ std::string getProgramLog(GLuint programId) {
     return logString;
 }
 
-PhongShader::PhongShader()
+Shader::Shader(std::string vertexShaderFilename, std::string fragShaderFilename)
 {
-    vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    GLuint vertexShader = generateVertexShader(vertexShaderFilename);
+    GLuint fragmentShader = generateFragmentShader(fragShaderFilename);
 
-    std::ifstream in(vertShaderFilename, std::ifstream::in);
-    std::stringstream buffer;
-    buffer << in.rdbuf();
-    in.close();
-    const auto vString = buffer.str();
-    const char * source = vString.c_str();
-    glShaderSource(vertexShader, 1, &source, NULL);
-    glCompileShader(vertexShader);
-
-    int success;
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        std::cout << "Vertex Shader Compile Failed.\n Log: " << getShaderLog(vertexShader) << "\n";
-        exit(-1);
-    }
-    buffer.clear();
-    buffer.str(std::string());
-
-    std::ifstream inFrag = std::ifstream(fragShaderFilename, std::ifstream::in);
-    buffer << inFrag.rdbuf();
-    in.close();
-
-    const auto fString = buffer.str();
-    const char * fragSource = fString.c_str();
-    glShaderSource(fragmentShader, 1, &fragSource, NULL);
-    glCompileShader(fragmentShader);
-
-    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        std::cout << "Fragment Shader Compile Failed.\n Log: " << getShaderLog(fragmentShader) << "\n";
-        exit(-1);
-    }
     shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vertexShader);
     glAttachShader(shaderProgram, fragmentShader);
     glLinkProgram(shaderProgram);
-
+    int success;
     glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
     if (!success) {
         std::cout << "Program Link Failed.\n Log: " << getProgramLog(shaderProgram) << "\n";
         exit(-1);
     }
+    glDetachShader(shaderProgram, vertexShader);
+    glDetachShader(shaderProgram, fragmentShader);
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
@@ -83,13 +53,13 @@ PhongShader::PhongShader()
     glGetProgramiv(shaderProgram, GL_VALIDATE_STATUS, &success);
     if (!success) {
         std::cout << "Program validate Failed.\n Log: " << getProgramLog(shaderProgram) << "\n";
-        exit(-1);
+        throw new std::exception();
     }
     glUseProgram(shaderProgram);
 }
 
 
-PhongShader::~PhongShader()
+Shader::~Shader()
 {
     if (shaderProgram == 0) return;
 
@@ -110,7 +80,54 @@ PhongShader::~PhongShader()
     delete[] shaderNames;
 }
 
-unsigned int PhongShader::getProgramId() 
+GLuint Shader::generateVertexShader(std::string filename)
+{
+    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    std::ifstream in(filename, std::ifstream::in);
+    std::stringstream buffer;
+    buffer << in.rdbuf();
+    in.close();
+    const auto vString = buffer.str();
+    const char * source = vString.c_str();
+    glShaderSource(vertexShader, 1, &source, NULL);
+    glCompileShader(vertexShader);
+
+    int success;
+    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        std::cout << "Vertex Shader Compile Failed.\n Log: " << getShaderLog(vertexShader) << "\n";
+        throw new std::exception();
+    }
+    buffer.clear();
+    return vertexShader;
+}
+
+GLuint Shader::generateFragmentShader(std::string filename)
+{
+    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    std::ifstream in(filename, std::ifstream::in);
+    std::stringstream buffer;
+    buffer << in.rdbuf();
+    in.close();
+    const auto vString = buffer.str();
+    const char * source = vString.c_str();
+    glShaderSource(fragmentShader, 1, &source, NULL);
+    glCompileShader(fragmentShader);
+
+    int success;
+    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        std::cout << "Vertex Shader Compile Failed.\n Log: " << getShaderLog(fragmentShader) << "\n";
+        throw new std::exception();
+    }
+    buffer.clear();
+    buffer.str(std::string());
+    return fragmentShader;
+}
+
+
+
+unsigned int Shader::getProgramId() 
 {
     return shaderProgram;
 }
