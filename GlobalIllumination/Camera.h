@@ -13,7 +13,7 @@ private:
     float xRot = 0.0f;
     float yRot = 0.0f;
     float fovDegree = 60.0f;
-    float aspect = 4.0 / 3.0;
+    float aspect = 4.0f / 3.0f;
     float nearPlane = 0.1f;
     float farPlane = 500.0f;
 

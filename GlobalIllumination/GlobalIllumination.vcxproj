@@ -23,12 +23,18 @@
     <ClCompile Include="glad.c" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ObjLoader.cpp" />
+    <ClCompile Include="PhongShader.cpp" />
+    <ClCompile Include="Renderer.cpp" />
+    <ClCompile Include="Scene.cpp" />
     <ClCompile Include="Shape.cpp" />
     <ClCompile Include="tiny_obj_loader.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
     <ClInclude Include="ObjLoader.h" />
+    <ClInclude Include="PhongShader.h" />
+    <ClInclude Include="Renderer.h" />
+    <ClInclude Include="Scene.h" />
     <ClInclude Include="Shape.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

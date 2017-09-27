@@ -8,7 +8,7 @@ uniform mat4 ModelViewMatrix;     // ModelView matrix.
 uniform mat4 ModelViewProjMatrix; // ModelView matrix * Projection matrix.
 uniform mat3 NormalMatrix;        // For transforming object-space direction 
                                   //   vector to eye space.
-                                  
+                            
 uniform vec4 LightPosition; // Given in eye space. Can be directional.
 uniform vec4 LightAmbient; 
 uniform vec4 LightDiffuse;
