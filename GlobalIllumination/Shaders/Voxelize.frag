@@ -1,5 +1,5 @@
 #version 450
-in vec3 wcPosition;   // Vertex position in world space.
+in vec3 wcPosition;   // Vertex position in scaled world space.
 in vec3 wcNormal;     // Vertex normal in world space.
 in vec2 fTexCoord;
 
@@ -10,7 +10,7 @@ struct FragmentStruct {
     vec4 color;
 };
 
-layout(std430, binding = 0) buffer FragmentListBlock {
+layout(binding = 0) buffer FragmentListBlock {
     FragmentStruct frag[];
 };
 
@@ -27,8 +27,6 @@ const vec2 size = vec2(2.0,0.0);
 const ivec3 off = ivec3(-1,0,1);
 
 layout (location = 0) out vec4 FragColor;
-
-vec3 scaleAndBias(vec3 p) { return 0.5f * p + vec3(0.5f); }
 
 //Generates a voxel list from rasterization
 void main() {    
@@ -49,9 +47,8 @@ void main() {
         nwcNormal = normalize(nwcNormal + cross(va, vb));
     }
     vec4 color = vec4(Diffuse * texture(diffuseTexture, fTexCoord).rgb, 1.0f);
-    vec3 normalizedVoxelPos = scaleAndBias(wcPosition);
     uint index = atomicCounterIncrement(fragListPtr);
-    frag[index].position = vec4(normalizedVoxelPos, 1.0f);
+    frag[index].position = vec4(wcPosition, 1.0f);
     frag[index].color = color;
     FragColor = color;
 }

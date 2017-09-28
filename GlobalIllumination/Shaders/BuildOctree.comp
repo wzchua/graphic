@@ -55,7 +55,9 @@ uint getChildPtr(uint parentPtr, ivec3 frameOffset) {
 
 void generateNode(uint parentPtr) {
     uint id = gl_GlobalInvocationID.x;
-    sync[parentPtr].treadInvoked = id;
+    if(sync[parentPtr].treadInvoked > id) {
+        sync[parentPtr].treadInvoked = id;
+    }
     barrier();
     // whoever managed to get their id written gets to generate it
     if(sync[parentPtr].treadInvoked == id) { 
@@ -72,6 +74,7 @@ void generateNode(uint parentPtr) {
 }
 
 void main() {
+    //frag position in -256 to 256 range
     uint id = gl_GlobalInvocationID.x;
     if(id >= noOfFragments) {
         return;

@@ -98,6 +98,8 @@ void Voxelizer::initializeWithScene(glm::vec3 min, glm::vec3 max)
     float smallestScale = glm::min(scale.x, glm::min(scale.y, scale.z));
     scale = glm::vec3(smallestScale);
     sceneMat = glm::translate(glm::scale(glm::mat4(1.0f), scale), translate);
+    newMin = sceneMat * glm::vec4(min, 1.0);
+    newMax = sceneMat * glm::vec4(max, 1.0);
 
     modelViewMat = voxelViewMatrix * sceneMat;
     modelViewProjMat = ortho * modelViewMat;
@@ -107,7 +109,8 @@ void Voxelizer::initializeWithScene(glm::vec3 min, glm::vec3 max)
 void Voxelizer::voxelizeFragmentList(Scene scene)
 {
     int currentShaderProgram = voxelizeListShader.use();
-    glViewport(0, 0, 512, 512);
+    glViewport(0, 0, 512, 512); 
+    glUniformMatrix4fv(glGetUniformLocation(currentShaderProgram, "ModelMatrix"), 1, GL_FALSE, glm::value_ptr(sceneMat));
     glUniformMatrix4fv(glGetUniformLocation(currentShaderProgram, "ModelViewMatrix"), 1, GL_FALSE, glm::value_ptr(modelViewMat));
     glUniformMatrix4fv(glGetUniformLocation(currentShaderProgram, "ModelViewProjMatrix"), 1, GL_FALSE, glm::value_ptr(modelViewProjMat));
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
@@ -116,6 +119,8 @@ void Voxelizer::voxelizeFragmentList(Scene scene)
     glDisable(GL_BLEND);
 
     scene.render(currentShaderProgram);
+    glm::vec4 min = glm::vec4(0.0);
+    glm::vec4 max = glm::vec4(0.0);
     // get length of fragment list
     unsigned int fragmentCount = 0;
     glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomicNodeCountPtr);
@@ -125,6 +130,23 @@ void Voxelizer::voxelizeFragmentList(Scene scene)
     ptr[0] = 1;
     glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER);
     glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboFragmentList);
+    fragStruct* ptrf = (fragStruct*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(fragStruct),
+        GL_MAP_READ_BIT);
+    for (int i = 0; i < fragmentCount; i++) {
+        min.x = glm::min(ptrf[i].position[0], min.x);
+        min.y = glm::min(ptrf[i].position[1], min.y);
+        min.z = glm::min(ptrf[i].position[2], min.z);
+        max.x = glm::max(ptrf[i].position[0], max.x);
+        max.y = glm::max(ptrf[i].position[1], max.y);
+        max.z = glm::max(ptrf[i].position[2], max.z);
+    }
+    fragStruct fr = ptrf[0];
+    fr = ptrf[1000];
+    fr = ptrf[2000];
+    glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
     currentShaderProgram = octreeCompShader.use();
     glUniform1ui(glGetUniformLocation(currentShaderProgram, "noOfFragments"), fragmentCount);
@@ -160,6 +182,7 @@ void Voxelizer::voxelizeFragmentList(Scene scene)
     nodeCount = ptr2[0];
     glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER);
     glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
+
 
 
 }

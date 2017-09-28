@@ -44,8 +44,10 @@ private:
     ShaderProgram octreeCompShader;
     glm::mat4 sceneMat;
     glm::mat4 ortho = glm::ortho(-256.0, 256.0, -256.0, 256.0, 0.0, 512.0);
-    glm::mat4 voxelViewMatrix = glm::lookAt(glm::vec3(256, 0, 0), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+    glm::mat4 voxelViewMatrix = glm::lookAt(glm::vec3(0, 0, 256), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
     glm::mat4 modelViewMat;
     glm::mat4 modelViewProjMat;
+    glm::vec3 newMin;
+    glm::vec3 newMax;
 };
 
