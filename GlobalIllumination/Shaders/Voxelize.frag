@@ -14,6 +14,8 @@ layout(std430, binding = 0) buffer FragmentListBlock {
     FragmentStruct frag[];
 };
 
+layout(r32ui) uniform uimage3D lock3D;
+
 uniform bool useBumpMap;
 layout (binding=1) uniform sampler2D diffuseTexture;
 layout (binding=2) uniform sampler2D alphaTexture;

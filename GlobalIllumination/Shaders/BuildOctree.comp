@@ -1,7 +1,7 @@
 #version 450
 #extension GL_ARB_shader_atomic_counter_ops : require
 
-layout (local_size_x = 32) in;
+layout (local_size_x = 512) in;
 //initlized at 1
 layout(binding = 0) uniform atomic_uint nodePtr;
 // 0
@@ -34,8 +34,8 @@ layout(binding = 2) coherent buffer SyncBlock {
     SyncStruct sync[];
 };
 
-layout(RGBA8) uniform image3D texture3D;
-layout(r32ui) uniform uimage3D lock3D;
+layout(binding = 0, RGBA8) uniform image3D texture3D;
+layout(binding = 1, r32ui) uniform uimage3D lock3D;
 
 const int length = 400;
 const int width = 400;

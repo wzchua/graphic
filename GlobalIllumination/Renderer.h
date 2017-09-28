@@ -7,6 +7,7 @@
 
 #include "Scene.h"
 #include "ShaderProgram.h"
+#include "Voxelizer.h"
 
 class Renderer
 {
@@ -16,16 +17,14 @@ private:
     GLFWwindow * window;
     Scene scene;
     ShaderProgram phongShader;
-    ShaderProgram voxelizeListShader;
-    ShaderProgram octreeCompShader;
     void phongRender();
     void voxelRender();
     unsigned int currentShaderProgram;
     unsigned int viewHeight;
     unsigned int viewWidth;
     GLuint nullTextureId;
-    GLuint atomicBuffer;
-    GLuint ssbo;
+    Voxelizer voxelizer;
+
     void onCursorPosition(GLFWwindow* window, double xpos, double ypos);
     void onKey(GLFWwindow* window, int key, int scancode, int action, int mods);
     inline static void onKeyStatic(GLFWwindow* window, int key, int scancode, int action, int mods) {
