@@ -86,34 +86,19 @@ Renderer::Renderer(GLFWwindow * window, unsigned int viewHeight, unsigned int vi
     glfwSetWindowUserPointer(window, this);
     glfwSetKeyCallback(window, onKeyStatic);
     glfwSetCursorPosCallback(window, onCursorPositionStatic);
-    GLenum err;
-    while ((err = glGetError()) != GL_NO_ERROR) {
-        switch (err) {
-        case GL_OUT_OF_MEMORY:
-            std::cerr << "OpenGL error: Out of Memory" << std::endl;
-            break;
-        default:
-            std::cerr << "OpenGL0 error: " << err << std::endl;
-        }
-    }
     phongShader.generateShader("./Shaders/Phong.vert", ShaderProgram::VERTEX);
     phongShader.generateShader("./Shaders/Phong.frag", ShaderProgram::FRAGMENT);
     phongShader.linkCompileValidate();
-
 
     voxelizeListShader.generateShader("./Shaders/Voxelize.vert", ShaderProgram::VERTEX);
     voxelizeListShader.generateShader("./Shaders/Voxelize.frag", ShaderProgram::FRAGMENT);
     voxelizeListShader.linkCompileValidate();
 
-    while ((err = glGetError()) != GL_NO_ERROR) {
-        switch (err) {
-        case GL_OUT_OF_MEMORY:
-            std::cerr << "OpenGL error: Out of Memory" << std::endl;
-            break;
-        default:
-            std::cerr << "OpenGL2 error: " << err << std::endl;
-        }
-    }
+    octreeCompShader.generateShader("./Shaders/BuildOctree.comp", ShaderProgram::COMPUTE);
+    octreeCompShader.linkCompileValidate();
+
+
+
 
     //atomic counter buffer
     glGenBuffers(1, &atomicBuffer);

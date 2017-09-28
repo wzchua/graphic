@@ -17,6 +17,7 @@ private:
     Scene scene;
     ShaderProgram phongShader;
     ShaderProgram voxelizeListShader;
+    ShaderProgram octreeCompShader;
     void phongRender();
     void voxelRender();
     unsigned int currentShaderProgram;

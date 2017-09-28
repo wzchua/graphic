@@ -1,0 +1,151 @@
+#version 450
+#extension GL_ARB_shader_atomic_counter_ops : require
+
+layout (local_size_x = 32) in;
+//initlized at 1
+layout(binding = 0) uniform atomic_uint nodePtr;
+// 0
+layout(binding = 1) uniform atomic_uint brickPtrX;
+layout(binding = 2) uniform atomic_uint brickPtrY;
+
+struct FragmentStruct {
+    vec4 position;
+    vec4 color;
+};
+
+layout(binding = 0) buffer FragmentListBlock {
+    FragmentStruct frag[];
+};
+
+struct NodeStruct {
+    uint childPtr;
+    uint brickPtrX;
+    uint brickPtrY;
+};
+
+layout(binding = 1) buffer NodeBlock {
+    NodeStruct node[];
+};
+struct SyncStruct {
+    uint treadInvoked;
+};
+
+layout(binding = 2) coherent buffer SyncBlock {
+    SyncStruct sync[];
+};
+
+layout(RGBA8) uniform image3D texture3D;
+layout(r32ui) uniform uimage3D lock3D;
+
+const int length = 400;
+const int width = 400;
+
+uniform uint noOfFragments;
+
+uint getChildPtr(uint parentPtr, ivec3 frameOffset) {
+    //map to node space where voxel center is at corner
+    ivec3 nodeOffset;
+    nodeOffset.x = max(frameOffset.x - 1, 0);
+    nodeOffset.y = max(frameOffset.y - 1, 0);
+    nodeOffset.z = max(frameOffset.z -1 , 0);
+    uint ptrOffset = nodeOffset.x * 1 + nodeOffset.y * 2 + nodeOffset.z * 4;
+
+    return ptrOffset + parentPtr;
+}
+
+void generateNode(uint parentPtr) {
+    uint id = gl_GlobalInvocationID.x;
+    sync[parentPtr].treadInvoked = id;
+    barrier();
+    // whoever managed to get their id written gets to generate it
+    if(sync[parentPtr].treadInvoked == id) { 
+        node[parentPtr].childPtr = atomicCounterAddARB(nodePtr, 8);
+        if(node[parentPtr].brickPtrX == 400) {
+            node[parentPtr].brickPtrX = 0;
+            atomicCounterMinARB(brickPtrX, 0);
+            node[parentPtr].brickPtrY = atomicCounterIncrement(brickPtrY);
+        } else {
+            node[parentPtr].brickPtrX = atomicCounterIncrement(brickPtrX);
+        }
+    }
+    barrier();
+}
+
+void main() {
+    uint id = gl_GlobalInvocationID.x;
+    if(id >= noOfFragments) {
+        return;
+    }
+    FragmentStruct fragment = frag[id];
+    uint nodeIndex = 0;
+    //level 0
+    ivec3 frameOffset = ivec3(0);
+    generateNode(nodeIndex);
+    //level 1
+    ivec3 prevFrameOffset = frameOffset * 2;
+    frameOffset = ivec3(fragment.position * 2);
+    ivec3 innerFrameOffset = frameOffset - prevFrameOffset;
+    nodeIndex = getChildPtr(nodeIndex, innerFrameOffset);
+    generateNode(nodeIndex);
+    //level 2
+    prevFrameOffset = frameOffset * 2;
+    frameOffset = ivec3(fragment.position * 4);
+    innerFrameOffset = frameOffset - prevFrameOffset;
+    nodeIndex = getChildPtr(nodeIndex, innerFrameOffset);
+    generateNode(nodeIndex);
+    //level 3
+    prevFrameOffset = frameOffset * 2;
+    frameOffset = ivec3(fragment.position * 8);
+    innerFrameOffset = frameOffset - prevFrameOffset;
+    nodeIndex = getChildPtr(nodeIndex, innerFrameOffset);
+    generateNode(nodeIndex);
+    //level 4
+    prevFrameOffset = frameOffset * 2;
+    frameOffset = ivec3(fragment.position * 16);
+    innerFrameOffset = frameOffset - prevFrameOffset;
+    nodeIndex = getChildPtr(nodeIndex, innerFrameOffset);
+    generateNode(nodeIndex);
+    //level 5
+    prevFrameOffset = frameOffset * 2;
+    frameOffset = ivec3(fragment.position * 32);
+    innerFrameOffset = frameOffset - prevFrameOffset;
+    nodeIndex = getChildPtr(nodeIndex, innerFrameOffset);
+    generateNode(nodeIndex);
+    //level 6
+    prevFrameOffset = frameOffset * 2;
+    frameOffset = ivec3(fragment.position * 64);
+    innerFrameOffset = frameOffset - prevFrameOffset;
+    nodeIndex = getChildPtr(nodeIndex, innerFrameOffset);
+    generateNode(nodeIndex);
+    //level 7
+    prevFrameOffset = frameOffset * 2;
+    frameOffset = ivec3(fragment.position * 128);
+    innerFrameOffset = frameOffset - prevFrameOffset;
+    nodeIndex = getChildPtr(nodeIndex, innerFrameOffset);
+    generateNode(nodeIndex);
+    //level 8
+    prevFrameOffset = frameOffset * 2;
+    frameOffset = ivec3(fragment.position * 256);
+    innerFrameOffset = frameOffset - prevFrameOffset;
+    nodeIndex = getChildPtr(nodeIndex, innerFrameOffset);
+    generateNode(nodeIndex);
+    //level 9
+    prevFrameOffset = frameOffset * 2;
+    frameOffset = ivec3(fragment.position * 512);
+    innerFrameOffset = frameOffset - prevFrameOffset;
+    nodeIndex = getChildPtr(nodeIndex, innerFrameOffset);
+
+    uint bx = node[nodeIndex].brickPtrX * 3;
+    uint by = node[nodeIndex].brickPtrY * 3;    
+    ivec3 texturePos = ivec3(bx + innerFrameOffset.x, by + innerFrameOffset.y, innerFrameOffset.z);
+    
+    uint Used = 0 - 1;
+    uint value = 0;
+    //lock mutex
+    while((value = imageAtomicExchange(lock3D, texturePos, Used)) != Used) {  }
+    vec4 prevColor = imageLoad(texture3D, texturePos);
+    vec4 avgColor = (prevColor * value + fragment.color) / (value + 1);
+    imageStore(texture3D, texturePos, avgColor);
+    //release mutex
+    imageAtomicExchange(lock3D, texturePos, (value + 1));
+}
