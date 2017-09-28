@@ -4,7 +4,7 @@ Shape::Shape()
 {
 }
 
-void Shape::buildVBO(const tinyobj::shape_t & shape, const tinyobj::attrib_t & attrib, const tinyobj::material_t & material)
+void Shape::buildVBO(const tinyobj::shape_t & shape, const tinyobj::attrib_t & attrib, const tinyobj::material_t & material, glm::vec3 & min, glm::vec3 & max)
 {
     name = shape.name;
 	for (const auto& index : shape.mesh.indices) {
@@ -14,6 +14,8 @@ void Shape::buildVBO(const tinyobj::shape_t & shape, const tinyobj::attrib_t & a
 			attrib.vertices[3 * index.vertex_index + 1],
 			attrib.vertices[3 * index.vertex_index + 2]
 		};
+        min = glm::min(vertex.position, min);
+        max = glm::max(vertex.position, max);
 		vertex.normal = {
 			attrib.normals[3 * index.normal_index + 0],
 			attrib.normals[3 * index.normal_index + 1],

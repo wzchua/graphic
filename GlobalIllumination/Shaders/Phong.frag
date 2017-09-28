@@ -4,6 +4,8 @@ in vec3 ecPosition;   // Fragment's 3D position in eye space.
 in vec3 ecNormal;     // Fragment's normal vector in eye space.
 in vec2 fTexCoord;
 
+layout(binding = 0) uniform atomic_uint fragListPtr;
+
 uniform mat4 ModelViewMatrix;     // ModelView matrix.
 uniform mat4 ModelViewProjMatrix; // ModelView matrix * Projection matrix.
 uniform mat3 NormalMatrix;        // For transforming object-space direction 
@@ -37,6 +39,7 @@ void main()
     if(texture(alphaTexture, fTexCoord).r < 0.5f) {
         discard;
     }
+    atomicCounterIncrement(fragListPtr);
     vec3 viewVec = -normalize(ecPosition);
     vec3 necNormal = normalize(ecNormal);
 

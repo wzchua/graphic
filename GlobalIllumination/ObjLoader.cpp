@@ -9,9 +9,11 @@ static bool fileExists(const std::string & fileName)
     return 0 == ret;
 }
 
-bool ObjLoader::loadObj(const std::string & path, std::vector<Shape>& meshList, std::map<std::string, GLuint> &textureMap)
+bool ObjLoader::loadObj(const std::string & path, std::vector<Shape>& meshList, std::map<std::string, GLuint> &textureMap, glm::vec3 & min, glm::vec3 & max)
 {
     tinyobj::attrib_t attrib;
+    min = glm::vec3(std::numeric_limits<float>::max());
+    max = -min;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
 
@@ -96,12 +98,12 @@ bool ObjLoader::loadObj(const std::string & path, std::vector<Shape>& meshList, 
 
             for (int i = 0; i < matList.size(); i++) {
                 meshList.push_back(Shape());
-                meshList.back().buildVBO(newShapes[i], attrib, matList[i]);
+                meshList.back().buildVBO(newShapes[i], attrib, matList[i], min, max);
             }
         }
         else {
             meshList.push_back(Shape());
-            meshList.back().buildVBO(shape, attrib, matList[0]);
+            meshList.back().buildVBO(shape, attrib, matList[0], min, max);
         }
 	}
 

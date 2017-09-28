@@ -18,6 +18,8 @@ private:
     std::map<std::string, GLuint> textureMap;
     std::vector<Shape> list;
     glm::mat4 modelMat = glm::scale(glm::mat4(1.0f), glm::vec3(0.2, 0.2, 0.2));
+    glm::vec3 sceneMin;
+    glm::vec3 sceneMax;
 public:
     GLuint nullTextureId;
     Camera cam = Camera(glm::vec3(5.0f));
@@ -27,5 +29,7 @@ public:
     void render(int programId);
     glm::mat4 getSceneModelMat();
     void updateLightToGPU(int currentShaderProgram);
+    glm::vec3 getSceneMinCoords() { return sceneMin; }
+    glm::vec3 getSceneMaxCoords() { return sceneMax; }
 };
 

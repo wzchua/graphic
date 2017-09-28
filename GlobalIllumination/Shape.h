@@ -34,7 +34,7 @@ class Shape
 {
 public:
 	Shape();
-    void buildVBO(const tinyobj::shape_t& shape, const tinyobj::attrib_t& attrib, const tinyobj::material_t & material);
+    void buildVBO(const tinyobj::shape_t& shape, const tinyobj::attrib_t& attrib, const tinyobj::material_t & material, glm::vec3 & min, glm::vec3 & max);
     void generateGPUBuffers();
     void render(const GLuint program, const std::map<std::string, GLuint>& textureMap, GLuint nullTextureId) const;
 	~Shape();

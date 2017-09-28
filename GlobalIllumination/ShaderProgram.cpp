@@ -1,4 +1,4 @@
-#include "Shader.h"
+#include "ShaderProgram.h"
 
 std::string getShaderLog(GLuint shaderId) {
     // Compile failed, get log
@@ -29,25 +29,21 @@ std::string getProgramLog(GLuint programId) {
     return logString;
 }
 
-Shader::Shader(std::string vertexShaderFilename, std::string fragShaderFilename)
+void ShaderProgram::linkCompileValidate()
 {
-    GLuint vertexShader = generateVertexShader(vertexShaderFilename);
-    GLuint fragmentShader = generateFragmentShader(fragShaderFilename);
-
-    shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
+    for (auto & shader : shaders) {
+        glAttachShader(shaderProgram, shader.getShaderId());
+    }
     glLinkProgram(shaderProgram);
     int success;
     glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
     if (!success) {
         std::cout << "Program Link Failed.\n Log: " << getProgramLog(shaderProgram) << "\n";
-        exit(-1);
+        throw new std::exception();
     }
-    glDetachShader(shaderProgram, vertexShader);
-    glDetachShader(shaderProgram, fragmentShader);
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
+    for (auto & shader : shaders) {
+        glDetachShader(shaderProgram, shader.getShaderId());
+    }
 
     glValidateProgram(shaderProgram);
     glGetProgramiv(shaderProgram, GL_VALIDATE_STATUS, &success);
@@ -55,13 +51,32 @@ Shader::Shader(std::string vertexShaderFilename, std::string fragShaderFilename)
         std::cout << "Program validate Failed.\n Log: " << getProgramLog(shaderProgram) << "\n";
         throw new std::exception();
     }
-    glUseProgram(shaderProgram);
 }
 
+unsigned int ShaderProgram::use()
+{
+    glUseProgram(shaderProgram);
+    return shaderProgram;
+}
 
-Shader::~Shader()
+unsigned int ShaderProgram::getProgramId()
+{
+    return shaderProgram;
+}
+
+ShaderProgram::ShaderProgram()
+{
+    shaderProgram = glCreateProgram();
+    shaders.reserve(5);
+}
+
+ShaderProgram::~ShaderProgram()
 {
     if (shaderProgram == 0) return;
+
+    for (auto & shader : shaders) {
+        shader.destroy();
+    }
 
     GLint numShaders = 0;
     glGetProgramiv(shaderProgram, GL_ATTACHED_SHADERS, &numShaders);
@@ -80,54 +95,48 @@ Shader::~Shader()
     delete[] shaderNames;
 }
 
-GLuint Shader::generateVertexShader(std::string filename)
+void ShaderProgram::generateShader(std::string filename, ShaderType type)
 {
-    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    shaders.push_back(Shader());
+    shaders.back().initialize(filename, type);
+}
+
+void ShaderProgram::Shader::initialize(std::string filename, ShaderType type)
+{
+    shaderId = glCreateShader(type);
+    this->type = type;
     std::ifstream in(filename, std::ifstream::in);
     std::stringstream buffer;
     buffer << in.rdbuf();
     in.close();
     const auto vString = buffer.str();
     const char * source = vString.c_str();
-    glShaderSource(vertexShader, 1, &source, NULL);
-    glCompileShader(vertexShader);
+    glShaderSource(shaderId, 1, &source, NULL);
+    glCompileShader(shaderId);
 
     int success;
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+    glGetShaderiv(shaderId, GL_COMPILE_STATUS, &success);
     if (!success) {
-        std::cout << "Vertex Shader Compile Failed.\n Log: " << getShaderLog(vertexShader) << "\n";
+        std::cout << filename << " Compile Failed.\n Log: " << getShaderLog(shaderId) << "\n";
         throw new std::exception();
     }
     buffer.clear();
-    return vertexShader;
 }
 
-GLuint Shader::generateFragmentShader(std::string filename)
+ShaderProgram::Shader::~Shader()
 {
-    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    std::ifstream in(filename, std::ifstream::in);
-    std::stringstream buffer;
-    buffer << in.rdbuf();
-    in.close();
-    const auto vString = buffer.str();
-    const char * source = vString.c_str();
-    glShaderSource(fragmentShader, 1, &source, NULL);
-    glCompileShader(fragmentShader);
 
-    int success;
-    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        std::cout << "Vertex Shader Compile Failed.\n Log: " << getShaderLog(fragmentShader) << "\n";
-        throw new std::exception();
+}
+
+GLuint ShaderProgram::Shader::getShaderId()
+{
+    return shaderId;
+}
+
+void ShaderProgram::Shader::destroy() {
+    if (shaderId == 0) {
+        return;
     }
-    buffer.clear();
-    buffer.str(std::string());
-    return fragmentShader;
-}
-
-
-
-unsigned int Shader::getProgramId() 
-{
-    return shaderProgram;
+    glDeleteShader(shaderId);
+    shaderId = 0;
 }

@@ -6,7 +6,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "Scene.h"
-#include "Shader.h"
+#include "ShaderProgram.h"
 
 class Renderer
 {
@@ -15,12 +15,16 @@ private:
     RenderType type;
     GLFWwindow * window;
     Scene scene;
-    Shader phongShader = Shader("./Shaders/Phong.vert", "./Shaders/Phong.frag");
+    ShaderProgram phongShader;
+    ShaderProgram voxelizeListShader;
     void phongRender();
+    void voxelRender();
     unsigned int currentShaderProgram;
     unsigned int viewHeight;
     unsigned int viewWidth;
     GLuint nullTextureId;
+    GLuint atomicBuffer;
+    GLuint ssbo;
     void onCursorPosition(GLFWwindow* window, double xpos, double ypos);
     void onKey(GLFWwindow* window, int key, int scancode, int action, int mods);
     inline static void onKeyStatic(GLFWwindow* window, int key, int scancode, int action, int mods) {
@@ -37,5 +41,6 @@ public:
     void startRenderLoop();
     void loadScene(std::string filename);
     void setToPhongShader();
+    void setToVoxelizeShader();
 };
 

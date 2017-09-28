@@ -20,7 +20,7 @@ bool Scene::LoadObjScene(std::string filename)
     glDeleteTextures(textureIds.size(), textureIds.data());
     textureMap.clear();
     list.clear();
-    if (!ObjLoader::loadObj(filename, list, textureMap)) {
+    if (!ObjLoader::loadObj(filename, list, textureMap, sceneMin, sceneMax)) {
         return false;
     }
 
