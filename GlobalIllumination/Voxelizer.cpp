@@ -189,7 +189,7 @@ void Voxelizer::voxelizeFragmentList(Scene scene)
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboNodeList);
     nodeStruct* ptrn = (nodeStruct*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(nodeStruct),
         GL_MAP_READ_BIT);
-    for (int i = 0; i < nodeCount; i++) {
+    for (int i = 0; i < 64; i++) {
         nList.push_back(ptrn[i]);
     }
     glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);

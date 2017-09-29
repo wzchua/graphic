@@ -83,19 +83,29 @@ void generateNode(uint parentPtr) {
 }
 
 void generateLeaf(uint parentPtr, uint leafPtr) {
-    uint isGenerating = atomicCompSwap(sync[parentPtr].treadInvoked, 2, 1);
-    if(isGenerating != 2) {
+    uint isGenerating = atomicCompSwap(sync[parentPtr].treadInvoked, 2, 3);
+    if(isGenerating == 2) {     
+        uint childPtr = node[parentPtr].childPtr;
+        for(int i = 0; i < 8; i++) {
+            node[childPtr + i].brickPtrY = 0 - 1;
+        }
+        atomicCompSwap(sync[parentPtr].treadInvoked, 3, 4);    
+    } else if(isGenerating < 2) {
         deferFragment();
         return;
     }
-    uint childPtr = node[parentPtr].childPtr;
-    for(int i = 0; i < 8; i++) {
-        node[childPtr + i].childPtr = 0 - 1;
+
+    uint isGenerating2 = atomicCompSwap(sync[leafPtr].treadInvoked, 0, 1);
+    if(isGenerating2 == 0) {   
+        if(node[leafPtr].brickPtrX == 0) {
+            node[leafPtr].brickPtrX = atomicCounterIncrement(brickPtrX);
+        }
+        atomicCompSwap(sync[leafPtr].treadInvoked, 1, 4);  
+    } else if(isGenerating2 == 1) {
+        deferFragment();
+    } else if(isGenerating2 == 2) {
+        
     }
-    if(node[leafPtr].brickPtrX == 0) {
-        node[leafPtr].brickPtrX = atomicCounterIncrement(brickPtrX);
-    }
-    atomicCompSwap(sync[parentPtr].treadInvoked, 1, 2);    
 }
 
 uniform float levels[10] = float[10](0.001953125f, 0.00390625f, 0.0078125f,
@@ -117,25 +127,23 @@ ivec3[10] computeLevelOffset(FragmentStruct fragment) {
 void main() {
     //frag position in 0 to 512 range
     uint id = gl_GlobalInvocationID.x;
-    memoryBarrier();
-    if(id >= noOfFragments) {
-        return;
-    }
-    FragmentStruct fragment = frag[id];
-    ivec3 levelOffsets[10];
-    levelOffsets = computeLevelOffset(fragment);
-    int maxLevel = 2;
+    if(id < noOfFragments) {
+        FragmentStruct fragment = frag[id];
+        ivec3 levelOffsets[10];
+        levelOffsets = computeLevelOffset(fragment);
+        int maxLevel = 3;
 
-    uint nodeIndex = 0;
-    generateNode(nodeIndex);
-
-    for(int i = 1; i < maxLevel; i++) {
-        nodeIndex = getChildPtr(nodeIndex, levelOffsets[i]); 
+        uint nodeIndex = 0;
         generateNode(nodeIndex);
+
+        for(int i = 1; i < maxLevel; i++) {
+            nodeIndex = getChildPtr(nodeIndex, levelOffsets[i]); 
+            generateNode(nodeIndex);
+            if(isToTerminate) { return; }
+        }
+        generateLeaf(nodeIndex, getChildPtr(nodeIndex, levelOffsets[maxLevel]));
         if(isToTerminate) { return; }
     }
-    generateLeaf(nodeIndex, getChildPtr(nodeIndex, levelOffsets[maxLevel]));
-    if(isToTerminate) { return; }
     
     /*
     uint bx = node[nodeIndex].brickPtrX & 0xFF;
