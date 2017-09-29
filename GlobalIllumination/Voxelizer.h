@@ -28,14 +28,16 @@ public:
     void initializeWithScene(glm::vec3 min, glm::vec3 max);
     void voxelizeFragmentList(Scene scene);
 private:
-    unsigned int count = 512 * 256 * 256;
+    unsigned int count = 256 * 256 * 256;
     int brickDim = 3;
     int texWdith = 400;
     int texHeight = 400;
+    GLuint atomicFragCountPtr;
     GLuint atomicNodeCountPtr;
     GLuint atomicBrickCountPtrX;
     GLuint atomicBrickCountPtrY;
     GLuint ssboFragmentList;
+    GLuint ssboFragmentList2;
     GLuint ssboNodeList;
     GLuint ssboSyncList;
     GLuint texture3DBrickList;
