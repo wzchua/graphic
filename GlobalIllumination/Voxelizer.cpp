@@ -26,7 +26,7 @@ Voxelizer::Voxelizer()
     glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 1, atomicNodeCountPtr);
     GLuint* ptr = (GLuint*)glMapBufferRange(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint),
         GL_MAP_WRITE_BIT);
-    ptr[0] = 9;
+    ptr[0] = 1;
     glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER);
     glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
 
@@ -37,7 +37,7 @@ Voxelizer::Voxelizer()
     glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 2, atomicBrickCountPtrX);
     ptr = (GLuint*)glMapBufferRange(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint),
         GL_MAP_WRITE_BIT);
-    ptr[0] = 1;
+    ptr[0] = 0;
     glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
 
     glGenBuffers(1, &atomicBrickCountPtrY);
@@ -77,11 +77,6 @@ Voxelizer::Voxelizer()
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboNodeList);
     glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(nodeStruct) * count, NULL, GL_DYNAMIC_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, ssboNodeList);
-
-    nodeStruct* ptrN = (nodeStruct*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(nodeStruct),
-        GL_MAP_WRITE_BIT);
-    ptrN[0].childPtr = 1;
-    glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
 
@@ -210,6 +205,7 @@ void Voxelizer::voxelizeFragmentList(Scene scene)
     glBindImageTexture(1, texture3DLockList, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
 
     int workgroupX = std::ceil(fragmentCount / 512.0);
+
     glDispatchCompute(workgroupX, 1, 1);
 
     GLenum err;

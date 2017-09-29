@@ -28,7 +28,7 @@ public:
     void initializeWithScene(glm::vec3 min, glm::vec3 max);
     void voxelizeFragmentList(Scene scene);
 private:
-    unsigned int count = 256 * 256 * 256;
+    unsigned int count = 256 * 256 * 128;
     int brickDim = 3;
     int texWdith = 400;
     int texHeight = 400;

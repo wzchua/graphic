@@ -68,35 +68,45 @@ uint getChildPtr(uint parentPtr, ivec3 frameOffset) {
     return ptrOffset + node[parentPtr].childPtr;
 }
 
-void generateNode(uint parentPtr, bool isLeaf) {
-    barrier();
-    memoryBarrier();
-    if(node[parentPtr].childPtr != 0) {
-        return;
-    }
+void generateNode(uint parentPtr) {
     uint isGenerating = atomicCompSwap(sync[parentPtr].treadInvoked, 0, 1);
+    if(isGenerating == 0) {
+        node[parentPtr].childPtr = atomicCounterAddARB(nodePtr, 8);
+        node[parentPtr].brickPtrX = atomicCounterIncrement(brickPtrX);
+        atomicCompSwap(sync[parentPtr].treadInvoked, 1, 2);    
+    }
     if(isGenerating == 1) {
         deferFragment();
-        return;
     } else if(isGenerating == 2) {
+        
+    }
+}
+
+void generateLeaf(uint parentPtr, uint leafPtr) {
+    uint isGenerating = atomicCompSwap(sync[parentPtr].treadInvoked, 2, 1);
+    if(isGenerating != 2) {
+        deferFragment();
         return;
     }
-    if(!isLeaf) {
-        atomicExchange(node[parentPtr].childPtr, atomicCounterAddARB(nodePtr, 8));
+    uint childPtr = node[parentPtr].childPtr;
+    for(int i = 0; i < 8; i++) {
+        node[childPtr + i].childPtr = 0 - 1;
     }
-    node[parentPtr].brickPtrX = atomicCounterIncrement(brickPtrX);
+    if(node[leafPtr].brickPtrX == 0) {
+        node[leafPtr].brickPtrX = atomicCounterIncrement(brickPtrX);
+    }
     atomicCompSwap(sync[parentPtr].treadInvoked, 1, 2);    
 }
 
-uniform float levels[9] = float[9](0.001953125f, 0.00390625f, 0.0078125f,
+uniform float levels[10] = float[10](0.001953125f, 0.00390625f, 0.0078125f,
                                 0.015625f, 0.03125f, 0.0625f,
-                                0.125f, 0.25f, 0.5f);
-                                
-ivec3[9] computeLevelOffset(FragmentStruct fragment) {
+                                0.125f, 0.25f, 0.5f, 1.0f);
+
+ivec3[10] computeLevelOffset(FragmentStruct fragment) {
     ivec3 frameOffset = ivec3(0);
     ivec3 prevFrameOffset = ivec3(0);
-    ivec3 levelOffsets[9];
-    for(int i = 0; i < 9; i++) {
+    ivec3 levelOffsets[10];
+    for(int i = 0; i < 10; i++) {
         prevFrameOffset = frameOffset * 2;
         frameOffset = ivec3(fragment.position * levels[i]);
         levelOffsets[i] = frameOffset - prevFrameOffset;
@@ -112,19 +122,25 @@ void main() {
         return;
     }
     FragmentStruct fragment = frag[id];
-    uint nodeIndex = 0;
-    ivec3 levelOffsets[9];
+    ivec3 levelOffsets[10];
     levelOffsets = computeLevelOffset(fragment);
-    //root node is pregenerated
-    for(int i = 1; i < 9; i++) {        
-        nodeIndex = getChildPtr(nodeIndex, levelOffsets[i]);
-        generateNode(nodeIndex, i == 8);
+    int maxLevel = 2;
+
+    uint nodeIndex = 0;
+    generateNode(nodeIndex);
+
+    for(int i = 1; i < maxLevel; i++) {
+        nodeIndex = getChildPtr(nodeIndex, levelOffsets[i]); 
+        generateNode(nodeIndex);
         if(isToTerminate) { return; }
     }
+    generateLeaf(nodeIndex, getChildPtr(nodeIndex, levelOffsets[maxLevel]));
+    if(isToTerminate) { return; }
     
     /*
-    uint bx = node[nodeIndex].brickPtrX * 3;
-    uint by = node[nodeIndex].brickPtrY * 3;    
+    uint bx = node[nodeIndex].brickPtrX & 0xFF;
+    uint by = node[nodeIndex].brickPtrX >> 16;    
+    ivec innerFrameOffset = levelOffsets[8];
     ivec3 texturePos = ivec3(bx + innerFrameOffset.x, by + innerFrameOffset.y, innerFrameOffset.z);
     
     uint Used = 0 - 1;
@@ -137,4 +153,5 @@ void main() {
     //release mutex
     imageAtomicExchange(lock3D, texturePos, (value + 1));
     */
+    
 }
