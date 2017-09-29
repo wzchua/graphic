@@ -204,6 +204,7 @@ void Voxelizer::voxelizeFragmentList(Scene scene)
     glBindImageTexture(0, texture3DBrickList, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
     glBindImageTexture(1, texture3DLockList, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
 
+    glMemoryBarrier(GL_ALL_BARRIER_BITS);
     int workgroupX = std::ceil(fragmentCount / 512.0);
 
     glDispatchCompute(workgroupX, 1, 1);

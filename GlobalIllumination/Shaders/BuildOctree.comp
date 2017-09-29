@@ -42,107 +42,112 @@ layout(binding = 3) coherent buffer SyncBlock {
 layout(binding = 0, RGBA8) uniform image3D texture3D;
 layout(binding = 1, r32ui) uniform uimage3D lock3D;
 
-const int length = 400;
-const int width = 400;
-
 uniform uint noOfFragments;
 
 bool isToTerminate = false;
+uniform uint ISPROCESS = 0 - 1;
+uniform uint LEAF = 0 - 2;
 
 void deferFragment() {
-    uint id = gl_GlobalInvocationID.x;
-    FragmentStruct fragment = frag[id];
     uint index = atomicCounterIncrement(fragListPtr);
-    frag2[index] = fragment;
+    frag2[index] = frag[gl_GlobalInvocationID.x];
     isToTerminate = true;
 }
 
-uint getChildPtr(uint parentPtr, ivec3 frameOffset) {
-    //map to node space where voxel center is at corner
-    ivec3 nodeOffset;
-    nodeOffset.x = min(frameOffset.x, 1);
-    nodeOffset.y = min(frameOffset.y, 1);
-    nodeOffset.z = min(frameOffset.z, 1);
-    uint ptrOffset = nodeOffset.x * 1 + nodeOffset.y * 2 + nodeOffset.z * 4;
-
-    return ptrOffset + node[parentPtr].childPtr;
-}
-
-void generateNode(uint parentPtr) {
-    uint isGenerating = atomicCompSwap(sync[parentPtr].treadInvoked, 0, 1);
-    if(isGenerating == 0) {
-        node[parentPtr].childPtr = atomicCounterAddARB(nodePtr, 8);
-        node[parentPtr].brickPtrX = atomicCounterIncrement(brickPtrX);
-        atomicCompSwap(sync[parentPtr].treadInvoked, 1, 2);    
-    }
-    if(isGenerating == 1) {
-        deferFragment();
-    } else if(isGenerating == 2) {
-        
-    }
-}
-
-void generateLeaf(uint parentPtr, uint leafPtr) {
-    uint isGenerating = atomicCompSwap(sync[parentPtr].treadInvoked, 2, 3);
-    if(isGenerating == 2) {     
-        uint childPtr = node[parentPtr].childPtr;
-        for(int i = 0; i < 8; i++) {
-            node[childPtr + i].brickPtrY = 0 - 1;
-        }
-        atomicCompSwap(sync[parentPtr].treadInvoked, 3, 4);    
-    } else if(isGenerating < 2) {
-        deferFragment();
-        return;
-    }
-
-    uint isGenerating2 = atomicCompSwap(sync[leafPtr].treadInvoked, 0, 1);
-    if(isGenerating2 == 0) {   
-        if(node[leafPtr].brickPtrX == 0) {
-            node[leafPtr].brickPtrX = atomicCounterIncrement(brickPtrX);
-        }
-        atomicCompSwap(sync[leafPtr].treadInvoked, 1, 4);  
-    } else if(isGenerating2 == 1) {
-        deferFragment();
-    } else if(isGenerating2 == 2) {
-        
-    }
+uint getPtrOffset(ivec3 frameOffset) {
+    return min(frameOffset.x, 1) * 1 
+    + min(frameOffset.y, 1) * 2 + min(frameOffset.z, 1) * 4;
 }
 
 uniform float levels[10] = float[10](0.001953125f, 0.00390625f, 0.0078125f,
                                 0.015625f, 0.03125f, 0.0625f,
                                 0.125f, 0.25f, 0.5f, 1.0f);
 
-ivec3[10] computeLevelOffset(FragmentStruct fragment) {
+ivec3[10] computeLevelOffset() {
     ivec3 frameOffset = ivec3(0);
     ivec3 prevFrameOffset = ivec3(0);
     ivec3 levelOffsets[10];
+    vec3 position = vec3(frag[gl_GlobalInvocationID.x].position);
     for(int i = 0; i < 10; i++) {
         prevFrameOffset = frameOffset * 2;
-        frameOffset = ivec3(fragment.position * levels[i]);
+        frameOffset = ivec3(position * levels[i]);
         levelOffsets[i] = frameOffset - prevFrameOffset;
     }
     return levelOffsets;
 } 
 
+uint enterNode(uint nodeIndex, uint offset) {
+    uint childIndex = atomicCompSwap(node[nodeIndex].childPtr, 0, ISPROCESS);
+    if(childIndex == 0) {
+        memoryBarrier();
+        childIndex = atomicCounterAddARB(nodePtr, 8);
+        atomicCompSwap(node[nodeIndex].childPtr, ISPROCESS, childIndex);
+        node[nodeIndex].brickPtrX = atomicCounterIncrement(brickPtrX);
+        memoryBarrier();        
+        return childIndex + offset;
+    } else if(childIndex == ISPROCESS) {
+        deferFragment();
+        return ISPROCESS;
+    } else {
+        atomicCompSwap(node[nodeIndex].childPtr, ISPROCESS, childIndex);
+        return childIndex + offset;
+    }
+}
+
+uint enterLeaf(uint nodeIndex, uint offset) {
+    uint childIndex = atomicCompSwap(node[nodeIndex].childPtr, 0, ISPROCESS);
+    if(childIndex == 0) {
+        memoryBarrier();
+        childIndex = atomicCounterAddARB(nodePtr, 8);
+        atomicCompSwap(node[nodeIndex].childPtr, ISPROCESS, childIndex);
+        for(int i = 0; i < 8; i++) {
+            atomicCompSwap(node[childIndex + i].childPtr, 0, LEAF);
+        }
+        node[nodeIndex].brickPtrX = atomicCounterIncrement(brickPtrX);
+        node[childIndex + offset].brickPtrX = atomicCounterIncrement(brickPtrX);
+        memoryBarrier();        
+        return childIndex + offset;
+    } else if(childIndex == ISPROCESS) {
+        deferFragment();
+        return ISPROCESS;
+    } else {
+        atomicCompSwap(node[nodeIndex].childPtr, ISPROCESS, childIndex);
+        return childIndex + offset;
+    }
+}
+
 void main() {
     //frag position in 0 to 512 range
-    uint id = gl_GlobalInvocationID.x;
-    if(id < noOfFragments) {
-        FragmentStruct fragment = frag[id];
-        ivec3 levelOffsets[10];
-        levelOffsets = computeLevelOffset(fragment);
-        int maxLevel = 3;
+    if(gl_GlobalInvocationID.x < noOfFragments) {
+        ivec3 levelOffsets[10] = computeLevelOffset();
+        int maxLevel = 9;
 
         uint nodeIndex = 0;
-        generateNode(nodeIndex);
-
-        for(int i = 1; i < maxLevel; i++) {
-            nodeIndex = getChildPtr(nodeIndex, levelOffsets[i]); 
-            generateNode(nodeIndex);
-            if(isToTerminate) { return; }
+        //bool isOkay = true;
+        //isOkay = generateNode(nodeIndex);
+        //if(!isOkay) { return; }
+        nodeIndex = enterNode(nodeIndex, getPtrOffset(levelOffsets[0]));
+        if(nodeIndex == ISPROCESS){
+            return;
         }
-        generateLeaf(nodeIndex, getChildPtr(nodeIndex, levelOffsets[maxLevel]));
-        if(isToTerminate) { return; }
+
+        for(int i = 1; i < maxLevel; i++) {            
+            nodeIndex = enterNode(nodeIndex, getPtrOffset(levelOffsets[i]));
+            if(nodeIndex == ISPROCESS){
+                return;
+            }
+            //nodeIndex = node[nodeIndex].childPtr + getPtrOffset(levelOffsets[i]); 
+            //isOkay = generateNode(nodeIndex);
+            //if(!isOkay) { return; }
+        }
+        nodeIndex = enterLeaf(nodeIndex, getPtrOffset(levelOffsets[maxLevel]));
+        if(nodeIndex == ISPROCESS){
+            return;
+        }
+        //if(isOkay) {
+        //    isOkay = generateLeaf(nodeIndex, node[nodeIndex].childPtr + getPtrOffset(levelOffsets[maxLevel]));
+        //}
+        //if(!isOkay) { return; }
     }
     
     /*
