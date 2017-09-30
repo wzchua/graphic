@@ -30,14 +30,6 @@ struct NodeStruct {
 layout(binding = 1) volatile buffer NodeBlock {
     NodeStruct node[];
 };
-struct SyncStruct {
-    uint treadInvoked;
-};
-
-layout(binding = 2) coherent buffer SyncBlock {
-    SyncStruct sync[];
-};
-
 
 layout(r32ui) uniform uimage3D lock3D;
 
@@ -73,24 +65,6 @@ uint getChildPtr(uint parentPtr, ivec3 frameOffset) {
     uint ptrOffset = nodeOffset.x * 1 + nodeOffset.y * 2 + nodeOffset.z * 4;
 
     return ptrOffset + node[parentPtr].childPtr;
-}
-
-void generateNode(uint parentPtr, bool isLeaf) {
-    if(node[parentPtr].childPtr != 0) {
-        return;
-    }
-    uint isGenerating = atomicCompSwap(sync[parentPtr].treadInvoked, 0, 1);
-    if(isGenerating == 1) {
-        isToDefer = true;
-        return;
-    } else if(isGenerating == 2) {
-        return;
-    }
-    if(!isLeaf) {
-        atomicExchange(node[parentPtr].childPtr, atomicCounterAddARB(nodePtr, 8));
-    }
-    node[parentPtr].brickPtrX = atomicCounterIncrement(brickPtrX);
-    atomicCompSwap(sync[parentPtr].treadInvoked, 1, 2);    
 }
 
 uniform float levels[9] = float[9](0.001953125f, 0.00390625f, 0.0078125f,
@@ -130,7 +104,7 @@ void main() {
     vec4 color = vec4(Diffuse * texture(diffuseTexture, fTexCoord).rgb, 1.0f);
     deferFragment(color);
     return;
-    
+
     /*
     uint nodeIndex = 0;
     ivec3 levelOffsets[9];

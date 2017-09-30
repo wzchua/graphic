@@ -18,28 +18,36 @@ public:
     struct nodeStruct {
         unsigned int childPtr;
         unsigned int brickPtrX;
-        unsigned int brickPtrY;
+        unsigned int parentPtr;
     };
-    struct syncStruct {
-        unsigned int treadId;
+    struct logStruct {
+        float position[4];
+        float color[4];
+        unsigned int nodeIndex;
+        unsigned int brickIndex;
+        unsigned int index1;
+        unsigned int index2;
     };
     Voxelizer();
     ~Voxelizer();
     void initializeWithScene(glm::vec3 min, glm::vec3 max);
     void voxelizeFragmentList(Scene scene);
 private:
-    unsigned int count = 256 * 256 * 128;
+    void getLogs(std::vector<logStruct> & logs);
+    int getCount(GLuint counterId);
+    unsigned int count = 1024 * 1024; //1m count
     int brickDim = 3;
-    int texWdith = 400;
-    int texHeight = 400;
+    int texWdith = 512;
+    int texHeight = 512;
+    unsigned int maxLogCount = 500;
     GLuint atomicFragCountPtr;
     GLuint atomicNodeCountPtr;
     GLuint atomicBrickCountPtrX;
-    GLuint atomicBrickCountPtrY;
+    GLuint atomicLogCounter;
     GLuint ssboFragmentList;
     GLuint ssboFragmentList2;
     GLuint ssboNodeList;
-    GLuint ssboSyncList;
+    GLuint ssboLogList;
     GLuint texture3DBrickList;
     GLuint texture3DLockList;
     ShaderProgram voxelizeListShader;

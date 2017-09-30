@@ -3,11 +3,11 @@
 
 layout (local_size_x = 512) in;
 layout(binding = 0) uniform atomic_uint fragListPtr;
-//initlized at 9
+//initlized at 1
 layout(binding = 1) uniform atomic_uint nodePtr;
 // 0
 layout(binding = 2) uniform atomic_uint brickPtrX;
-layout(binding = 3) uniform atomic_uint brickPtrY;
+layout(binding = 3) uniform atomic_uint logPtr;
 
 struct FragmentStruct {
     vec4 position;
@@ -25,33 +25,50 @@ layout(binding = 1) buffer FragmentListBlock2 {
 struct NodeStruct {
     uint childPtr;
     uint brickPtrX;
-    uint brickPtrY;
+    uint parentPtr;
 };
 
 layout(binding = 2) volatile buffer NodeBlock {
     NodeStruct node[];
 };
-struct SyncStruct {
-    uint treadInvoked;
+
+struct LogStruct {
+    vec4 position;
+    vec4 color;
+    uint nodeIndex;
+    uint brickPtr;
+    uint index1;
+    uint index2;
 };
 
-layout(binding = 3) coherent buffer SyncBlock {
-    SyncStruct sync[];
+layout(binding = 3) volatile buffer LogBlock {
+    LogStruct logList[];
 };
 
 layout(binding = 0, RGBA8) uniform image3D texture3D;
 layout(binding = 1, r32ui) uniform uimage3D lock3D;
 
 uniform uint noOfFragments;
+uniform uint maxNoOfLogs;
 
-bool isToTerminate = false;
 uniform uint ISPROCESS = 0 - 1;
 uniform uint LEAF = 0 - 2;
 
 void deferFragment() {
     uint index = atomicCounterIncrement(fragListPtr);
     frag2[index] = frag[gl_GlobalInvocationID.x];
-    isToTerminate = true;
+}
+
+void logFragment(vec4 pos, vec4 color, uint nodeIndex, uint brickPtr, uint index1, uint index2) {
+    if(atomicCounter(logPtr) < maxNoOfLogs) {        
+        uint index = atomicCounterIncrement(logPtr);
+        logList[index].position = pos;
+        logList[index].color = color;
+        logList[index].nodeIndex = nodeIndex;
+        logList[index].brickPtr = brickPtr;
+        logList[index].index1 = index1;
+        logList[index].index2 = index2;
+    }
 }
 
 uint getPtrOffset(ivec3 frameOffset) {
@@ -74,22 +91,23 @@ ivec3[10] computeLevelOffset() {
         levelOffsets[i] = frameOffset - prevFrameOffset;
     }
     return levelOffsets;
-} 
+}
 
 uint enterNode(uint nodeIndex, uint offset) {
     uint childIndex = atomicCompSwap(node[nodeIndex].childPtr, 0, ISPROCESS);
     if(childIndex == 0) {
-        memoryBarrier();
         childIndex = atomicCounterAddARB(nodePtr, 8);
-        atomicCompSwap(node[nodeIndex].childPtr, ISPROCESS, childIndex);
         node[nodeIndex].brickPtrX = atomicCounterIncrement(brickPtrX);
-        memoryBarrier();        
+        atomicCompSwap(node[nodeIndex].childPtr, ISPROCESS, childIndex);
+        for(int i = 0; i < 8; i++) {
+            node[childIndex + i].parentPtr = nodeIndex;
+        }
+        memoryBarrier();
         return childIndex + offset;
     } else if(childIndex == ISPROCESS) {
         deferFragment();
         return ISPROCESS;
     } else {
-        atomicCompSwap(node[nodeIndex].childPtr, ISPROCESS, childIndex);
         return childIndex + offset;
     }
 }
@@ -97,74 +115,77 @@ uint enterNode(uint nodeIndex, uint offset) {
 uint enterLeaf(uint nodeIndex, uint offset) {
     uint childIndex = atomicCompSwap(node[nodeIndex].childPtr, 0, ISPROCESS);
     if(childIndex == 0) {
-        memoryBarrier();
         childIndex = atomicCounterAddARB(nodePtr, 8);
-        atomicCompSwap(node[nodeIndex].childPtr, ISPROCESS, childIndex);
-        for(int i = 0; i < 8; i++) {
-            atomicCompSwap(node[childIndex + i].childPtr, 0, LEAF);
-        }
         node[nodeIndex].brickPtrX = atomicCounterIncrement(brickPtrX);
-        node[childIndex + offset].brickPtrX = atomicCounterIncrement(brickPtrX);
-        memoryBarrier();        
-        return childIndex + offset;
+        for(int i = 0; i < 8; i++) {
+            node[childIndex + i].childPtr = LEAF;
+            node[childIndex + i].parentPtr = nodeIndex;
+        }
+        atomicCompSwap(node[nodeIndex].childPtr, ISPROCESS, childIndex);
+        memoryBarrier();
     } else if(childIndex == ISPROCESS) {
         deferFragment();
         return ISPROCESS;
-    } else {
-        atomicCompSwap(node[nodeIndex].childPtr, ISPROCESS, childIndex);
-        return childIndex + offset;
     }
+    
+    uint brickState = atomicCompSwap(node[childIndex + offset].brickPtrX, 0, ISPROCESS);
+    if(brickState == 0) {
+        uint brickPtr = atomicCounterIncrement(brickPtrX);
+        atomicCompSwap(node[childIndex + offset].brickPtrX, ISPROCESS, brickPtr);
+        memoryBarrier();
+    } else if(brickState == ISPROCESS){
+        deferFragment();
+        return ISPROCESS;
+    }
+    
+    return childIndex + offset;
 }
 
+uniform int lowestLevel = 9;
 void main() {
     //frag position in 0 to 512 range
     if(gl_GlobalInvocationID.x < noOfFragments) {
         ivec3 levelOffsets[10] = computeLevelOffset();
-        int maxLevel = 9;
 
         uint nodeIndex = 0;
-        //bool isOkay = true;
-        //isOkay = generateNode(nodeIndex);
-        //if(!isOkay) { return; }
-        nodeIndex = enterNode(nodeIndex, getPtrOffset(levelOffsets[0]));
-        if(nodeIndex == ISPROCESS){
-            return;
-        }
+        // start in root node
+        int currentLevel = 0;
 
-        for(int i = 1; i < maxLevel; i++) {            
-            nodeIndex = enterNode(nodeIndex, getPtrOffset(levelOffsets[i]));
+        while(currentLevel < lowestLevel - 1) {         
+            // move to next node  
+            currentLevel++;
+            nodeIndex = enterNode(nodeIndex, getPtrOffset(levelOffsets[currentLevel]));
             if(nodeIndex == ISPROCESS){
                 return;
             }
-            //nodeIndex = node[nodeIndex].childPtr + getPtrOffset(levelOffsets[i]); 
-            //isOkay = generateNode(nodeIndex);
-            //if(!isOkay) { return; }
         }
-        nodeIndex = enterLeaf(nodeIndex, getPtrOffset(levelOffsets[maxLevel]));
+        nodeIndex = enterLeaf(nodeIndex, getPtrOffset(levelOffsets[lowestLevel]));
         if(nodeIndex == ISPROCESS){
             return;
         }
-        //if(isOkay) {
-        //    isOkay = generateLeaf(nodeIndex, node[nodeIndex].childPtr + getPtrOffset(levelOffsets[maxLevel]));
-        //}
-        //if(!isOkay) { return; }
+
+        uint state = atomicCompSwap(node[nodeIndex].childPtr, LEAF, ISPROCESS);
+        if(state == ISPROCESS) {
+            deferFragment();
+            return;
+        } else {
+            uint brickPtr = node[nodeIndex].brickPtrX;
+            uint bx = (brickPtr & 0x1FF) * 3;
+            uint by = (brickPtr >> 9) * 3 ;
+            ivec3 innerFrameOffset = levelOffsets[lowestLevel];
+            ivec3 texturePos = ivec3(bx + innerFrameOffset.x, by + innerFrameOffset.y, innerFrameOffset.z);  
+            uvec4 count = imageLoad(lock3D, texturePos);
+            vec4 prevColor = imageLoad(texture3D, texturePos);
+            FragmentStruct f = frag[gl_GlobalInvocationID.x];
+            if(brickPtr == 0) {
+                logFragment(f.position, vec4(texturePos, 777), nodeIndex, brickPtr, node[nodeIndex].childPtr, 0);
+            }
+            vec4 avgColor = (prevColor * count.r + frag[gl_GlobalInvocationID.x].color) / (count.r + 1);
+            imageStore(texture3D, texturePos, avgColor);
+            count.r = count.r + 1;
+            imageStore(lock3D, texturePos, count);
+            atomicCompSwap(node[nodeIndex].childPtr, ISPROCESS, LEAF);
+        }
     }
-    
-    /*
-    uint bx = node[nodeIndex].brickPtrX & 0xFF;
-    uint by = node[nodeIndex].brickPtrX >> 16;    
-    ivec innerFrameOffset = levelOffsets[8];
-    ivec3 texturePos = ivec3(bx + innerFrameOffset.x, by + innerFrameOffset.y, innerFrameOffset.z);
-    
-    uint Used = 0 - 1;
-    uint value = 0;
-    //lock mutex
-    while((value = imageAtomicExchange(lock3D, texturePos, Used)) == Used) {  }
-    vec4 prevColor = imageLoad(texture3D, texturePos);
-    vec4 avgColor = (prevColor * value + fragment.color) / (value + 1);
-    imageStore(texture3D, texturePos, avgColor);
-    //release mutex
-    imageAtomicExchange(lock3D, texturePos, (value + 1));
-    */
     
 }
