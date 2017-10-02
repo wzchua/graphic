@@ -1,0 +1,48 @@
+#version 450
+layout (local_size_x = 512) in;
+
+layout(binding = 2) uniform atomic_uint modelBrickPtr;
+
+layout(binding = 0, r32ui) uniform uimage3D redColorBrick;
+layout(binding = 1, r32ui) uniform uimage3D greenColorBrick;
+layout(binding = 2, r32ui) uniform uimage3D blueColorBrick;
+layout(binding = 3, r32ui) uniform uimage3D alphaColorBrick;
+layout(binding = 4, r32ui) uniform uimage3D normalXBrick;
+layout(binding = 5, r32ui) uniform uimage3D normalYBrick;
+layout(binding = 6, r32ui) uniform uimage3D normalZBrick;
+layout(binding = 7, r32ui) uniform uimage3D fragmentCounter;
+layout(binding = 8, RGBA8) uniform image3D colorBrick;
+layout(binding = 9, RGBA8) uniform image3D normalBrick;
+
+void main() {
+  uint brickPtr = gl_GlobalInvocationID.x;
+    if(brickPtr < atomicCounter(modelBrickPtr)) {
+      ivec3 zero = ivec3(0);
+      ivec3 one = ivec3(1, 0, 0);
+      ivec3 two = ivec3(0, 1, 0);
+      ivec3 three = ivec3(1, 1, 0);
+      uint bx = (brickPtr & 0x1FF) * 2;
+      uint by = (brickPtr >> 9) * 2;
+      for(int i = 0; i < 8, i++) {
+        ivec3 pos = ivec3(bx + (i & 1), by + ((i & 2) >> 1), (i & 4) >> 2);
+        int count = imageLoad(fragmentCounter, pos);
+
+        uint red = imageLoad(redColorBrick, pos);
+        uint green = imageLoad(greenColorBrick, pos);
+        uint blue = imageLoad(blueColorBrick, pos);
+        uint alpha = imageLoad(alphaColorBrick, pos);
+        vec4 color = vec4(red, green, blue, alpha);
+        
+        vec4 avgColor = color/count;
+        imageStore(colorBrick, pos, avgColor);
+
+        uint normalx = imageLoad(normalXBrick, pos);
+        uint normaly = imageLoad(normalYBrick, pos);
+        uint normalz = imageLoad(normalZBrick, pos);
+        vec3 normal = vec3(normalx, normaly, normalz);
+
+        vec3 avgNormal = normal/count;
+        imageStore(normalBrick, pos, vec4(avgNormal, 0.0));
+      }
+    }
+}

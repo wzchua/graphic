@@ -1,0 +1,12 @@
+#version 450
+
+layout(binding = 8, RGBA8) writeonly uniform image3D colorBrick;
+layout(binding = 9, RGBA8) writeonly uniform image3D normalBrick;
+
+layout(binding = 8, RGBA8) uniform sampler3D colorBrickSampler;
+layout(binding = 9, RGBA8) uniform sampler3D normalBrickSampler;
+
+
+void main() {
+
+}
