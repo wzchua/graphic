@@ -14,11 +14,14 @@ public:
     struct fragStruct {
         float position[4];
         float color[4];
+        float normal[4];
     };
     struct nodeStruct {
-        unsigned int childPtr;
-        unsigned int brickPtrX;
         unsigned int parentPtr;
+        unsigned int selfPtr;
+        unsigned int childPtr;
+        unsigned int modelBrickPtr;
+        unsigned int lightBrickPtr;
     };
     struct logStruct {
         float position[4];
@@ -36,22 +39,33 @@ private:
     void getLogs(std::vector<logStruct> & logs);
     int getCount(GLuint counterId);
     unsigned int count = 1024 * 1024; //1m count
-    int brickDim = 3;
+    int brickDim = 2;
     int texWdith = 512;
     int texHeight = 512;
     unsigned int maxLogCount = 500;
+
     GLuint atomicFragCountPtr;
     GLuint atomicNodeCountPtr;
-    GLuint atomicBrickCountPtrX;
+    GLuint atomicModelBrickCounterPtr;
+    GLuint atomicLeafNodeCountPtr;
     GLuint atomicLogCounter;
+
     GLuint ssboFragmentList;
     GLuint ssboFragmentList2;
     GLuint ssboNodeList;
+    GLuint ssboLeafNodeList;
     GLuint ssboLogList;
+
+    GLuint texture3DrgColorBrickList;
+    GLuint texture3DbaColorBrickList;
+    GLuint texture3DxyNormalBrickList;
+    GLuint texture3DzwNormalBrickList;
     GLuint texture3DBrickList;
-    GLuint texture3DLockList;
+    GLuint texture3DCounterList;
+
     ShaderProgram voxelizeListShader;
     ShaderProgram octreeCompShader;
+
     glm::mat4 sceneMat;
     glm::mat4 ortho = glm::ortho(-256.0, 256.0, -256.0, 256.0, 0.0, 512.0);
     glm::mat4 voxelViewMatrix = glm::lookAt(glm::vec3(0, 0, 256), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));

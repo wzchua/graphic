@@ -7,11 +7,13 @@ layout(binding = 0) uniform atomic_uint fragListPtr;
 layout(binding = 1) uniform atomic_uint nodePtr;
 // 0
 layout(binding = 2) uniform atomic_uint modelBrickPtr;
-layout(binding = 8) uniform atomic_uint logPtr;
+layout(binding = 3) uniform atomic_uint leafNodePtr;
+layout(binding = 7) uniform atomic_uint logPtr;
 
 struct FragmentStruct {
     vec4 position;
     vec4 color;
+    vec4 normal;
 };
 
 layout(binding = 0) buffer FragmentListBlock {
@@ -20,7 +22,7 @@ layout(binding = 0) buffer FragmentListBlock {
 
 layout(binding = 1) buffer FragmentListBlock2 {
     FragmentStruct frag2[];
-};
+}; 
 
 struct NodeStruct {
     uint parentPtr;
@@ -28,10 +30,14 @@ struct NodeStruct {
     uint childPtr;
     uint modelBrickPtr;
     uint lightBrickPtr;
-}
+};
 
 layout(binding = 2) volatile buffer NodeBlock {
     NodeStruct node[];
+};
+
+layout(binding = 3) buffer ArrayBlock {
+    uint leafList[];
 };
 
 struct LogStruct {
@@ -43,24 +49,21 @@ struct LogStruct {
     uint index2;
 };
 
-layout(binding = 3) volatile buffer LogBlock {
+layout(binding = 7) volatile buffer LogBlock {
     LogStruct logList[];
 };
 
-layout(binding = 0, r32ui) uniform uimage3D redColorBrick;
-layout(binding = 1, r32ui) uniform uimage3D greenColorBrick;
-layout(binding = 2, r32ui) uniform uimage3D blueColorBrick;
-layout(binding = 3, r32ui) uniform uimage3D alphaColorBrick;
-layout(binding = 4, r32ui) uniform uimage3D normalXBrick;
-layout(binding = 5, r32ui) uniform uimage3D normalYBrick;
-layout(binding = 6, r32ui) uniform uimage3D normalZBrick;
+layout(binding = 0, r32ui) coherent uniform uimage3D rgColorBrick;
+layout(binding = 1, r32ui) coherent uniform uimage3D baColorBrick;
+layout(binding = 2, r32ui) coherent uniform uimage3D xynormalBrick;
+layout(binding = 3, r32ui) coherent uniform uimage3D zwnormalBrick;
 layout(binding = 7, r32ui) uniform uimage3D fragmentCounter;
 
 uniform uint noOfFragments;
 uniform uint maxNoOfLogs;
 
 uniform uint ISPROCESS = 0 - 1;
-uniform uint LEAF = 0 - 2;
+uniform uint LEAFHOST = 0 - 2;
 
 void deferFragment() {
     uint index = atomicCounterIncrement(fragListPtr);
@@ -119,17 +122,23 @@ uint enterNode(uint nodeIndex, uint offset) {
     }
 }
 // leaf host node host 2x2 voxels
-uint enterLeafHost(uint leafIndex) {
+uint setupLeafHost(uint leafIndex) {
     uint leafState = atomicCompSwap(node[leafIndex].childPtr, 0, ISPROCESS);
     if(leafState == 0) {
         node[leafIndex].modelBrickPtr = atomicCounterIncrement(modelBrickPtr);
-        atomicCompSwap(node[leafIndex].childPtr, ISPROCESS, LEAF);
+        uint index = atomicCounterIncrement(leafNodePtr);
+        leafList[index] = leafIndex;
+        atomicCompSwap(node[leafIndex].childPtr, ISPROCESS, LEAFHOST);
     } else if(leafState == ISPROCESS){
         deferFragment();
         return ISPROCESS;
     }
     
     return leafState;
+}
+
+uint convVec2ToRG16( vec2 val) {
+return  ( uint( val .y ) &0x0000FFFF) <<16U | ( uint( val .x ) &0x0000FFFF);
 }
 
 uniform int lowestLevel = 9;
@@ -142,7 +151,7 @@ void main() {
         // start in root node
         int currentLevel = 0;
 
-        while(currentLevel < lowestLevel) {
+        while(currentLevel < lowestLevel - 1) {
             // move to next node  
             currentLevel++;
             nodeIndex = enterNode(nodeIndex, getPtrOffset(levelOffsets[currentLevel]));
@@ -150,7 +159,7 @@ void main() {
                 return;
             }
         }
-        nodeIndex = enterLeafHost(nodeIndex);
+        nodeIndex = setupLeafHost(nodeIndex);
         if(nodeIndex == ISPROCESS){
             return;
         }
@@ -161,11 +170,11 @@ void main() {
         ivec3 innerFrameOffset = levelOffsets[lowestLevel];
         ivec3 texturePos = ivec3(bx + innerFrameOffset.x, by + innerFrameOffset.y, innerFrameOffset.z);  
         FragmentStruct f = frag[gl_GlobalInvocationID.x];
-        imageAtomicAdd(redColorBrick, texturePos, uint(f.color.r));
-        imageAtomicAdd(greenColorBrick, texturePos, uint(f.color.g));
-        imageAtomicAdd(blueColorBrick, texturePos, uint(f.color.b));
-        imageAtomicAdd(alphaColorBrick, texturePos, uint(f.color.a));
-        imageAtomicAdd(fragmentCounter, 1);
+        imageAtomicAdd(rgColorBrick, texturePos, convVec2ToRG16(f.color.rg * 255.0f));
+        imageAtomicAdd(baColorBrick, texturePos, convVec2ToRG16(f.color.ba * 255.0f));
+        imageAtomicAdd(xynormalBrick, texturePos, convVec2ToRG16(f.normal.xy * 255.0f));
+        imageAtomicAdd(zwnormalBrick, texturePos, convVec2ToRG16(f.normal.zw * 255.0f));
+        imageAtomicAdd(fragmentCounter, texturePos, 1);
     }
     
 }
