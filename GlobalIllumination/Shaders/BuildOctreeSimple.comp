@@ -71,14 +71,16 @@ void deferFragment() {
 }
 
 void logFragment(vec4 pos, vec4 color, uint nodeIndex, uint brickPtr, uint index1, uint index2) {
-    if(atomicCounter(logPtr) < maxNoOfLogs) {        
-        uint index = atomicCounterIncrement(logPtr);
+    uint index = atomicCounterIncrement(logPtr);
+    if(index < maxNoOfLogs) {        
         logList[index].position = pos;
         logList[index].color = color;
         logList[index].nodeIndex = nodeIndex;
         logList[index].brickPtr = brickPtr;
         logList[index].index1 = index1;
         logList[index].index2 = index2;
+    } else {
+        atomicCounterDecrement(logPtr);
     }
 }
 
@@ -134,7 +136,7 @@ uint setupLeafHost(uint leafIndex) {
         return ISPROCESS;
     }
     
-    return leafState;
+    return leafIndex;
 }
 
 uint convVec2ToRG16( vec2 val) {
@@ -170,11 +172,12 @@ void main() {
         ivec3 innerFrameOffset = levelOffsets[lowestLevel];
         ivec3 texturePos = ivec3(bx + innerFrameOffset.x, by + innerFrameOffset.y, innerFrameOffset.z);  
         FragmentStruct f = frag[gl_GlobalInvocationID.x];
-        imageAtomicAdd(rgColorBrick, texturePos, convVec2ToRG16(f.color.rg * 255.0f));
+        uint rg = imageAtomicAdd(rgColorBrick, texturePos, convVec2ToRG16(f.color.rg * 255.0f));
         imageAtomicAdd(baColorBrick, texturePos, convVec2ToRG16(f.color.ba * 255.0f));
         imageAtomicAdd(xynormalBrick, texturePos, convVec2ToRG16(f.normal.xy * 255.0f));
         imageAtomicAdd(zwnormalBrick, texturePos, convVec2ToRG16(f.normal.zw * 255.0f));
-        imageAtomicAdd(fragmentCounter, texturePos, 1);
+        uint count = imageAtomicAdd(fragmentCounter, texturePos, 1);
+        logFragment(f.normal, f.color, nodeIndex, brickPtr, rg, count);
     }
     
 }
