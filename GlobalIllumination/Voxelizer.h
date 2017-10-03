@@ -36,8 +36,9 @@ public:
     void initializeWithScene(glm::vec3 min, glm::vec3 max);
     void voxelizeFragmentList(Scene scene);
 private:
-    void getLogs(std::vector<logStruct> & logs);
+    void getLogs(std::vector<logStruct> & logs, bool reset = false);
     int getCount(GLuint counterId);
+    int getAndResetCount(GLuint counterId, int resetValue = 0);
     unsigned int count = 1024 * 1024; //1m count
     int brickDim = 2;
     int texWdith = 512;
@@ -60,11 +61,14 @@ private:
     GLuint texture3DbaColorBrickList;
     GLuint texture3DxyNormalBrickList;
     GLuint texture3DzwNormalBrickList;
-    GLuint texture3DBrickList;
     GLuint texture3DCounterList;
+
+    GLuint texture3DColorList;
+    GLuint texture3DNormalList;
 
     ShaderProgram voxelizeListShader;
     ShaderProgram octreeCompShader;
+    ShaderProgram octreeAverageCompShader;
 
     glm::mat4 sceneMat;
     glm::mat4 ortho = glm::ortho(-256.0, 256.0, -256.0, 256.0, 0.0, 512.0);

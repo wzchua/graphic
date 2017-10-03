@@ -5,7 +5,7 @@ layout (local_size_x = 512) in;
 layout(binding = 0) uniform atomic_uint fragListPtr;
 //initlized at 1
 layout(binding = 1) uniform atomic_uint nodePtr;
-// 0
+// initlized at 1
 layout(binding = 2) uniform atomic_uint modelBrickPtr;
 layout(binding = 3) uniform atomic_uint leafNodePtr;
 layout(binding = 7) uniform atomic_uint logPtr;
@@ -55,8 +55,8 @@ layout(binding = 7) volatile buffer LogBlock {
 
 layout(binding = 0, r32ui) coherent uniform uimage3D rgColorBrick;
 layout(binding = 1, r32ui) coherent uniform uimage3D baColorBrick;
-layout(binding = 2, r32ui) coherent uniform uimage3D xynormalBrick;
-layout(binding = 3, r32ui) coherent uniform uimage3D zwnormalBrick;
+layout(binding = 2, r32ui) coherent uniform uimage3D xyNormalBrick;
+layout(binding = 3, r32ui) coherent uniform uimage3D zwNormalBrick;
 layout(binding = 7, r32ui) uniform uimage3D fragmentCounter;
 
 uniform uint noOfFragments;
@@ -143,6 +143,10 @@ uint convVec2ToRG16( vec2 val) {
 return  ( uint( val .y ) &0x0000FFFF) <<16U | ( uint( val .x ) &0x0000FFFF);
 }
 
+vec2 convRG16ToVec2( uint val) {  
+  return  vec2 ( float(val & 0x0000FFFF), float((val & 0xFFFF0000) >>16U));
+}
+
 uniform int lowestLevel = 9;
 void main() {
     //frag position in 0 to 512 range
@@ -166,6 +170,7 @@ void main() {
             return;
         }
 
+        memoryBarrier();
         uint brickPtr = node[nodeIndex].modelBrickPtr;
         uint bx = (brickPtr & 0x1FF) * 2;
         uint by = (brickPtr >> 9) * 2;
@@ -173,11 +178,10 @@ void main() {
         ivec3 texturePos = ivec3(bx + innerFrameOffset.x, by + innerFrameOffset.y, innerFrameOffset.z);  
         FragmentStruct f = frag[gl_GlobalInvocationID.x];
         uint rg = imageAtomicAdd(rgColorBrick, texturePos, convVec2ToRG16(f.color.rg * 255.0f));
-        imageAtomicAdd(baColorBrick, texturePos, convVec2ToRG16(f.color.ba * 255.0f));
-        imageAtomicAdd(xynormalBrick, texturePos, convVec2ToRG16(f.normal.xy * 255.0f));
-        imageAtomicAdd(zwnormalBrick, texturePos, convVec2ToRG16(f.normal.zw * 255.0f));
+        uint ba = imageAtomicAdd(baColorBrick, texturePos, convVec2ToRG16(f.color.ba * 255.0f));
+        uint xy = imageAtomicAdd(xyNormalBrick, texturePos, convVec2ToRG16(f.normal.xy * 255.0f));
+        uint zw = imageAtomicAdd(zwNormalBrick, texturePos, convVec2ToRG16(f.normal.zw * 255.0f));
         uint count = imageAtomicAdd(fragmentCounter, texturePos, 1);
-        logFragment(f.normal, f.color, nodeIndex, brickPtr, rg, count);
     }
     
 }

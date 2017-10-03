@@ -1,46 +1,72 @@
 #version 450
 layout (local_size_x = 512) in;
 
+layout(binding = 7) uniform atomic_uint logPtr;
+
+struct LogStruct {
+    vec4 position;
+    vec4 color;
+    uint nodeIndex;
+    uint brickPtr;
+    uint index1;
+    uint index2;
+};
+
+layout(binding = 7) volatile buffer LogBlock {
+    LogStruct logList[];
+};
+
 layout(binding = 0, r32ui) uniform uimage3D rgColorBrick;
 layout(binding = 1, r32ui) uniform uimage3D baColorBrick;
-layout(binding = 2, r32ui) uniform uimage3D xynormalBrick;
-layout(binding = 3, r32ui) uniform uimage3D zwnormalBrick;
+layout(binding = 2, r32ui) uniform uimage3D xyNormalBrick;
+layout(binding = 3, r32ui) uniform uimage3D zwNormalBrick;
 layout(binding = 4, RGBA8) uniform image3D colorBrick;
 layout(binding = 5, RGBA8) uniform image3D normalBrick;
 layout(binding = 7, r32ui) uniform uimage3D fragmentCounter;
 
 uniform uint noOfBricks;
+uniform uint maxNoOfLogs;
+
+void logFragment(vec4 pos, vec4 color, uint nodeIndex, uint brickPtr, uint index1, uint index2) {
+    uint index = atomicCounterIncrement(logPtr);
+    if(index < maxNoOfLogs) {        
+        logList[index].position = pos;
+        logList[index].color = color;
+        logList[index].nodeIndex = nodeIndex;
+        logList[index].brickPtr = brickPtr;
+        logList[index].index1 = index1;
+        logList[index].index2 = index2;
+    } else {
+        atomicCounterDecrement(logPtr);
+    }
+}
 
 vec2 convRG16ToVec2( uint val) {  
-return  vec2 ( float(val & 0x0000FFFF), float((val & 0xFFFF0000) >>16U))
+  return  vec2 ( float(val & 0x0000FFFF), float((val & 0xFFFF0000) >>16U));
 }
 
 void main() {
   uint brickPtr = gl_GlobalInvocationID.x;
     if(brickPtr < noOfBricks) {
-      ivec3 zero = ivec3(0);
-      ivec3 one = ivec3(1, 0, 0);
-      ivec3 two = ivec3(0, 1, 0);
-      ivec3 three = ivec3(1, 1, 0);
       uint bx = (brickPtr & 0x1FF) * 2;
       uint by = (brickPtr >> 9) * 2;
-      for(int i = 0; i < 8, i++) {
+      for(int i = 0; i < 8; i++) {
         ivec3 pos = ivec3(bx + (i & 1), by + ((i & 2) >> 1), (i & 4) >> 2);
         float count = float(imageLoad(fragmentCounter, pos));
 
-        vec2 rg = convRG16ToVec2(imageLoad(rgColorBrick, pos));
-        vec2 ba = convRG16ToVec2(imageLoad(baColorBrick, pos));
-        vec4 color = vec4(rg, ba);
+        vec2 rg = convRG16ToVec2(imageLoad(rgColorBrick, pos).r);
+        vec2 ba = convRG16ToVec2(imageLoad(baColorBrick, pos).r);
+        vec4 color = vec4(rg, ba) / 255.0f; //normalize to 0 to 1
         
-        vec4 avgColor = (color/count) / 255.0f; //normalize to 0 to 1
+        vec4 avgColor = (color/count); 
         imageStore(colorBrick, pos, avgColor);
 
-        vec2 normalxy = convRG16ToVec2(imageLoad(xyNormalBrick, pos));
-        vec2 normalzw = convRG16ToVec2(imageLoad(zwNormalBrick, pos));
-        vec3 normal = vec3(normalxy, normalzw.x);
+        vec2 normalxy = convRG16ToVec2(imageLoad(xyNormalBrick, pos).r);
+        vec2 normalzw = convRG16ToVec2(imageLoad(zwNormalBrick, pos).r);
+        vec4 normal = vec4(normalxy, normalzw) / 255.0f;  //normalize to 0 to 1;
 
-        vec3 avgNormal = (normal/count) / 255.0f; //normalize to 0 to 1;
-        imageStore(normalBrick, pos, vec4(avgNormal, 0.0));
-      }
+        vec4 avgNormal = (normal/count);
+        imageStore(normalBrick, pos, avgNormal);
+        
     }
 }

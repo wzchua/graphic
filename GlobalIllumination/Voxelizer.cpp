@@ -10,6 +10,9 @@ Voxelizer::Voxelizer()
 
     octreeCompShader.generateShader("./Shaders/BuildOctreeSimple.comp", ShaderProgram::COMPUTE);
     octreeCompShader.linkCompileValidate();
+
+    octreeAverageCompShader.generateShader("./Shaders/AverageOctreeBricks.comp", ShaderProgram::COMPUTE);
+    octreeAverageCompShader.linkCompileValidate();
     
     //atomic counter buffer
     glGenBuffers(1, &atomicFragCountPtr);
@@ -37,7 +40,7 @@ Voxelizer::Voxelizer()
     glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 2, atomicModelBrickCounterPtr);
     ptr = (GLuint*)glMapBufferRange(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint),
         GL_MAP_WRITE_BIT);
-    ptr[0] = 0;
+    ptr[0] = 1;
     glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER);
     glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
 
@@ -164,6 +167,30 @@ Voxelizer::Voxelizer()
 
     glTexStorage3D(GL_TEXTURE_3D, 1, GL_R32UI, texWdith * brickDim, texHeight * brickDim, brickDim);
     glBindTexture(GL_TEXTURE_3D, 0);
+
+    glGenTextures(1, &texture3DColorList);
+    glBindTexture(GL_TEXTURE_3D, texture3DColorList);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
+
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glTexStorage3D(GL_TEXTURE_3D, 2, GL_RGBA8, texWdith * brickDim, texHeight * brickDim, brickDim);
+    glBindTexture(GL_TEXTURE_3D, 0);
+
+    glGenTextures(1, &texture3DNormalList);
+    glBindTexture(GL_TEXTURE_3D, texture3DNormalList);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
+
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glTexStorage3D(GL_TEXTURE_3D, 2, GL_RGBA8, texWdith * brickDim, texHeight * brickDim, brickDim);
+    glBindTexture(GL_TEXTURE_3D, 0);
 }
 
 
@@ -265,6 +292,7 @@ void Voxelizer::voxelizeFragmentList(Scene scene)
         glBindImageTexture(3, texture3DzwNormalBrickList, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
         glBindImageTexture(7, texture3DCounterList, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
 
+        //swap bindings
         if (isOdd) {
             glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboFragmentList);
             glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssboFragmentList);
@@ -322,11 +350,32 @@ void Voxelizer::voxelizeFragmentList(Scene scene)
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
 
+    int leafCount = getCount(atomicModelBrickCounterPtr);
+    std::vector<logStruct> logs;
+    getLogs(logs, true);
+    currentShaderProgram = octreeAverageCompShader.use();
+    //averge brick value
+    glBindImageTexture(4, texture3DColorList, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
+    glBindImageTexture(5, texture3DNormalList, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
+    glUniform1ui(glGetUniformLocation(currentShaderProgram, "noOfBricks"), leafCount);
+    glUniform1ui(glGetUniformLocation(currentShaderProgram, "maxNoOfLogs"), maxLogCount);
+
+    glMemoryBarrier(GL_ALL_BARRIER_BITS);
+    int workgroupX = std::ceil(leafCount / 512.0);
+
+    glDispatchCompute(workgroupX, 1, 1);
+
+    glMemoryBarrier(GL_ALL_BARRIER_BITS);
+    std::vector<logStruct> logs2;
+    getLogs(logs2);
+
+    std::cout << "averaged" << std::endl;
+
 }
 
-void Voxelizer::getLogs(std::vector<logStruct>& logs)
+void Voxelizer::getLogs(std::vector<logStruct>& logs, bool reset)
 {
-    int logCount = getCount(atomicLogCounter);
+    int logCount = (reset) ? getAndResetCount(atomicLogCounter) : getCount(atomicLogCounter);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboLogList);
     logStruct * ptr = (logStruct*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(logStruct),
         GL_MAP_READ_BIT);
@@ -345,6 +394,19 @@ int Voxelizer::getCount(GLuint counterId)
     GLuint* ptr = (GLuint*)glMapBufferRange(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint),
         GL_MAP_READ_BIT);
     count = ptr[0];
+    glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER);
+    glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
+    return count;
+}
+
+int Voxelizer::getAndResetCount(GLuint counterId, int resetValue)
+{
+    int count;
+    glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, counterId);
+    GLuint* ptr = (GLuint*)glMapBufferRange(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint),
+        GL_MAP_READ_BIT);
+    count = ptr[0];
+    ptr[0] = resetValue;
     glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER);
     glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
     return count;
