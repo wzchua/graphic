@@ -1,5 +1,5 @@
 #version 450
-layout (location = 0) in vec4 vPosition;  // Vertex position in object space.
+layout (location = 0) in vec3 vPosition;  // Vertex position in object space.
 layout (location = 1) in vec3 vNormal;    // Vertex normal in object space.
 layout (location = 2) in vec2 texCoord;    // Vertex normal in object space.
 
@@ -14,9 +14,9 @@ out vec2 fTexCoord;
 
 void main()
 {
-    vec4 ecPosition4 = ModelViewMatrix * vPosition;
+    vec4 ecPosition4 = ModelViewMatrix * vec4(vPosition, 1.0);
     ecPosition = vec3( ecPosition4 ) / ecPosition4.w;
     ecNormal = normalize( NormalMatrix * vNormal );
     fTexCoord = texCoord;
-    gl_Position = ModelViewProjMatrix * vPosition;
+    gl_Position = ModelViewProjMatrix * vec4(vPosition, 1.0);
 }

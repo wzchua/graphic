@@ -65,7 +65,7 @@ uint getLeafAtPosition(vec3 position, out ivec3 brickOffset) {
         // move to next node  
         currentLevel++;
         nodeIndex = enterNode(nodeIndex, getPtrOffset(offsets[currentLevel]));
-        if(nodeIndex == INVALID){
+        if(nodeIndex == INVALID || nodeIndex == 0){
             return INVALID;
         }
     }
@@ -83,14 +83,41 @@ bool isRayInCubeSpace(vec3 rayPosition) {
         && rayPosition.y >= 0.0f && rayPosition.y <=512.0f
         && rayPosition.z >= 0.0f && rayPosition.z <=512.0f;
 }
+layout(binding = 7) uniform atomic_uint logPtr;
+
+struct LogStruct {
+    vec4 position;
+    vec4 color;
+    uint nodeIndex;
+    uint brickPtr;
+    uint index1;
+    uint index2;
+};
+
+layout(binding = 7) volatile buffer LogBlock {
+    LogStruct logList[];
+};
+
+void logFragment(vec4 pos, vec4 color, uint nodeIndex, uint brickPtr, uint index1, uint index2) {
+    uint index = atomicCounterIncrement(logPtr);
+    if(index < 500) {        
+        logList[index].position = pos;
+        logList[index].color = color;
+        logList[index].nodeIndex = nodeIndex;
+        logList[index].brickPtr = brickPtr;
+        logList[index].index1 = index1;
+        logList[index].index2 = index2;
+    } else {
+        atomicCounterDecrement(logPtr);
+    }
+}
 
 layout (location = 0) out vec4 FragColor;
 void main() {    
-    FragColor = vec4(1.0f, 0.0f, 0.0f, 1.0f); 
 
-    /*
-    vec3 dir = normalize(wcPosition - (eyeOrigin + camTransforwardBackwards * 2.0));
-    vec3 rOrigin = eyeOrigin;
+    vec3 dir = normalize(wcPosition - (camPosition + camTransforwardBackwards * 2.0));
+    vec3 rOrigin = camPosition;
+    logFragment(vec4(wcPosition, 1.0f), vec4(dir, 1.0f), 0, 0, 0, 0);
     uint leafIndex = 0;
     vec3 rayPosition = rOrigin;
     ivec3 brickOffset;
@@ -107,5 +134,4 @@ void main() {
     } else {
         discard;
     }
-*/
 }

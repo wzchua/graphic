@@ -225,11 +225,11 @@ Voxelizer::Voxelizer()
 
     std::vector<GLuint> quadindices;
     quadindices.push_back(0);
-    quadindices.push_back(1);
     quadindices.push_back(3);
+    quadindices.push_back(1);
     quadindices.push_back(2);
-    quadindices.push_back(3);
     quadindices.push_back(1);
+    quadindices.push_back(3);
 
     int vertexSize = sizeof(glm::vec3);
     glGenVertexArrays(1, &quadVAOId);
@@ -244,7 +244,7 @@ Voxelizer::Voxelizer()
     glBindBuffer(GL_ARRAY_BUFFER, quadVBOId);
     glBufferData(GL_ARRAY_BUFFER, quadVertices.size() * vertexSize, quadVertices.data(), GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, vertexSize, (GLvoid*)offsetof(Vertex, Vertex::position));
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
     glEnableVertexAttribArray(0);
 
     glBindVertexArray(0);
@@ -276,9 +276,11 @@ void Voxelizer::initializeWithScene(glm::vec3 min, glm::vec3 max)
 
 void Voxelizer::voxelizeFragmentList(Scene& scene)
 {
+    
     int currentShaderProgram = voxelizeListShader.use();
     resetAllData();
-    glViewport(0, 0, 512, 512); 
+    glViewport(0, 0, 512, 512);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glUniformMatrix4fv(glGetUniformLocation(currentShaderProgram, "ModelMatrix"), 1, GL_FALSE, glm::value_ptr(sceneMat));
     glUniformMatrix4fv(glGetUniformLocation(currentShaderProgram, "ModelViewMatrix"), 1, GL_FALSE, glm::value_ptr(modelViewMat));
     glUniformMatrix4fv(glGetUniformLocation(currentShaderProgram, "ModelViewProjMatrix"), 1, GL_FALSE, glm::value_ptr(modelViewProjMat));
@@ -299,7 +301,6 @@ void Voxelizer::voxelizeFragmentList(Scene& scene)
     ptr[0] = 0;
     glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER);
     glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
-
     //fragmentCount = 1024;
     currentShaderProgram = octreeCompShader.use();
     bool isOdd = true;
@@ -370,21 +371,35 @@ void Voxelizer::voxelizeFragmentList(Scene& scene)
     //std::vector<logStruct> logs2;
     //getLogs(logs2);
 
-    std::cout << "averaged" << std::endl;
-
+    
     //render octree
     currentShaderProgram = octreeRenderShader.use();
     Camera camVoxel(glm::vec3(0.0f));
+    glm::vec3 pos = glm::vec3(0.0f);
+    glm::vec3 backword = glm::vec3(0.0f, 0.0f, -1.0f);
 
     glm::mat4 inverseViewMatrix = glm::inverse(camVoxel.getViewMatrix());
+    glm::mat4 projView = camVoxel.getProjMatrix() * camVoxel.getViewMatrix();
     glUniformMatrix4fv(glGetUniformLocation(currentShaderProgram, "ModelMatrix"), 1, GL_FALSE, glm::value_ptr(sceneMat));
     glUniformMatrix4fv(glGetUniformLocation(currentShaderProgram, "InverseViewMatrix"), 1, GL_FALSE, glm::value_ptr(inverseViewMatrix));
 
+    glUniform3fv(glGetUniformLocation(currentShaderProgram, "camPosition"), 1, glm::value_ptr(pos));
+    glUniform3fv(glGetUniformLocation(currentShaderProgram, "camTransforwardBackwards"), 1, glm::value_ptr(backword));
+
     glViewport(0, 0, 800, 600);
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_BLEND);
+
     glBindVertexArray(quadVAOId);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
+    std::vector<logStruct> logs2;
+    getLogs(logs2);
 
+    std::cout << "x" << std::endl;
 }
 
 void Voxelizer::resetAllData()
