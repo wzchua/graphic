@@ -20,6 +20,9 @@ private:
     glm::mat4 modelMat = glm::scale(glm::mat4(1.0f), glm::vec3(0.2, 0.2, 0.2));
     glm::vec3 sceneMin;
     glm::vec3 sceneMax;
+    // copy ops are private to prevent copying 
+    Scene(const Scene&); // no implementation 
+    Scene& operator=(const Scene&); // no implementation 
 public:
     GLuint nullTextureId;
     Camera cam = Camera(glm::vec3(5.0f));

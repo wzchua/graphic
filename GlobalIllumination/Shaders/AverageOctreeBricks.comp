@@ -67,6 +67,7 @@ void main() {
 
         vec4 avgNormal = (normal/count);
         imageStore(normalBrick, pos, avgNormal);
+        }
         
     }
 }

@@ -34,7 +34,8 @@ public:
     Voxelizer();
     ~Voxelizer();
     void initializeWithScene(glm::vec3 min, glm::vec3 max);
-    void voxelizeFragmentList(Scene scene);
+    void voxelizeFragmentList(Scene& scene);
+    void resetAllData();
 private:
     void getLogs(std::vector<logStruct> & logs, bool reset = false);
     int getCount(GLuint counterId);
@@ -69,6 +70,11 @@ private:
     ShaderProgram voxelizeListShader;
     ShaderProgram octreeCompShader;
     ShaderProgram octreeAverageCompShader;
+    ShaderProgram octreeRenderShader;
+
+    GLuint quadVAOId;
+    GLuint quadVBOId;
+    GLuint quadEBOId;
 
     glm::mat4 sceneMat;
     glm::mat4 ortho = glm::ortho(-256.0, 256.0, -256.0, 256.0, 0.0, 512.0);
