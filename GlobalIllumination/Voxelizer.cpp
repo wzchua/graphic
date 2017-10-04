@@ -375,14 +375,14 @@ void Voxelizer::voxelizeFragmentList(Scene& scene)
     //render octree
     currentShaderProgram = octreeRenderShader.use();
     Camera camVoxel(glm::vec3(0.0f));
-    glm::vec3 pos = glm::vec3(0.0f);
-    glm::vec3 backword = glm::vec3(0.0f, 0.0f, -1.0f);
 
     glm::mat4 inverseViewMatrix = glm::inverse(camVoxel.getViewMatrix());
     glm::mat4 projView = camVoxel.getProjMatrix() * camVoxel.getViewMatrix();
     glUniformMatrix4fv(glGetUniformLocation(currentShaderProgram, "ModelMatrix"), 1, GL_FALSE, glm::value_ptr(sceneMat));
     glUniformMatrix4fv(glGetUniformLocation(currentShaderProgram, "InverseViewMatrix"), 1, GL_FALSE, glm::value_ptr(inverseViewMatrix));
 
+    glm::vec3 pos = inverseViewMatrix * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    glm::vec3 backword =  glm::vec3(0.0f, 0.0f, -1.0f);
     glUniform3fv(glGetUniformLocation(currentShaderProgram, "camPosition"), 1, glm::value_ptr(pos));
     glUniform3fv(glGetUniformLocation(currentShaderProgram, "camTransforwardBackwards"), 1, glm::value_ptr(backword));
 

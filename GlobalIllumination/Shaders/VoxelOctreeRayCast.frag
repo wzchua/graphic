@@ -115,20 +115,31 @@ void logFragment(vec4 pos, vec4 color, uint nodeIndex, uint brickPtr, uint index
 layout (location = 0) out vec4 FragColor;
 void main() {    
 
-    vec3 dir = normalize(wcPosition - (camPosition + camTransforwardBackwards * 2.0));
-    vec3 rOrigin = camPosition;
-    logFragment(vec4(wcPosition, 1.0f), vec4(dir, 1.0f), 0, 0, 0, 0);
+    vec3 rOrigin = (wcPosition+256);
+    vec3 dir = normalize((wcPosition + 256) - ((camPosition+256) + camTransforwardBackwards * 1.0));
+    float x = gl_FragCoord.x;
+    float y = gl_FragCoord.y;
+    if( x < 1 && y < 1) {
+        logFragment(vec4(rOrigin, x), vec4(dir, y), 0, 0, 0, 0);
+    }
     uint leafIndex = 0;
     vec3 rayPosition = rOrigin;
     ivec3 brickOffset;
     bool isRayInCube = true;
     //ray stepping
     do {
-        leafIndex = getLeafAtPosition(rayPosition, brickOffset);
+        
+        if( x < 1 && y < 1) {
+            logFragment(vec4(rayPosition, x), vec4(dir, y), leafIndex, 0, 0, isRayInCube ? 1 : 0);
+        }
         rayPosition += dir;
         isRayInCube = isRayInCubeSpace(rayPosition);
-    } while(leafIndex != INVALID && isRayInCube);
+        leafIndex = getLeafAtPosition(rayPosition, brickOffset);
+    } while(leafIndex == INVALID && isRayInCube);
 
+    if( x < 1 && y < 1) {
+        logFragment(vec4(rayPosition, x), vec4(dir, y), leafIndex, 0, 0, isRayInCube ? 1 : 0);
+    }
     if(isRayInCube) {
         FragColor = imageLoad(colorBrick, brickOffset); 
     } else {

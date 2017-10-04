@@ -1,5 +1,5 @@
 #version 450
-layout (location = 0) in vec3 vPosition;  // Vertex position in eye space.
+layout (location = 0) in vec3 vPosition;  // Vertex position in voxel world space.
 
 uniform mat4 ModelMatrix;     // ModelView matrix.
 uniform mat4 InverseViewMatrix;
