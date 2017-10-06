@@ -67,7 +67,12 @@ void main() {
 
         vec4 avgNormal = (normal/count);
         imageStore(normalBrick, pos, avgNormal);
-        }
         
+        if(brickPtr == 1) {
+            logFragment(color, normal, 0xffff, brickPtr, 0, uint(count));
+        }
+
+
+        }        
     }
 }

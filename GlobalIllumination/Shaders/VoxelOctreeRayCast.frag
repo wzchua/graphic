@@ -20,6 +20,7 @@ struct NodeStruct {
     uint parentPtr;
     uint selfPtr;
     uint childPtr;
+    uint childBit;
     uint modelBrickPtr;
     uint lightBrickPtr;
 };
@@ -69,12 +70,16 @@ uint getLeafAtPosition(vec3 position, out ivec3 brickOffset) {
             return INVALID;
         }
     }
+    uint leafOffset = getPtrOffset(offsets[lowestLevel]);
+    uint childBit = node[nodeIndex].childBit;
+    if(((childBit >> leafOffset) & 1) == 0) {
+        return INVALID;
+    }
     uint brickPtr = node[nodeIndex].modelBrickPtr;
     uint bx = (brickPtr & 0x1FF) * 2;
     uint by = (brickPtr >> 9) * 2;
     ivec3 innerFrameOffset = offsets[lowestLevel];
     brickOffset = ivec3(bx + innerFrameOffset.x, by + innerFrameOffset.y, innerFrameOffset.z);
-
     return nodeIndex;
 }
 
@@ -115,8 +120,8 @@ void logFragment(vec4 pos, vec4 color, uint nodeIndex, uint brickPtr, uint index
 layout (location = 0) out vec4 FragColor;
 void main() {    
 
-    vec3 rOrigin = (wcPosition+256);
-    vec3 dir = normalize((wcPosition + 256) - ((camPosition+256) + camTransforwardBackwards * 1.0));
+    vec3 rOrigin = (wcPosition);
+    vec3 dir = normalize((wcPosition) - ((camPosition) + camTransforwardBackwards * 4.0));
     float x = gl_FragCoord.x;
     float y = gl_FragCoord.y;
     if( x < 1 && y < 1) {
@@ -126,7 +131,7 @@ void main() {
     vec3 rayPosition = rOrigin;
     ivec3 brickOffset;
     bool isRayInCube = true;
-    //ray stepping
+    //ray march
     do {
         
         if( x < 1 && y < 1) {
@@ -138,10 +143,15 @@ void main() {
     } while(leafIndex == INVALID && isRayInCube);
 
     if( x < 1 && y < 1) {
-        logFragment(vec4(rayPosition, x), vec4(dir, y), leafIndex, 0, 0, isRayInCube ? 1 : 0);
+        logFragment(vec4(rayPosition, x), vec4(dir, y), leafIndex, uint(brickOffset.x), uint(brickOffset.y), isRayInCube ? 1 : 0);
     }
     if(isRayInCube) {
         FragColor = imageLoad(colorBrick, brickOffset); 
+        
+        if( x < 1 && y < 1) {
+            logFragment(vec4(rayPosition, x), FragColor, leafIndex, uint(brickOffset.x), uint(brickOffset.y), isRayInCube ? 1 : 0);
+        }
+
     } else {
         discard;
     }

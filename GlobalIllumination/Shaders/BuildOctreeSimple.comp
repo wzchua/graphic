@@ -28,6 +28,7 @@ struct NodeStruct {
     uint parentPtr;
     uint selfPtr;
     uint childPtr;
+    uint childBit;
     uint modelBrickPtr;
     uint lightBrickPtr;
 };
@@ -177,11 +178,17 @@ void main() {
         ivec3 innerFrameOffset = levelOffsets[lowestLevel];
         ivec3 texturePos = ivec3(bx + innerFrameOffset.x, by + innerFrameOffset.y, innerFrameOffset.z);  
         FragmentStruct f = frag[gl_GlobalInvocationID.x];
+        uint leafOffset = getPtrOffset(innerFrameOffset);
+        atomicOr(node[nodeIndex].childBit, 1 << leafOffset);
         uint rg = imageAtomicAdd(rgColorBrick, texturePos, convVec2ToRG16(f.color.rg * 255.0f));
         uint ba = imageAtomicAdd(baColorBrick, texturePos, convVec2ToRG16(f.color.ba * 255.0f));
         uint xy = imageAtomicAdd(xyNormalBrick, texturePos, convVec2ToRG16(f.normal.xy * 255.0f));
         uint zw = imageAtomicAdd(zwNormalBrick, texturePos, convVec2ToRG16(f.normal.zw * 255.0f));
         uint count = imageAtomicAdd(fragmentCounter, texturePos, 1);
+        if(brickPtr == 1) {
+            logFragment(vec4(convRG16ToVec2(rg), convRG16ToVec2(ba)) + f.color,
+                vec4(convRG16ToVec2(xy), convRG16ToVec2(zw)) + f.normal, leafOffset, brickPtr, node[nodeIndex].childBit, count);
+        }
     }
     
 }

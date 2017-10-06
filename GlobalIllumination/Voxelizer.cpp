@@ -301,6 +301,7 @@ void Voxelizer::voxelizeFragmentList(Scene& scene)
     ptr[0] = 0;
     glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER);
     glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
+    /*
     std::vector<fragStruct> fListD;
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboFragmentList);
     fragStruct* ptrf = (fragStruct*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(fragStruct),
@@ -317,6 +318,8 @@ void Voxelizer::voxelizeFragmentList(Scene& scene)
     }
     glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    */
+    
 
 
     //fragmentCount = 1024;
@@ -370,11 +373,31 @@ void Voxelizer::voxelizeFragmentList(Scene& scene)
 
         //std::vector<logStruct> logs;
         //getLogs(logs);
+        /*
+        unsigned int nodeCount = 0;
+        std::vector<nodeStruct> nList;
+        glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomicNodeCountPtr);
+        GLuint* ptr2 = (GLuint*)glMapBufferRange(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint),
+            GL_MAP_READ_BIT | GL_MAP_WRITE_BIT);
+        nodeCount = ptr2[0];
+        glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER);
+        glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
+
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboNodeList);
+        nodeStruct* ptrn = (nodeStruct*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(nodeStruct),
+            GL_MAP_READ_BIT);
+        for (int i = 0; i < nodeCount; i++) {
+            nList.push_back(ptrn[i]);
+        }
+        glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+        */
+
     }
 
     int leafCount = getCount(atomicModelBrickCounterPtr);
-    //std::vector<logStruct> logs;
-    //getLogs(logs, true);
+    std::vector<logStruct> logs;
+    getLogs(logs, true);
     currentShaderProgram = octreeAverageCompShader.use();
     //averge brick value
     glBindImageTexture(4, texture3DColorList, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
@@ -386,20 +409,19 @@ void Voxelizer::voxelizeFragmentList(Scene& scene)
     int workgroupX = std::ceil(leafCount / 512.0);
     glDispatchCompute(workgroupX, 1, 1);
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
-    //std::vector<logStruct> logs2;
-    //getLogs(logs2);
+    std::vector<logStruct> logs2;
+    getLogs(logs2, true);
 
     
     //render octree
     currentShaderProgram = octreeRenderShader.use();
-    Camera camVoxel(glm::vec3(0.0f));
+    Camera camVoxel(glm::vec3(256.0f, 16.0f, 226.0f));
 
     glm::mat4 inverseViewMatrix = glm::inverse(camVoxel.getViewMatrix());
-    glm::mat4 projView = camVoxel.getProjMatrix() * camVoxel.getViewMatrix();
-    glUniformMatrix4fv(glGetUniformLocation(currentShaderProgram, "ModelMatrix"), 1, GL_FALSE, glm::value_ptr(worldToVoxelMat));
+    glUniformMatrix4fv(glGetUniformLocation(currentShaderProgram, "WorldToVoxelMat"), 1, GL_FALSE, glm::value_ptr(worldToVoxelMat));
     glUniformMatrix4fv(glGetUniformLocation(currentShaderProgram, "InverseViewMatrix"), 1, GL_FALSE, glm::value_ptr(inverseViewMatrix));
 
-    glm::vec3 pos = inverseViewMatrix * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    glm::vec3 pos = glm::vec4(256.0f, 16.0f, 226.0f, 1.0f);
     glm::vec3 backword =  glm::vec3(0.0f, 0.0f, -1.0f);
     glUniform3fv(glGetUniformLocation(currentShaderProgram, "camPosition"), 1, glm::value_ptr(pos));
     glUniform3fv(glGetUniformLocation(currentShaderProgram, "camTransforwardBackwards"), 1, glm::value_ptr(backword));
@@ -414,8 +436,8 @@ void Voxelizer::voxelizeFragmentList(Scene& scene)
     glBindVertexArray(quadVAOId);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
-    std::vector<logStruct> logs2;
-    getLogs(logs2);
+    logs2.clear();
+    getLogs(logs2, true);
 
     std::cout << "x" << std::endl;
 }
@@ -475,7 +497,7 @@ int Voxelizer::getAndResetCount(GLuint counterId, int resetValue)
     int count;
     glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, counterId);
     GLuint* ptr = (GLuint*)glMapBufferRange(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint),
-        GL_MAP_READ_BIT);
+        GL_MAP_READ_BIT | GL_MAP_WRITE_BIT);
     count = ptr[0];
     ptr[0] = resetValue;
     glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER);

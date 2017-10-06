@@ -1,7 +1,7 @@
 #version 450
 layout (location = 0) in vec3 vPosition;  // Vertex position in voxel world space.
 
-uniform mat4 ModelMatrix;     // ModelView matrix.
+uniform mat4 WorldToVoxelMat;     // WorldToVoxelMat matrix.
 uniform mat4 InverseViewMatrix;
 
 out vec3 wcPosition;   // Vertex position in voxel world space.

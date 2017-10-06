@@ -20,6 +20,7 @@ public:
         unsigned int parentPtr;
         unsigned int selfPtr;
         unsigned int childPtr;
+        unsigned int childBit;
         unsigned int modelBrickPtr;
         unsigned int lightBrickPtr;
     };
