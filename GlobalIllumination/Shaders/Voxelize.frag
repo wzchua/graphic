@@ -35,7 +35,7 @@ bool isToDefer = false;
 
 void deferFragment(vec4 color, vec3 normal) {
     uint index = atomicCounterIncrement(fragListPtr);
-    frag[index].position = vec4(wcPosition + vec3(256.0), 1.0f);
+    frag[index].position = vec4(wcPosition, 1.0f);
     frag[index].color = color;
     frag[index].normal = vec4(normal, 1.0f);
     discard;

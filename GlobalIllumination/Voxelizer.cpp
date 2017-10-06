@@ -260,16 +260,16 @@ void Voxelizer::initializeWithScene(glm::vec3 min, glm::vec3 max)
 {
     //scale/translate scene into ortho box 512 x 512 x 512
     glm::vec3 length = (max - min);
-    glm::vec3 translate = glm::vec3(0.0f) - (min + length / 2.0f);
+    glm::vec3 translate = glm::vec3(0.0f) - min;
     glm::vec3 scale = 512.0f / length;
     //fixed ratio scaling
     float smallestScale = glm::min(scale.x, glm::min(scale.y, scale.z));
     scale = glm::vec3(smallestScale);
-    sceneMat = glm::translate(glm::scale(glm::mat4(1.0f), scale), translate);
-    newMin = sceneMat * glm::vec4(min, 1.0);
-    newMax = sceneMat * glm::vec4(max, 1.0);
+    worldToVoxelMat = glm::translate(glm::scale(glm::mat4(1.0f), scale), translate);
+    newMin = worldToVoxelMat * glm::vec4(min, 1.0);
+    newMax = worldToVoxelMat * glm::vec4(max, 1.0);
 
-    modelViewMat = voxelViewMatrix * sceneMat;
+    modelViewMat = voxelViewMatrix * worldToVoxelMat;
     modelViewProjMat = ortho * modelViewMat;
 
 }
@@ -281,7 +281,7 @@ void Voxelizer::voxelizeFragmentList(Scene& scene)
     resetAllData();
     glViewport(0, 0, 512, 512);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glUniformMatrix4fv(glGetUniformLocation(currentShaderProgram, "ModelMatrix"), 1, GL_FALSE, glm::value_ptr(sceneMat));
+    glUniformMatrix4fv(glGetUniformLocation(currentShaderProgram, "ModelMatrix"), 1, GL_FALSE, glm::value_ptr(worldToVoxelMat));
     glUniformMatrix4fv(glGetUniformLocation(currentShaderProgram, "ModelViewMatrix"), 1, GL_FALSE, glm::value_ptr(modelViewMat));
     glUniformMatrix4fv(glGetUniformLocation(currentShaderProgram, "ModelViewProjMatrix"), 1, GL_FALSE, glm::value_ptr(modelViewProjMat));
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
@@ -301,6 +301,24 @@ void Voxelizer::voxelizeFragmentList(Scene& scene)
     ptr[0] = 0;
     glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER);
     glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
+    std::vector<fragStruct> fListD;
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboFragmentList);
+    fragStruct* ptrf = (fragStruct*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(fragStruct),
+        GL_MAP_READ_BIT);
+    //980216
+    for (int i = 0; i < fragmentCount; i++) {
+        min.x = glm::min(ptrf[i].position[0], min.x);
+        min.y = glm::min(ptrf[i].position[1], min.y);
+        min.z = glm::min(ptrf[i].position[2], min.z);
+        max.x = glm::max(ptrf[i].position[0], max.x);
+        max.y = glm::max(ptrf[i].position[1], max.y);
+        max.z = glm::max(ptrf[i].position[2], max.z);
+        fListD.push_back(ptrf[i]);
+    }
+    glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+
     //fragmentCount = 1024;
     currentShaderProgram = octreeCompShader.use();
     bool isOdd = true;
@@ -378,7 +396,7 @@ void Voxelizer::voxelizeFragmentList(Scene& scene)
 
     glm::mat4 inverseViewMatrix = glm::inverse(camVoxel.getViewMatrix());
     glm::mat4 projView = camVoxel.getProjMatrix() * camVoxel.getViewMatrix();
-    glUniformMatrix4fv(glGetUniformLocation(currentShaderProgram, "ModelMatrix"), 1, GL_FALSE, glm::value_ptr(sceneMat));
+    glUniformMatrix4fv(glGetUniformLocation(currentShaderProgram, "ModelMatrix"), 1, GL_FALSE, glm::value_ptr(worldToVoxelMat));
     glUniformMatrix4fv(glGetUniformLocation(currentShaderProgram, "InverseViewMatrix"), 1, GL_FALSE, glm::value_ptr(inverseViewMatrix));
 
     glm::vec3 pos = inverseViewMatrix * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
