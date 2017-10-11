@@ -277,7 +277,6 @@ void Voxelizer::initializeWithScene(glm::vec3 min, glm::vec3 max)
 
 void Voxelizer::voxelizeFragmentList(Scene& scene)
 {
-    
     int currentShaderProgram = voxelizeListShader.use();
     resetAllData();
     glViewport(0, 0, 512, 512);
@@ -412,18 +411,16 @@ void Voxelizer::voxelizeFragmentList(Scene& scene)
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
     std::vector<logStruct> logs2;
     getLogs(logs2, true);
-
     
     //render octree
     currentShaderProgram = octreeRenderShader.use();
-    Camera camVoxel(glm::vec3(256.0f, 32.0f, 128.0f));
 
     glm::mat4 inverseViewMatrix = glm::inverse(camVoxel.getViewMatrix());
     glUniformMatrix4fv(glGetUniformLocation(currentShaderProgram, "WorldToVoxelMat"), 1, GL_FALSE, glm::value_ptr(worldToVoxelMat));
     glUniformMatrix4fv(glGetUniformLocation(currentShaderProgram, "InverseViewMatrix"), 1, GL_FALSE, glm::value_ptr(inverseViewMatrix));
-    glm::vec3 position = camVoxel.getPosition();
-    glm::vec3 forward = camVoxel.getForward();
-    glm::vec3 up = camVoxel.getUp();
+    glm::vec3 position = scene.cam.getPosition();
+    glm::vec3 forward = scene.cam.getForward();
+    glm::vec3 up = scene.cam.getUp();
     glUniform3fv(glGetUniformLocation(currentShaderProgram, "camPosition"), 1, glm::value_ptr(position));
     glUniform3fv(glGetUniformLocation(currentShaderProgram, "camForward"), 1, glm::value_ptr(forward));
     glUniform3fv(glGetUniformLocation(currentShaderProgram, "camUp"), 1, glm::value_ptr(up));
@@ -444,7 +441,6 @@ void Voxelizer::voxelizeFragmentList(Scene& scene)
     glBindVertexArray(0);
     logs2.clear();
     getLogs(logs2, true);
-
 
     std::cout << "x" << std::endl;
 }

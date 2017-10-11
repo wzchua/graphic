@@ -37,6 +37,7 @@ public:
     void initializeWithScene(glm::vec3 min, glm::vec3 max);
     void voxelizeFragmentList(Scene& scene);
     void resetAllData();
+    Camera camVoxel = Camera(glm::vec3(256.0f, 32.0f, 128.0f));
 private:
     void getLogs(std::vector<logStruct> & logs, bool reset = false);
     int getCount(GLuint counterId);
