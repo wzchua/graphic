@@ -25,6 +25,7 @@ void CheckGLError()
 Voxelizer::Voxelizer()
 {
     voxelizeListShader.generateShader("./Shaders/Voxelize.vert", ShaderProgram::VERTEX);
+    voxelizeListShader.generateShader("./Shaders/Voxelize.geom", ShaderProgram::GEOMETRY);
     voxelizeListShader.generateShader("./Shaders/Voxelize.frag", ShaderProgram::FRAGMENT);
     voxelizeListShader.linkCompileValidate();
 
@@ -415,16 +416,21 @@ void Voxelizer::voxelizeFragmentList(Scene& scene)
     
     //render octree
     currentShaderProgram = octreeRenderShader.use();
-    Camera camVoxel(glm::vec3(256.0f, 16.0f, 226.0f));
+    Camera camVoxel(glm::vec3(256.0f, 32.0f, 128.0f));
 
     glm::mat4 inverseViewMatrix = glm::inverse(camVoxel.getViewMatrix());
     glUniformMatrix4fv(glGetUniformLocation(currentShaderProgram, "WorldToVoxelMat"), 1, GL_FALSE, glm::value_ptr(worldToVoxelMat));
     glUniformMatrix4fv(glGetUniformLocation(currentShaderProgram, "InverseViewMatrix"), 1, GL_FALSE, glm::value_ptr(inverseViewMatrix));
-
-    glm::vec3 pos = glm::vec4(256.0f, 16.0f, 226.0f, 1.0f);
-    glm::vec3 backword =  glm::vec3(0.0f, 0.0f, -1.0f);
-    glUniform3fv(glGetUniformLocation(currentShaderProgram, "camPosition"), 1, glm::value_ptr(pos));
-    glUniform3fv(glGetUniformLocation(currentShaderProgram, "camTransforwardBackwards"), 1, glm::value_ptr(backword));
+    glm::vec3 position = camVoxel.getPosition();
+    glm::vec3 forward = camVoxel.getForward();
+    glm::vec3 up = camVoxel.getUp();
+    glUniform3fv(glGetUniformLocation(currentShaderProgram, "camPosition"), 1, glm::value_ptr(position));
+    glUniform3fv(glGetUniformLocation(currentShaderProgram, "camForward"), 1, glm::value_ptr(forward));
+    glUniform3fv(glGetUniformLocation(currentShaderProgram, "camUp"), 1, glm::value_ptr(up));
+    int width = 800;
+    int height = 600;
+    glUniform1i(glGetUniformLocation(currentShaderProgram, "width"), width);
+    glUniform1i(glGetUniformLocation(currentShaderProgram, "height"), height);
 
     glViewport(0, 0, 800, 600);
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
@@ -438,6 +444,7 @@ void Voxelizer::voxelizeFragmentList(Scene& scene)
     glBindVertexArray(0);
     logs2.clear();
     getLogs(logs2, true);
+
 
     std::cout << "x" << std::endl;
 }

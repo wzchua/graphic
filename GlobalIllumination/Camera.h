@@ -27,6 +27,9 @@ public:
     void moveTo(glm::vec3 position);
     void move(glm::vec3 translation);
     void viewMove(int mouseXDelta, int mouseYDelta);
+    glm::vec3 getPosition();
+    glm::vec3 getForward();
+    glm::vec3 getUp();
 
     glm::mat4 getViewMatrix() const;
     glm::mat4 getProjMatrix() const;

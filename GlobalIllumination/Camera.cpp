@@ -40,6 +40,21 @@ void Camera::viewMove(int mouseXDelta, int mouseYDelta)
 
 }
 
+glm::vec3 Camera::getPosition()
+{
+    return position;
+}
+
+glm::vec3 Camera::getForward()
+{
+    return forward;
+}
+
+glm::vec3 Camera::getUp()
+{
+    return up;
+}
+
 glm::mat4 Camera::getViewMatrix() const
 {
     if (isViewMatrixUpdated) {
