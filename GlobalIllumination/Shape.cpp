@@ -23,7 +23,7 @@ void Shape::buildVBO(const tinyobj::shape_t & shape, const tinyobj::attrib_t & a
 		};
         vertex.texCoord = {
             attrib.texcoords[2 * index.texcoord_index + 0],
-            1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
+            attrib.texcoords[2 * index.texcoord_index + 1]
         };
 
 		if (_uniqueVertices.count(vertex) == 0) {
