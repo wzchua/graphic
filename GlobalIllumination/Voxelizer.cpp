@@ -95,8 +95,8 @@ Voxelizer::Voxelizer()
     std::cout << "GL_MAX_COMPUTE_WORK_GROUP_SIZE is " << work_grp_size[0] << ", " << work_grp_size[1] << ", " << work_grp_size[2] << " bytes." << std::endl;
     glGetIntegerv(GL_MAX_3D_TEXTURE_SIZE, &size);
     std::cout << "GL_MAX_3D_TEXTURE_SIZE  is " << size << " bytes." << std::endl;
-    glGetIntegerv(GL_MAX_IMAGE_UNITS, &size);
-    std::cout << "GL_MAX_IMAGE_UNITS  is " << size << " bytes." << std::endl;
+    glGetIntegerv(GL_MAX_GEOMETRY_OUTPUT_VERTICES, &size);
+    std::cout << "GL_MAX_GEOMETRY_OUTPUT_VERTICES  is " << size << " ." << std::endl;
 
     //fragmentlist buffer
     glGenBuffers(1, &ssboFragmentList);
@@ -270,20 +270,25 @@ void Voxelizer::initializeWithScene(glm::vec3 min, glm::vec3 max)
     newMin = worldToVoxelMat * glm::vec4(min, 1.0);
     newMax = worldToVoxelMat * glm::vec4(max, 1.0);
 
-    modelViewMat = voxelViewMatrix * worldToVoxelMat;
-    modelViewProjMat = ortho * modelViewMat;
-
+    viewProjMatrixXY = ortho * voxelViewMatriXY;
+    viewProjMatrixZY = ortho * voxelViewMatriZY;
+    viewProjMatrixXZ = ortho * voxelViewMatriXZ;
 }
 
 void Voxelizer::voxelizeFragmentList(Scene& scene)
 {
+    using Clock = std::chrono::high_resolution_clock;
+    auto timeStart = Clock::now();
     int currentShaderProgram = voxelizeListShader.use();
     resetAllData();
     glViewport(0, 0, 512, 512);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glUniform1ui(glGetUniformLocation(currentShaderProgram, "maxNoOfLogs"), maxLogCount);
     glUniformMatrix4fv(glGetUniformLocation(currentShaderProgram, "ModelMatrix"), 1, GL_FALSE, glm::value_ptr(worldToVoxelMat));
-    glUniformMatrix4fv(glGetUniformLocation(currentShaderProgram, "ModelViewMatrix"), 1, GL_FALSE, glm::value_ptr(modelViewMat));
-    glUniformMatrix4fv(glGetUniformLocation(currentShaderProgram, "ModelViewProjMatrix"), 1, GL_FALSE, glm::value_ptr(modelViewProjMat));
+    glUniformMatrix4fv(glGetUniformLocation(currentShaderProgram, "ViewProjMatrixXY"), 1, GL_FALSE, glm::value_ptr(viewProjMatrixXY));
+    glUniformMatrix4fv(glGetUniformLocation(currentShaderProgram, "ViewProjMatrixZY"), 1, GL_FALSE, glm::value_ptr(viewProjMatrixZY));
+    glUniformMatrix4fv(glGetUniformLocation(currentShaderProgram, "ViewProjMatrixXZ"), 1, GL_FALSE, glm::value_ptr(viewProjMatrixXZ));
+    glUniform1i(glGetUniformLocation(currentShaderProgram, "projectionAxis"), projectionAxis);
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
@@ -319,6 +324,9 @@ void Voxelizer::voxelizeFragmentList(Scene& scene)
     glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     */
+
+    //std::vector<logStruct> logsF;
+    //getLogs(logsF);
     
 
 
@@ -396,21 +404,21 @@ void Voxelizer::voxelizeFragmentList(Scene& scene)
     }
 
     int leafCount = getCount(atomicModelBrickCounterPtr);
-    std::vector<logStruct> logs;
-    getLogs(logs, true);
+    //std::vector<logStruct> logs;
+    //getLogs(logs, true);
     currentShaderProgram = octreeAverageCompShader.use();
     //averge brick value
     glBindImageTexture(4, texture3DColorList, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
     glBindImageTexture(5, texture3DNormalList, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
     glUniform1ui(glGetUniformLocation(currentShaderProgram, "noOfBricks"), leafCount);
-    glUniform1ui(glGetUniformLocation(currentShaderProgram, "maxNoOfLogs"), maxLogCount);
+    glUniform1ui(glGetUniformLocation(currentShaderProgram, "noOfBricks"), leafCount);
 
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
     int workgroupX = std::ceil(leafCount / 512.0);
     glDispatchCompute(workgroupX, 1, 1);
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
-    std::vector<logStruct> logs2;
-    getLogs(logs2, true);
+    //std::vector<logStruct> logs2;
+    //getLogs(logs2, true);
     
     //render octree
     currentShaderProgram = octreeRenderShader.use();
@@ -439,10 +447,12 @@ void Voxelizer::voxelizeFragmentList(Scene& scene)
     glBindVertexArray(quadVAOId);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
-    logs2.clear();
-    getLogs(logs2, true);
 
-    std::cout << "x" << std::endl;
+    //logs2.clear();
+    //getLogs(logs2, true);
+
+    auto timeEnd = Clock::now();
+    std::cout << "time: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeEnd - timeStart).count() << "ms" << std::endl;
 }
 
 void Voxelizer::resetAllData()
@@ -458,14 +468,19 @@ void Voxelizer::resetAllData()
     glInvalidateBufferData(ssboNodeList);
     glInvalidateBufferData(ssboLeafNodeList);
     glInvalidateBufferData(ssboLogList);
-    
-    glInvalidateTexImage(texture3DrgColorBrickList, 0);
-    glInvalidateTexImage(texture3DbaColorBrickList, 0);
-    glInvalidateTexImage(texture3DxyNormalBrickList, 0);
-    glInvalidateTexImage(texture3DzwNormalBrickList, 0);
-    glInvalidateTexImage(texture3DCounterList, 0);
-    glInvalidateTexImage(texture3DColorList, 0);
-    glInvalidateTexImage(texture3DNormalList, 0);
+
+    glClearNamedBufferData(ssboNodeList, GL_R8UI, GL_RED_INTEGER, GL_UNSIGNED_BYTE, NULL);
+    glClearNamedBufferData(ssboLeafNodeList, GL_R8UI, GL_RED_INTEGER, GL_UNSIGNED_BYTE, NULL);
+
+    CheckGLError();
+    glClearTexImage(texture3DrgColorBrickList, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, NULL);
+    glClearTexImage(texture3DbaColorBrickList, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, NULL);
+    glClearTexImage(texture3DzwNormalBrickList, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, NULL);
+    glClearTexImage(texture3DzwNormalBrickList, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, NULL);
+    CheckGLError();
+    glClearTexImage(texture3DCounterList, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, NULL);
+    glClearTexImage(texture3DColorList, 0, GL_RGBA, GL_FLOAT, NULL);
+    glClearTexImage(texture3DNormalList, 0, GL_RGBA, GL_FLOAT, NULL);
     CheckGLError();
 }
 

@@ -124,5 +124,15 @@ void Renderer::onKey(GLFWwindow* window, int key, int scancode, int action, int 
         if (camMove.z != 0.0f || camMove.x != 0.0f) {
             scene.cam.move(camMove);
         }
+
+        if (key == GLFW_KEY_1) {
+            voxelizer.projectionAxis = 0;
+        }
+        if (key == GLFW_KEY_2) {
+            voxelizer.projectionAxis = 1;
+        }
+        if (key == GLFW_KEY_3) {
+            voxelizer.projectionAxis = 2;
+        }
     }
 }
