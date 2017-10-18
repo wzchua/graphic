@@ -1,4 +1,21 @@
 #version 450
+layout (local_size_x = 512) in;
+
+layout(binding = 2) uniform atomic_uint modelBrickPtr;
+layout(binding = 3) uniform atomic_uint leafNodePtr;
+
+struct NodeStruct {
+    uint parentPtr;
+    uint selfPtr;
+    uint childPtr;
+    uint childBit;
+    uint modelBrickPtr;
+    uint lightBrickPtr;
+};
+
+layout(binding = 2) volatile buffer NodeBlock {
+    NodeStruct node[];
+};
 
 layout(binding = 8, RGBA8) writeonly uniform image3D colorBrick;
 layout(binding = 9, RGBA8) writeonly uniform image3D normalBrick;
@@ -6,7 +23,45 @@ layout(binding = 9, RGBA8) writeonly uniform image3D normalBrick;
 layout(binding = 8, RGBA8) uniform sampler3D colorBrickSampler;
 layout(binding = 9, RGBA8) uniform sampler3D normalBrickSampler;
 
+layout(binding = 3) buffer ArrayBlock {
+    uint leafList[];
+};
+
+uniform int noOfNodes;
+
+ivec3 computeOffset(uint bx, uint by, int childIndex) {    
+    return ivec3(bx + (i & childIndex), by + ((childIndex & 2) >> 1), (childIndex & 4) >> 2);
+}
 
 void main() {
+    
+  uint nodeListPtr = gl_GlobalInvocationID.x;
+    if(nodeListPtr < noOfNodes) {
+        uint childPtr = leafList[nodeListPtr];
+        uint parentPtr = node[childPtr].parentPtr;      
+        uint brickState = atomicCompSwap(node[parentPtr].modelBrickPtr, 0, ISPROCESS);        
+        if(brickState == 0) {
+            uint brickPtr = atomicCounterIncrement(modelBrickPtr);
+            uint childBits = node[parentPtr].childBit;
+            uint bx = (brickPtr & 0x1FF) * 2;
+            uint by = (brickPtr >> 9) * 2;
+            vec4 color = vec4(0.0f);
+            for(int i = 0; i < 8; i++) {
+                uint hasChild = (childBits >> i) & 0x01;
+                //check child bit
+                if(hasChild == 1) {      
+                    //read child brick mipmap level 1
+                    uint childBrickPtr = node[childPtr].brickPtr;
+                    uint childbx = (brickPtr & 0x1FF) * 2;
+                    uint childby = (brickPtr >> 9) * 2;
+                    color = texture(colorBrickSampler, ivec3(childbx, childby, 0), 1);
 
+                    //store in parent brick
+                    ivec3 pos = computeOffset(bx, by, i);
+                    imageStore(colorBrick, pos, avgColor);
+                }
+            }
+            node[parentPtr].modelBrickPtr = brickPtr;
+        }
+    }
 }

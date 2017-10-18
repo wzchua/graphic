@@ -3,7 +3,7 @@
 #version 450 core
 
 layout(triangles) in;
-layout(triangle_strip, max_vertices = 9) out;
+layout(triangle_strip, max_vertices = 3) out;
 
 
 in vec3 vwcPosition[];
@@ -24,41 +24,43 @@ out int axis;
 void main() {
     vec3 triangleNormal = normalize( cross( vwcPosition[1]-vwcPosition[0], vwcPosition[2]-vwcPosition[0] ) );
     triangleNormal = abs(triangleNormal);
-    //if(projectionAxis == 0) {
+    /*
+    if(projectionAxis == 0) {
         axis = 1;
         for(int i = 0; i < 3; i++) {
             wcPosition = vwcPosition[i];
             wcNormal = vwcNormal[i];
             fTexCoord = vTexCoord[i];
-            gl_Position = ViewProjMatrixXY * gl_in[i].gl_Position;
+            gl_Position = vec4(gl_in[i].gl_Position.x, gl_in[i].gl_Position.y, gl_in[i].gl_Position.z, 1.0f);
             EmitVertex();
         }
         EndPrimitive();
-    //}
-    //if(projectionAxis == 1) {
+    }
+    if(projectionAxis == 1) {
         axis = 2;
         for(int i = 0; i < 3; i++) {
             wcPosition = vwcPosition[i];
             wcNormal = vwcNormal[i];
             fTexCoord = vTexCoord[i];
-            gl_Position = ViewProjMatrixZY * gl_in[i].gl_Position;
+            gl_Position = vec4(gl_in[i].gl_Position.z, gl_in[i].gl_Position.y, gl_in[i].gl_Position.x, 1.0f);
             EmitVertex();
         }
         EndPrimitive();
-    //}
-    //if(projectionAxis == 2) {
+    }
+    if(projectionAxis == 2) {
         axis = 3;
         for(int i = 0; i < 3; i++) {
             wcPosition = vwcPosition[i];
             wcNormal = vwcNormal[i];
             fTexCoord = vTexCoord[i];
-            gl_Position = ViewProjMatrixXZ * gl_in[i].gl_Position;
+            gl_Position = vec4(gl_in[i].gl_Position.x, gl_in[i].gl_Position.z, gl_in[i].gl_Position.y, 1.0f);
             EmitVertex();
         }
         EndPrimitive();
-    //}
+    }
+    */
 
-    /*
+    
     if(triangleNormal.x > triangleNormal.y && triangleNormal.x > triangleNormal.z) {
         for(int i = 0; i < 3; i++) {
             wcPosition = vwcPosition[i];
@@ -86,5 +88,5 @@ void main() {
             EmitVertex();
         }
         EndPrimitive();
-    }*/
+    }
 }

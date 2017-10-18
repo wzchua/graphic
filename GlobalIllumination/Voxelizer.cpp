@@ -295,8 +295,6 @@ void Voxelizer::voxelizeFragmentList(Scene& scene)
     glDisable(GL_BLEND);
 
     scene.render(currentShaderProgram);
-    glm::vec4 min = glm::vec4(0.0);
-    glm::vec4 max = glm::vec4(0.0);
     // get length of fragment list
     unsigned int fragmentCount = 0;
     glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomicFragCountPtr);
@@ -307,6 +305,8 @@ void Voxelizer::voxelizeFragmentList(Scene& scene)
     glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER);
     glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
     /*
+    glm::vec4 min = glm::vec4(0.0);
+    glm::vec4 max = glm::vec4(0.0);
     std::vector<fragStruct> fListD;
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboFragmentList);
     fragStruct* ptrf = (fragStruct*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(fragStruct),
@@ -333,16 +333,16 @@ void Voxelizer::voxelizeFragmentList(Scene& scene)
     //fragmentCount = 1024;
     currentShaderProgram = octreeCompShader.use();
     bool isOdd = true;
+
+    glBindImageTexture(0, texture3DrgColorBrickList, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
+    glBindImageTexture(1, texture3DbaColorBrickList, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
+    glBindImageTexture(2, texture3DxyNormalBrickList, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
+    glBindImageTexture(3, texture3DzwNormalBrickList, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
+    glBindImageTexture(7, texture3DCounterList, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
+
     while (fragmentCount != 0) {
         glUniform1ui(glGetUniformLocation(currentShaderProgram, "noOfFragments"), fragmentCount);
         glUniform1ui(glGetUniformLocation(currentShaderProgram, "maxNoOfLogs"), maxLogCount);
-
-        glBindImageTexture(0, texture3DrgColorBrickList, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
-        glBindImageTexture(1, texture3DbaColorBrickList, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
-        glBindImageTexture(2, texture3DxyNormalBrickList, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
-        glBindImageTexture(3, texture3DzwNormalBrickList, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
-        glBindImageTexture(7, texture3DCounterList, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
-
         //swap bindings
         if (isOdd) {
             glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboFragmentList);
@@ -462,26 +462,20 @@ void Voxelizer::resetAllData()
     getAndResetCount(atomicModelBrickCounterPtr, 1);
     getAndResetCount(atomicLeafNodeCountPtr);
     getAndResetCount(atomicLogCounter);
-
-    glInvalidateBufferData(ssboFragmentList);
-    glInvalidateBufferData(ssboFragmentList2);
-    glInvalidateBufferData(ssboNodeList);
-    glInvalidateBufferData(ssboLeafNodeList);
-    glInvalidateBufferData(ssboLogList);
-
+    
     glClearNamedBufferData(ssboNodeList, GL_R8UI, GL_RED_INTEGER, GL_UNSIGNED_BYTE, NULL);
     glClearNamedBufferData(ssboLeafNodeList, GL_R8UI, GL_RED_INTEGER, GL_UNSIGNED_BYTE, NULL);
 
-    CheckGLError();
     glClearTexImage(texture3DrgColorBrickList, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, NULL);
     glClearTexImage(texture3DbaColorBrickList, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, NULL);
+    glClearTexImage(texture3DxyNormalBrickList, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, NULL);
     glClearTexImage(texture3DzwNormalBrickList, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, NULL);
-    glClearTexImage(texture3DzwNormalBrickList, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, NULL);
-    CheckGLError();
+
     glClearTexImage(texture3DCounterList, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, NULL);
     glClearTexImage(texture3DColorList, 0, GL_RGBA, GL_FLOAT, NULL);
     glClearTexImage(texture3DNormalList, 0, GL_RGBA, GL_FLOAT, NULL);
     CheckGLError();
+    glMemoryBarrier(GL_ALL_BARRIER_BITS);
 }
 
 void Voxelizer::getLogs(std::vector<logStruct>& logs, bool reset)

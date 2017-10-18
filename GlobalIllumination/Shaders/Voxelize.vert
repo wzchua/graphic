@@ -18,5 +18,5 @@ void main()
     vwcPosition = vec3( wcPosition4 ) / wcPosition4.w;
     vwcNormal = vNormal;
     vTexCoord = texCoord;
-    gl_Position = vec4(vwcPosition, 1.0f);
+    gl_Position = ViewProjMatrixXY * vec4(vwcPosition, 1.0f);
 }
