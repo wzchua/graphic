@@ -43,6 +43,7 @@ void main() {
         if(brickState == 0) {
             uint brickPtr = atomicCounterIncrement(modelBrickPtr);
             uint childBits = node[parentPtr].childBit;
+            uint childRootPtr = node[parentPtr].childPtr;
             uint bx = (brickPtr & 0x1FF) * 2;
             uint by = (brickPtr >> 9) * 2;
             vec4 color = vec4(0.0f);
@@ -51,7 +52,7 @@ void main() {
                 //check child bit
                 if(hasChild == 1) {      
                     //read child brick mipmap level 1
-                    uint childBrickPtr = node[childPtr].brickPtr;
+                    uint childBrickPtr = node[childRootPtr + i].brickPtr;
                     uint childbx = (brickPtr & 0x1FF) * 2;
                     uint childby = (brickPtr >> 9) * 2;
                     color = texelFetch(colorBrickSampler, ivec3(childbx, childby, 0), 1);
