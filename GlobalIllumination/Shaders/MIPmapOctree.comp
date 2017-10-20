@@ -54,7 +54,7 @@ void main() {
                     uint childBrickPtr = node[childPtr].brickPtr;
                     uint childbx = (brickPtr & 0x1FF) * 2;
                     uint childby = (brickPtr >> 9) * 2;
-                    color = texture(colorBrickSampler, ivec3(childbx, childby, 0), 1);
+                    color = texelFetch(colorBrickSampler, ivec3(childbx, childby, 0), 1);
 
                     //store in parent brick
                     ivec3 pos = computeOffset(bx, by, i);

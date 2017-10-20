@@ -1,0 +1,68 @@
+#version 450
+
+layout (local_size_x = 32, local_size_y = 32) in;
+
+layout(binding = 2, rgba8) coherent uniform uimage3D dirLightBrick;
+layout(binding = 3, r32ui) coherent uniform uimage3D xyLightBrick;
+layout(binding = 4, r32ui) coherent uniform uimage3D zwLightBrick;
+layout(binding = 5, r32ui) coherent uniform uimage3D radLightBrick;
+layout(binding = 7, r32ui) uniform uimage3D fragmentCounter;
+
+uniform int lightmapSize;
+
+
+ivec2[3] getNodeMapSiblings(ivec2 pos, int level) {
+    int divideFactor = 2 * (level + 1);
+    ivec2 parent = pos / divideFactor;
+    ivec2 rootChild = parent * divideFactor;
+    ivec2 offset = pos - rootChild;
+    ivec2 child1 = (parent * 2 + ivec2(1, 0)) * (2 * level);
+    ivec2 child2 = (parent * 2 + ivec2(0, 1)) * (2 * level);
+    ivec2 child3 = (parent * 2 + ivec2(1, 1)) * (2 * level);
+
+    if(offset == ivec2(0)) {
+        return ivec2[3] { child1, child2, child3 };
+    } else if(offset.x == 0 && offset.y > 0) {
+        return ivec2[3] { rootChild, child1, child3 };
+    } else if(offset.x > 0 && offset.y == 0){
+        return ivec2[3] { rootChild, child2, child3 };
+    } else {
+        return ivec2[3] { rootChild, child1, child2 };
+    }
+
+}
+
+bool isRootChild(ivec2 pos, int level) {    
+    int divideFactor = 2 * (level + 1);
+    ivec2 parent = pos / divideFactor;
+    ivec2 rootChild = parent * divideFactor;
+    ivec2 offset = pos - rootChild;
+    return offset == ivec2(0);
+}
+
+vec2 convRG16ToVec2( uint val) {  
+  return  vec2 ( float(val & 0x0000FFFF), float((val & 0xFFFF0000) >>16U));
+}
+uniform int level;
+void main() {
+    ivec2 xy = gl_GlobalInvocationID.xy;
+    if(xy.x < lightmapSize && xy.y < lightmapSize) {
+        //level 0
+        uint nodeValueComposite = texelFetch(lightmapLeafNode, xy, 0).r;
+        uint nodeIndex = nodeValueComposite >> 3;
+        uint leafPtr = nodeValueComposite & 7;
+
+        uint brickPtr = node[nodeIndex].lightBrickPtr;
+        uint bx = (brickPtr & 0x1FF) * 2;
+        uint by = (brickPtr >> 9) * 2;
+        ivec3 pos = ivec3(bx + (leafPtr & 1), by + ((leafPtr & 2) >> 1), (leafPtr & 4) >> 2);
+        if(level == 0) {
+            vec2 xy = convRG16ToVec2(imageLoad(xyLightBrick, pos).r);
+            vec2 zw = convRG16ToVec2(imageLoad(zwLightBrick, pos).r);
+            uint count = imageLoad(fragmentCounter, pos).r;
+            uint radiance = imageLoad(radLightBrick, pos).r;
+            vec4 lightDir = vec4(xy, zw) / float(count);
+            imageStore(dirLightBrick, pos, lightDir);
+        }
+    }
+}
