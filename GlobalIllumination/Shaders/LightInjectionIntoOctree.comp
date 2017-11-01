@@ -1,6 +1,7 @@
 #version 450
 
 layout (local_size_x = 32, local_size_y = 32) in;
+layout(binding = 6) uniform atomic_uint lightPtr;
 layout(binding = 7) uniform atomic_uint logPtr;
 
 layout(binding = 0, RGBA8) uniform sampler2D lightmapPosition;
@@ -40,6 +41,9 @@ struct LogStruct {
 
 layout(binding = 7) volatile buffer LogBlock {
     LogStruct logList[];
+};
+layout(binding = 3) buffer ArrayBlock {
+    uint lightList[];
 };
 
 void logFragment(vec4 pos, vec4 color, uint nodeIndex, uint brickPtr, uint index1, uint index2) {
@@ -81,6 +85,10 @@ void main() {
         imageAtomicAdd(xyLightBrick, pos, convVec2ToRG16(lightDirection.xy * 255.0f));
         imageAtomicAdd(zwLightBrick, pos, convVec2ToRG16(lightDirection.zw * 255.0f));
         imageAtomicAdd(radLightBrick, pos, lightRadiance); // consider solid angle before adding
-        imageAtomicAdd(fragmentCounter, pos, 1);        
+        uint count = imageAtomicAdd(fragmentCounter, pos, 1);
+        if(count == 0) {
+            uint lightId = atomicCounterIncrement(lightPtr);
+            lightList[lightId] = nodeValueComposite;
+        }
     }
 }

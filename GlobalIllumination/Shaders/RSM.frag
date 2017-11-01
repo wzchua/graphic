@@ -97,5 +97,5 @@ void main() {
     if(leafState == 0) {
         node[nodeIndex].lightBrickPtr = atomicCounterIncrement(lightBrickPtr);
     }
-    imageStore(lightmapLeafNode, ivec2(gl_FragCoord.xy), vec4((nodeIndex << 3) & leafOffset));
+    imageStore(lightmapLeafNode, ivec2(gl_FragCoord.xy), ivec4((nodeIndex << 3) & leafOffset));
 }

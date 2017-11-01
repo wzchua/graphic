@@ -1,0 +1,106 @@
+#version 450
+layout (local_size_x = 1024) in;
+
+layout(binding = 2, rgba8) coherent uniform uimage3D dirLightBrick;
+layout(binding = 3, r32ui) coherent uniform uimage3D xyLightBrick;
+layout(binding = 4, r32ui) coherent uniform uimage3D zwLightBrick;
+layout(binding = 5, r32ui) coherent uniform uimage3D radLightBrick;
+layout(binding = 7, r32ui) uniform uimage3D fragmentCounter;
+
+struct NodeStruct {
+    uint parentPtr;
+    uint selfPtr;
+    uint childPtr;
+    uint childBit;
+    uint modelBrickPtr;
+    uint lightBit;
+    uint lightBrickPtr;
+};
+
+layout(binding = 2) volatile buffer NodeBlock {
+    NodeStruct node[];
+};
+
+struct LogStruct {
+    vec4 position;
+    vec4 color;
+    uint nodeIndex;
+    uint brickPtr;
+    uint index1;
+    uint index2;
+};
+
+layout(binding = 7) volatile buffer LogBlock {
+    LogStruct logList[];
+};
+layout(binding = 3) buffer ArrayBlock {
+    uint lightList[];
+};
+uint convVec2ToRG16( vec2 val) {
+    return  ( uint( val .y ) &0x0000FFFF) <<16U | ( uint( val .x ) &0x0000FFFF);
+}
+
+void logFragment(vec4 pos, vec4 color, uint nodeIndex, uint brickPtr, uint index1, uint index2) {
+    uint index = atomicCounterIncrement(logPtr);
+    if(index < maxNoOfLogs) {        
+        logList[index].position = pos;
+        logList[index].color = color;
+        logList[index].nodeIndex = nodeIndex;
+        logList[index].brickPtr = brickPtr;
+        logList[index].index1 = index1;
+        logList[index].index2 = index2;
+    } else {
+        atomicCounterDecrement(logPtr);
+    }
+}
+void injectLightInfo(uint nodeIndex, uint leafPtr, vec4 lightDir, uint radiance) {    
+    uint brickPtr = node[nodeIndex].lightBrickPtr;
+    uint bx = (brickPtr & 0x1FF) * 2;
+    uint by = (brickPtr >> 9) * 2;
+    ivec3 pos = ivec3(bx + (leafPtr & 1), by + ((leafPtr & 2) >> 1), (leafPtr & 4) >> 2);
+    
+    imageAtomicAdd(xyLightBrick, pos, convVec2ToRG16(lightDir.xy * 255.0f));
+    imageAtomicAdd(zwLightBrick, pos, convVec2ToRG16(lightDir.zw * 255.0f));
+    imageAtomicAdd(radLightBrick, pos, radiance); 
+    uint count = imageAtomicAdd(fragmentCounter, pos, 1);
+    if(count == 0) {
+        uint lightId = atomicCounterIncrement(lightPtr);
+        lightList[lightId] = (nodeIndex << 3) & leafOffset;
+    }
+}
+
+void averageLightInfo(uint nodeIndex, uint leafPtr, out uint radiance, out vec4 lightDir) {
+    uint brickPtr = node[nodeIndex].lightBrickPtr;
+    uint bx = (brickPtr & 0x1FF) * 2;
+    uint by = (brickPtr >> 9) * 2;
+    ivec3 pos = ivec3(bx + (leafPtr & 1), by + ((leafPtr & 2) >> 1), (leafPtr & 4) >> 2);
+
+    vec2 xy = convRG16ToVec2(imageLoad(xyLightBrick, pos).r);
+    vec2 zw = convRG16ToVec2(imageLoad(zwLightBrick, pos).r);
+    uint count = imageLoad(fragmentCounter, pos).r;
+    uint radiance = imageLoad(radLightBrick, pos).r;
+    vec4 lightDir = vec4(xy, zw) / float(count);
+    imageStore(dirLightBrick, pos, lightDir);
+    imageStore(fragmentCounter, pos, 1);
+}
+
+uniform int numberOfLightVoxel;
+uniform int level;
+
+void main() {
+    
+    int id = gl_GlobalInvocationID.x;
+    if(id < numberOfLightVoxel) {
+        uint nodeValueComposite = lightList[id];
+        uint nodeIndex = nodeValueComposite >> 3;
+        uint leafPtr = nodeValueComposite & 7;
+        uint radiance; vec4 lightDir;
+        averageLightInfo(nodeIndex, leafPtr, radiance, lightDir);
+        if(level < 9) {
+            uint parent = node[nodeIndex].parentPtr;
+            uint childLeafPtr = nodeIndex - node[parent].childPtr;
+            injectLightInfo(parent, childLeafPtr, radiance, lightDir);
+        }    
+    }
+
+}

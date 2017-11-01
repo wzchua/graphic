@@ -68,26 +68,46 @@ bool allEqual(uint one, uint two, uint three, uint four) {
     return c1 && c2 && c3;
 }
 
-void averageLightInfo(uint nodeIndex, uint leafPtr ) {
+void averageLightInfo(uint nodeIndex, uint leafPtr) {
+    uint brickPtr = node[nodeIndex].lightBrickPtr;
+    uint bx = (brickPtr & 0x1FF) * 2;
+    uint by = (brickPtr >> 9) * 2;
+    ivec3 pos = ivec3(bx + (leafPtr & 1), by + ((leafPtr & 2) >> 1), (leafPtr & 4) >> 2);
 
-        uint brickPtr = node[nodeIndex].lightBrickPtr;
-        uint bx = (brickPtr & 0x1FF) * 2;
-        uint by = (brickPtr >> 9) * 2;
-        ivec3 pos = ivec3(bx + (leafPtr & 1), by + ((leafPtr & 2) >> 1), (leafPtr & 4) >> 2);
+    vec2 xy = convRG16ToVec2(imageLoad(xyLightBrick, pos).r);
+    vec2 zw = convRG16ToVec2(imageLoad(zwLightBrick, pos).r);
+    uint count = imageLoad(fragmentCounter, pos).r;
+    uint radiance = imageLoad(radLightBrick, pos).r;
+    vec4 lightDir = vec4(xy, zw) / float(count);
+    imageStore(dirLightBrick, pos, lightDir);
+    imageStore(fragmentCounter, pos, 1);
+}
 
-        vec2 xy = convRG16ToVec2(imageLoad(xyLightBrick, pos).r);
-        vec2 zw = convRG16ToVec2(imageLoad(zwLightBrick, pos).r);
-        uint count = imageLoad(fragmentCounter, pos).r;
-        uint radiance = imageLoad(radLightBrick, pos).r;
-        vec4 lightDir = vec4(xy, zw) / float(count);
-        imageStore(dirLightBrick, pos, lightDir);
+void storeLightInfo(uint nodeIndex, uint leafPtr, vec4 lightDir, uint radiance) {
+    uint brickPtr = node[nodeIndex].lightBrickPtr;
+    uint bx = (brickPtr & 0x1FF) * 2;
+    uint by = (brickPtr >> 9) * 2;
+    ivec3 pos = ivec3(bx + (leafPtr & 1), by + ((leafPtr & 2) >> 1), (leafPtr & 4) >> 2);
+    imageStore(dirLightBrick, pos, lightDir);
+    imageStore(radLightBrick, pos, ivec4(radiance));
+    atomicOr(node[nodeIndex].lightBit, 1 << leafPtr);
+}
+
+void extractLightInfo(uint nodeIndex, uint leafPtr, out vec4 lightDir, out uint radiance) {
+    uint brickPtr = node[nodeIndex].lightBrickPtr;
+    uint bx = (brickPtr & 0x1FF) * 2;
+    uint by = (brickPtr >> 9) * 2;
+    ivec3 pos = ivec3(bx + (leafPtr & 1), by + ((leafPtr & 2) >> 1), (leafPtr & 4) >> 2);
+
+    radiance = imageLoad(radLightBrick, pos).r;
+    lightDir = imageLoad(dirLightBrick, pos);
 }
 
 void main() {
     ivec2 xy = gl_GlobalInvocationID.xy * level_multiplier;
     if(xy.x < lightmapSize && xy.y < lightmapSize) {
         if(level == 0) {
-            uint nodeValueComposite = texelFetch(lightmapLeafNode, xy + offset, level).r;
+            uint nodeValueComposite = texelFetch(lightmapLeafNode, xy, level).r;
             uint nodeIndex = nodeValueComposite >> 3;
             uint leafPtr = nodeValueComposite & 7;
             averageLightInfo(nodeIndex, leafPtr);
@@ -95,22 +115,26 @@ void main() {
             uint nodeValueCompositeChild1 = texelFetch(lightmapLeafNode, xy + ivec2(0), level-1).r
             uint nodeIndexChild1 = nodeValueCompositeChild1 >> 3;
             uint leafPtrChild1 = nodeValueCompositeChild1 & 7;
-            averageLightInfo(nodeIndexChild1, leafPtrChild1);
+            vec4 lightDirChild1; uint radianceChild1;
+            extractLightInfo(nodeIndexChild1, leafPtrChild1, lightDirChild1, radianceChild1);
 
-            uint nodeValueCompositeChild2 = texelFetch(lightmapLeafNode, xy + ivec2(1, 0), level-1).r
+            uint nodeValueCompositeChild2 = texelFetch(lightmapLeafNode, xy + ivec2(level_multiplier-1, 0), level-1).r
             uint nodeIndexChild2 = nodeValueCompositeChild2 >> 3;
             uint leafPtrChild2 = nodeValueCompositeChild2 & 7;
-            averageLightInfo(nodeIndexChild2, leafPtrChild2);
+            vec4 lightDirChild2; uint radianceChild2;
+            extractLightInfo(nodeIndexChild2, leafPtrChild2, lightDirChild2, radianceChild2);
 
-            uint nodeValueCompositeChild3 = texelFetch(lightmapLeafNode, xy + ivec2(0, 1), level-1).r
+            uint nodeValueCompositeChild3 = texelFetch(lightmapLeafNode, xy + ivec2(0, level_multiplier-1), level-1).r
             uint nodeIndexChild3 = nodeValueCompositeChild3 >> 3;
             uint leafPtrChild3 = nodeValueCompositeChild3 & 7;
-            averageLightInfo(nodeIndexChild3, leafPtrChild3);
+            vec4 lightDirChild3; uint radianceChild3;
+            extractLightInfo(nodeIndexChild3, leafPtrChild3, lightDirChild3, radianceChild3);
 
-            uint nodeValueCompositeChild4 = texelFetch(lightmapLeafNode, xy + ivec2(1), level-1).r
+            uint nodeValueCompositeChild4 = texelFetch(lightmapLeafNode, xy + ivec2(level_multiplier-1), level-1).r
             uint nodeIndexChild4 = nodeValueCompositeChild4 >> 3;
             uint leafPtrChild4 = nodeValueCompositeChild4 & 7;
-            averageLightInfo(nodeIndexChild4, leafPtrChild4);
+            vec4 lightDirChild4; uint radianceChild4;
+            extractLightInfo(nodeIndexChild4, leafPtrChild4, lightDirChild4, radianceChild4);
 
             uint parent1 = nodeIndexChild1;
             uint parent2 = nodeIndexChild2;
@@ -119,13 +143,20 @@ void main() {
 
             //find ancestor
             while(!allEqual(parent1, parent2, parent3, parent4)) {
-                parent1 = node[parent1].parentPtr;
-                parent2 = node[parent2].parentPtr;
-                parent3 = node[parent3].parentPtr;
-                parent4 = node[parent4].parentPtr;            
+                uint newParent1 = node[parent1].parentPtr;
+                uint newParent2 = node[parent2].parentPtr;
+                uint newParent3 = node[parent3].parentPtr;
+                uint newParent4 = node[parent4].parentPtr;            
 
                 //populate upper nodes
-
+                leafPtrChild1 = parent1 - node[newParent1].childPtr;
+                storeLightInfo(newParent1, leafPtrChild1, lightDirChild1, radianceChild1);
+                leafPtrChild2 = parent2 - node[newParent2].childPtr;
+                storeLightInfo(newParent2, leafPtrChild2, lightDirChild2, radianceChild2);
+                leafPtrChild3 = parent3 - node[newParent3].childPtr;
+                storeLightInfo(newParent3, leafPtrChild3, lightDirChild3, radianceChild3);
+                leafPtrChild4 = parent4 - node[newParent4].childPtr;
+                storeLightInfo(newParent4, leafPtrChild4, lightDirChild4, radianceChild4);
             }
             
         }
