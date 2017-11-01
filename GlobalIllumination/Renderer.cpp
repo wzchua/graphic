@@ -16,6 +16,8 @@ void Renderer::setToPhongShader()
 
 void Renderer::phongRender()
 {
+    using Clock = std::chrono::high_resolution_clock;
+    auto timeStart = Clock::now();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glm::mat4 modelViewMat = scene.cam.getViewMatrix() * scene.getSceneModelMat();
@@ -27,6 +29,8 @@ void Renderer::phongRender()
     glUniformMatrix3fv(glGetUniformLocation(currentShaderProgram, "NormalMatrix"), 1, GL_FALSE, glm::value_ptr(normalMat));
 
     scene.render(currentShaderProgram);
+    std::cout << "time after render: " << std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - timeStart).count() << "ms" << std::endl;
+
 }
 
 void Renderer::voxelRender() {

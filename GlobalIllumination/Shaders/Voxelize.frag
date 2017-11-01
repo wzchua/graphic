@@ -68,7 +68,7 @@ void deferFragment(vec4 color, vec3 normal) {
     frag[index].position = vec4(floor(wcPosition), 1.0f);
     frag[index].color = color;
     frag[index].normal = vec4(normal, 1.0f);
-    logFragment(vec4(wcPosition, 1.0f), color, 0, 0, 0, 0);
+    //logFragment(vec4(wcPosition, 1.0f), color, 0, 0, 0, 0);
 }
 //Generates a voxel list from rasterization
 void main() {    

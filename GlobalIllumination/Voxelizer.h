@@ -45,7 +45,8 @@ private:
     void getLogs(std::vector<logStruct> & logs, bool reset = false);
     int getCount(GLuint counterId);
     int getAndResetCount(GLuint counterId, int resetValue = 0);
-    unsigned int count = 1024 * 1024; //1m count
+    unsigned int fragCount = 1024 * 1024 * 8;
+    unsigned int nodeCount = 1024 * 1024 * 4;
     int brickDim = 2;
     int texWdith = 512;
     int texHeight = 512;
