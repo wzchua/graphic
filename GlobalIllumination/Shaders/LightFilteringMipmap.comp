@@ -8,6 +8,20 @@ layout(binding = 4, r32ui) coherent uniform uimage3D zwLightBrick;
 layout(binding = 5, r32ui) coherent uniform uimage3D radLightBrick;
 layout(binding = 7, r32ui) uniform uimage3D fragmentCounter;
 
+struct NodeStruct {
+    uint parentPtr;
+    uint selfPtr;
+    uint childPtr;
+    uint childBit;
+    uint modelBrickPtr;
+    uint lightBrickPtr;
+};
+
+layout(binding = 2) volatile buffer NodeBlock {
+    NodeStruct node[];
+};
+
+
 uniform int lightmapSize;
 
 
@@ -44,25 +58,75 @@ vec2 convRG16ToVec2( uint val) {
   return  vec2 ( float(val & 0x0000FFFF), float((val & 0xFFFF0000) >>16U));
 }
 uniform int level;
-void main() {
-    ivec2 xy = gl_GlobalInvocationID.xy;
-    if(xy.x < lightmapSize && xy.y < lightmapSize) {
-        //level 0
-        uint nodeValueComposite = texelFetch(lightmapLeafNode, xy, 0).r;
-        uint nodeIndex = nodeValueComposite >> 3;
-        uint leafPtr = nodeValueComposite & 7;
+uniform int level_multiplier;
+
+bool allEqual(uint one, uint two, uint three, uint four) {
+    bool c1 = one == two;
+    bool c2 = three == four;
+    bool c3 = two == three;
+    return c1 && c2 && c3;
+}
+
+void averageLightInfo(uint nodeIndex, uint leafPtr ) {
 
         uint brickPtr = node[nodeIndex].lightBrickPtr;
         uint bx = (brickPtr & 0x1FF) * 2;
         uint by = (brickPtr >> 9) * 2;
         ivec3 pos = ivec3(bx + (leafPtr & 1), by + ((leafPtr & 2) >> 1), (leafPtr & 4) >> 2);
+
+        vec2 xy = convRG16ToVec2(imageLoad(xyLightBrick, pos).r);
+        vec2 zw = convRG16ToVec2(imageLoad(zwLightBrick, pos).r);
+        uint count = imageLoad(fragmentCounter, pos).r;
+        uint radiance = imageLoad(radLightBrick, pos).r;
+        vec4 lightDir = vec4(xy, zw) / float(count);
+        imageStore(dirLightBrick, pos, lightDir);
+}
+
+void main() {
+    ivec2 xy = gl_GlobalInvocationID.xy * level_multiplier;
+    if(xy.x < lightmapSize && xy.y < lightmapSize) {
         if(level == 0) {
-            vec2 xy = convRG16ToVec2(imageLoad(xyLightBrick, pos).r);
-            vec2 zw = convRG16ToVec2(imageLoad(zwLightBrick, pos).r);
-            uint count = imageLoad(fragmentCounter, pos).r;
-            uint radiance = imageLoad(radLightBrick, pos).r;
-            vec4 lightDir = vec4(xy, zw) / float(count);
-            imageStore(dirLightBrick, pos, lightDir);
+            uint nodeValueComposite = texelFetch(lightmapLeafNode, xy + offset, level).r;
+            uint nodeIndex = nodeValueComposite >> 3;
+            uint leafPtr = nodeValueComposite & 7;
+            averageLightInfo(nodeIndex, leafPtr);
+        } else {
+            uint nodeValueCompositeChild1 = texelFetch(lightmapLeafNode, xy + ivec2(0), level-1).r
+            uint nodeIndexChild1 = nodeValueCompositeChild1 >> 3;
+            uint leafPtrChild1 = nodeValueCompositeChild1 & 7;
+            averageLightInfo(nodeIndexChild1, leafPtrChild1);
+
+            uint nodeValueCompositeChild2 = texelFetch(lightmapLeafNode, xy + ivec2(1, 0), level-1).r
+            uint nodeIndexChild2 = nodeValueCompositeChild2 >> 3;
+            uint leafPtrChild2 = nodeValueCompositeChild2 & 7;
+            averageLightInfo(nodeIndexChild2, leafPtrChild2);
+
+            uint nodeValueCompositeChild3 = texelFetch(lightmapLeafNode, xy + ivec2(0, 1), level-1).r
+            uint nodeIndexChild3 = nodeValueCompositeChild3 >> 3;
+            uint leafPtrChild3 = nodeValueCompositeChild3 & 7;
+            averageLightInfo(nodeIndexChild3, leafPtrChild3);
+
+            uint nodeValueCompositeChild4 = texelFetch(lightmapLeafNode, xy + ivec2(1), level-1).r
+            uint nodeIndexChild4 = nodeValueCompositeChild4 >> 3;
+            uint leafPtrChild4 = nodeValueCompositeChild4 & 7;
+            averageLightInfo(nodeIndexChild4, leafPtrChild4);
+
+            uint parent1 = nodeIndexChild1;
+            uint parent2 = nodeIndexChild2;
+            uint parent3 = nodeIndexChild3;
+            uint parent4 = nodeIndexChild4;
+
+            //find ancestor
+            while(!allEqual(parent1, parent2, parent3, parent4)) {
+                parent1 = node[parent1].parentPtr;
+                parent2 = node[parent2].parentPtr;
+                parent3 = node[parent3].parentPtr;
+                parent4 = node[parent4].parentPtr;            
+
+                //populate upper nodes
+
+            }
+            
         }
     }
 }

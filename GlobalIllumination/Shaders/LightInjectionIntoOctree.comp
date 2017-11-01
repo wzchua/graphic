@@ -76,7 +76,7 @@ void main() {
         uint bx = (brickPtr & 0x1FF) * 2;
         uint by = (brickPtr >> 9) * 2;
         ivec3 pos = ivec3(bx + (leafPtr & 1), by + ((leafPtr & 2) >> 1), (leafPtr & 4) >> 2);
-        //TODO: Map to node map instead
+        
         imageAtomicAdd(xyLightBrick, pos, convVec2ToRG16(lightDirection.xy * 255.0f));
         imageAtomicAdd(zwLightBrick, pos, convVec2ToRG16(lightDirection.zw * 255.0f));
         imageAtomicAdd(radLightBrick, pos, lightRadiance); // consider solid angle before adding
