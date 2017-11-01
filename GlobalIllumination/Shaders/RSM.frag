@@ -15,6 +15,7 @@ struct NodeStruct {
     uint childPtr;
     uint childBit;
     uint modelBrickPtr;
+    uint lightBit;
     uint lightBrickPtr;
 };
 
@@ -83,10 +84,13 @@ void main() {
     while(currentLevel < lowestLevel - 1) {
         // move to next node  
         currentLevel++;
-        nodeIndex = node[nodeIndex].childPtr + getPtrOffset(levelOffsets[currentLevel]);
+        uint intermediateChildOffset = getPtrOffset(levelOffsets[currentLevel]);
+        atomicOr(node[nodeIndex].lightBit, 1 << intermediateChildOffset);
+        nodeIndex = node[nodeIndex].childPtr + intermediateChildOffset;
     }
     ivec3 innerFrameOffset = levelOffsets[lowestLevel];
     uint leafOffset = getPtrOffset(innerFrameOffset);
+    atomicOr(node[nodeIndex].lightBit, 1 << leafOffset);
 
     uint leafState = atomicCompSwap(node[nodeIndex].lightBrickPtr, 0, ISPROCESS); 
     //initialize light brick if not initialized   

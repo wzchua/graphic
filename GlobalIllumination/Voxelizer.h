@@ -23,6 +23,7 @@ public:
         unsigned int childPtr;
         unsigned int childBit;
         unsigned int modelBrickPtr;
+        unsigned int lightBit;
         unsigned int lightBrickPtr;
     };
     struct logStruct {

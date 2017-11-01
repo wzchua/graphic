@@ -25,6 +25,7 @@ struct NodeStruct {
     uint childPtr;
     uint childBit;
     uint modelBrickPtr;
+    uint lightBit;
     uint lightBrickPtr;
 };
 
