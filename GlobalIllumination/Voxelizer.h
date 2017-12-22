@@ -8,6 +8,7 @@
 
 #include "ShaderProgram.h"
 #include "Scene.h"
+#include "GLBufferObject.h"
 
 class Voxelizer
 {
@@ -43,8 +44,8 @@ public:
     int projectionAxis = 0;
 private:
     void getLogs(std::vector<logStruct> & logs, bool reset = false);
-    int getCount(GLuint counterId);
-    int getAndResetCount(GLuint counterId, int resetValue = 0);
+    int getCount(GLBufferObject& counterId);
+    int getAndResetCount(GLBufferObject& counterId, int resetValue = 0);
     unsigned int fragCount = 1024 * 1024 * 8;
     unsigned int nodeCount = 1024 * 1024 * 4;
     int brickDim = 2;
@@ -52,12 +53,12 @@ private:
     int texHeight = 512;
     unsigned int maxLogCount = 500;
 
-    GLuint atomicFragCountPtr;
-    GLuint atomicNodeCountPtr;
-    GLuint atomicModelBrickCounterPtr;
-    GLuint atomicLeafNodeCountPtr;
-    GLuint atomicLogCounter;
-
+    GLBufferObject atomicFragCounter;
+    GLBufferObject atomicNodeCounter;
+    GLBufferObject atomicModelBrickCounter;
+    GLBufferObject atomicLeafNodeCounter;
+    GLBufferObject atomicLogCounter;
+    
     GLuint ssboFragmentList;
     GLuint ssboFragmentList2;
     GLuint ssboNodeList;

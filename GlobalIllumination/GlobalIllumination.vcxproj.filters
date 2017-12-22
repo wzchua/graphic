@@ -45,6 +45,21 @@
     <ClCompile Include="Voxelizer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="FragmentToGrid.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GraphicModuleBase.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GLBufferObject.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderToFragmentList.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="VoxelVisualizer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ObjLoader.h">
@@ -66,6 +81,21 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Voxelizer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FragmentToGrid.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GraphicModuleBase.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GLBufferObject.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderToFragmentList.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="VoxelVisualizer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

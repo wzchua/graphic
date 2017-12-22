@@ -1,0 +1,48 @@
+#version 450
+layout (local_size_x = 32, local_size_y = 32) in;
+
+layout(binding = 2, rgba8) coherent uniform uimage3D dirLightBrick;
+layout(binding = 5, r32ui) coherent uniform uimage3D radLightBrick;
+
+layout(binding = 8, RGBA8) uniform sampler2D voxelPositionRender;
+layout(binding = 9, RGBA8) uniform sampler2D voxelNormalRender;
+
+struct NodeStruct {
+    uint parentPtr;
+    uint selfPtr;
+    uint childPtr;
+    uint childBit;
+    uint modelBrickPtr;
+    uint lightBit;
+    uint lightBrickPtr;
+};
+
+layout(binding = 2) volatile buffer NodeBlock {
+    NodeStruct node[];
+};
+uniform ivec2 ScreenSize;
+
+vec4 coneTrace(vec3 origin, vec3 dir) {
+    dir = normalize(dir);
+    float alpha = 0.0f;
+    vec3 pos;
+    while(alpha < 1.0f) {
+        pos = origin + dir;
+        int len = length(pos - origin);
+        //check octree
+
+        //
+    }
+}
+
+void main() {
+    ivec2 xy = gl_GlobalInvocationID.xy;
+    if(xy < ScreenSize) {
+        vec3 pos = texelFetch(voxelPositionRender, xy, 0);
+        vec3 normal = texelFetch(voxelNormalRender, xy, 0);
+        // generate 5 direction for diffuse cones
+
+        // cone trace
+
+    }
+}

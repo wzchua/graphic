@@ -20,24 +20,34 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="FragmentToGrid.cpp" />
     <ClCompile Include="glad.c" />
+    <ClCompile Include="GLBufferObject.cpp" />
+    <ClCompile Include="GraphicModuleBase.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ObjLoader.cpp" />
+    <ClCompile Include="RenderToFragmentList.cpp" />
     <ClCompile Include="ShaderProgram.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="Shape.cpp" />
     <ClCompile Include="tiny_obj_loader.cc" />
     <ClCompile Include="Voxelizer.cpp" />
+    <ClCompile Include="VoxelVisualizer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="FragmentToGrid.h" />
+    <ClInclude Include="GLBufferObject.h" />
+    <ClInclude Include="GraphicModuleBase.h" />
     <ClInclude Include="ObjLoader.h" />
+    <ClInclude Include="RenderToFragmentList.h" />
     <ClInclude Include="ShaderProgram.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="Shape.h" />
     <ClInclude Include="Voxelizer.h" />
+    <ClInclude Include="VoxelVisualizer.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

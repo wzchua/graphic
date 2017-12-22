@@ -38,50 +38,23 @@ Voxelizer::Voxelizer()
     octreeRenderShader.generateShader("./Shaders/VoxelOctreeRayCast.vert", ShaderProgram::VERTEX);
     octreeRenderShader.generateShader("./Shaders/VoxelOctreeRayCast.frag", ShaderProgram::FRAGMENT);
     octreeRenderShader.linkCompileValidate();
-    
-    //atomic counter buffer
-    glGenBuffers(1, &atomicFragCountPtr);
-    // bind the buffer and define its initial storage capacity
-    glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomicFragCountPtr);
-    glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), NULL, GL_DYNAMIC_DRAW);
-    glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, atomicFragCountPtr);
-    glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
+    GLuint zero = 0;
+    GLuint one = 1;
 
-    glGenBuffers(1, &atomicNodeCountPtr);
-    // bind the buffer and define its initial storage capacity
-    glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomicNodeCountPtr);
-    glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), NULL, GL_DYNAMIC_DRAW);
-    glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 1, atomicNodeCountPtr);
-    GLuint* ptr = (GLuint*)glMapBufferRange(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint),
-        GL_MAP_WRITE_BIT);
-    ptr[0] = 1;
-    glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER);
-    glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
+    atomicFragCounter.initialize(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &zero, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, true);
+    atomicFragCounter.bind(0);
 
-    glGenBuffers(1, &atomicModelBrickCounterPtr);
-    // bind the buffer and define its initial storage capacity
-    glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomicModelBrickCounterPtr);
-    glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), NULL, GL_DYNAMIC_DRAW);
-    glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 2, atomicModelBrickCounterPtr);
-    ptr = (GLuint*)glMapBufferRange(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint),
-        GL_MAP_WRITE_BIT);
-    ptr[0] = 1;
-    glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER);
-    glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
+    atomicNodeCounter.initialize(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &one, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, true);
+    atomicNodeCounter.bind(1);
 
-    glGenBuffers(1, &atomicLeafNodeCountPtr);
-    // bind the buffer and define its initial storage capacity
-    glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomicLeafNodeCountPtr);
-    glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), NULL, GL_DYNAMIC_DRAW);
-    glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 3, atomicLeafNodeCountPtr);
-    glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
+    atomicModelBrickCounter.initialize(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &one, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, true);
+    atomicModelBrickCounter.bind(2);
 
-    glGenBuffers(1, &atomicLogCounter);
-    // bind the buffer and define its initial storage capacity
-    glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomicLogCounter);
-    glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), NULL, GL_DYNAMIC_DRAW);
-    glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 7, atomicLogCounter);
-    glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
+    atomicLeafNodeCounter.initialize(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &zero, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, true);
+    atomicModelBrickCounter.bind(3);
+
+    atomicLogCounter.initialize(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &zero, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, true);
+    atomicLogCounter.bind(7);
 
     GLint size;
     glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &size);
@@ -280,7 +253,9 @@ void Voxelizer::voxelizeFragmentList(Scene& scene)
     using Clock = std::chrono::high_resolution_clock;
     auto timeStart = Clock::now();
     int currentShaderProgram = voxelizeListShader.use();
+
     resetAllData();
+    atomicFragCounter.bind(0);
     std::cout << "time after reset: " << std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - timeStart).count() << "ms" << std::endl;
 
     glViewport(0, 0, 512, 512);
@@ -297,10 +272,11 @@ void Voxelizer::voxelizeFragmentList(Scene& scene)
     glDisable(GL_BLEND);
 
     scene.render(currentShaderProgram);
+    glMemoryBarrier(GL_ATOMIC_COUNTER_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
     std::cout << "time after render: " << std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - timeStart).count() << "ms" << std::endl;
 
     // get length of fragment list
-    unsigned int fragmentCount = getAndResetCount(atomicFragCountPtr);
+    unsigned int fragmentCount = getAndResetCount(atomicFragCounter);
     /*
     glm::vec4 min = glm::vec4(0.0);
     glm::vec4 max = glm::vec4(0.0);
@@ -367,7 +343,7 @@ void Voxelizer::voxelizeFragmentList(Scene& scene)
         glDispatchCompute(workgroupX, 1, 1);
         isOdd = !isOdd;
 
-        fragmentCount = getAndResetCount(atomicFragCountPtr);
+        fragmentCount = getAndResetCount(atomicFragCounter);
         std::cout << "time after iter: " << std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - timeStart).count() << "ms" << std::endl;
 
 
@@ -398,7 +374,7 @@ void Voxelizer::voxelizeFragmentList(Scene& scene)
     std::cout << "time after octree: " << std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - timeStart).count() << "ms" << std::endl;
 
 
-    int leafCount = getCount(atomicModelBrickCounterPtr);
+    int leafCount = getCount(atomicModelBrickCounter);
     std::cout << "Leaves: " << leafCount << std::endl;
     //std::vector<logStruct> logs;
     //getLogs(logs, true);
@@ -447,22 +423,16 @@ void Voxelizer::voxelizeFragmentList(Scene& scene)
     //getLogs(logs2, true);
 
     auto timeEnd = Clock::now();
-    std::cout << "time: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeEnd - timeStart).count() << "ms" << std::endl;
+    std::cout << "time end: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeEnd - timeStart).count() << "ms" << std::endl;
 }
 
 void Voxelizer::resetAllData()
 {
-    //getAndResetCount(atomicFragCountPtr);
-    glInvalidateBufferData(atomicFragCountPtr);
-    glClearNamedBufferData(atomicFragCountPtr, GL_RG32UI, GL_RED_INTEGER, GL_UNSIGNED_INT, NULL);
-    getAndResetCount(atomicNodeCountPtr, 1);
-    getAndResetCount(atomicModelBrickCounterPtr, 1);
-    //getAndResetCount(atomicLeafNodeCountPtr);
-    glInvalidateBufferData(atomicLeafNodeCountPtr);
-    glClearNamedBufferData(atomicLeafNodeCountPtr, GL_RG32UI, GL_RED_INTEGER, GL_UNSIGNED_INT, NULL);
-    //getAndResetCount(atomicLogCounter);
-    glInvalidateBufferData(atomicLeafNodeCountPtr);
-    glClearNamedBufferData(atomicLeafNodeCountPtr, GL_RG32UI, GL_RED_INTEGER, GL_UNSIGNED_INT, NULL);
+    getAndResetCount(atomicFragCounter);
+    getAndResetCount(atomicNodeCounter, 1);
+    getAndResetCount(atomicModelBrickCounter, 1);
+    getAndResetCount(atomicLeafNodeCounter);
+    getAndResetCount(atomicLogCounter);
 
     glInvalidateBufferData(ssboNodeList);
     glClearNamedBufferData(ssboNodeList, GL_R8UI, GL_RED_INTEGER, GL_UNSIGNED_BYTE, NULL);
@@ -484,6 +454,7 @@ void Voxelizer::resetAllData()
     glClearTexImage(texture3DColorList, 0, GL_RGBA, GL_FLOAT, NULL);
     glInvalidateTexImage(texture3DNormalList, 0);
     glClearTexImage(texture3DNormalList, 0, GL_RGBA, GL_FLOAT, NULL);
+    glMemoryBarrier(GL_ATOMIC_COUNTER_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
 }
 
 void Voxelizer::getLogs(std::vector<logStruct>& logs, bool reset)
@@ -500,27 +471,19 @@ void Voxelizer::getLogs(std::vector<logStruct>& logs, bool reset)
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
-int Voxelizer::getCount(GLuint counterId)
+int Voxelizer::getCount(GLBufferObject& counter)
 {
     int count;
-    glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, counterId);
-    GLuint* ptr = (GLuint*)glMapBufferRange(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint),
-        GL_MAP_READ_BIT);
+    GLuint* ptr = (GLuint*)counter.getPtr();
     count = ptr[0];
-    glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER);
-    glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
     return count;
 }
 
-int Voxelizer::getAndResetCount(GLuint counterId, int resetValue)
+int Voxelizer::getAndResetCount(GLBufferObject& counter, int resetValue)
 {
     int count;
-    glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, counterId);
-    GLuint* ptr = (GLuint*)glMapBufferRange(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint),
-        GL_MAP_READ_BIT | GL_MAP_WRITE_BIT);
+    GLuint* ptr = (GLuint*)counter.getPtr();
     count = ptr[0];
     ptr[0] = resetValue;
-    glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER);
-    glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
     return count;
 }

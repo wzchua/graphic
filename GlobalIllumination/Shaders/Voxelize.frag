@@ -58,10 +58,6 @@ layout(binding = 0, RGBA8) uniform image3D texture3D;
 
 const vec2 size = vec2(2.0,0.0);
 const ivec3 off = ivec3(-1,0,1);
-const int length = 400;
-const int width = 400;
-
-bool isToDefer = false;
 
 void deferFragment(vec4 color, vec3 normal) {
     uint index = atomicCounterIncrement(fragListPtr);
