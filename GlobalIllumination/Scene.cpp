@@ -13,28 +13,20 @@ Scene::~Scene()
 
 bool Scene::LoadObjScene(std::string filename)
 {
-    std::vector<unsigned int> textureIds;
-    for (auto const& iter : textureMap) {
-        textureIds.push_back(iter.second);
-    }
-    glDeleteTextures(textureIds.size(), textureIds.data());
-    textureMap.clear();
+    mSceneMatManager.resetTextureMap();
     list.clear();
-    if (!ObjLoader::loadObj(filename, list, textureMap, sceneMin, sceneMax)) {
+    if (!ObjLoader::loadObj(filename, mSceneMatManager, sceneMin, sceneMax)) {
         return false;
     }
 
-    for (int i = 0; i < list.size(); i++) {
-        list[i].generateGPUBuffers();
-    }
+    mSceneMatManager.generateGPUBuffers();
+    mSceneMatManager.makeAllTextureResident();
     return true;
 }
 
 void Scene::render(int programId)
 {
-    for (int i = 0; i < list.size(); i++) {
-        list[i].render(programId, textureMap, nullTextureId);
-    }
+    mSceneMatManager.render();
 }
 
 glm::mat4 Scene::getSceneModelMat()

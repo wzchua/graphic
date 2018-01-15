@@ -29,7 +29,7 @@ void Renderer::phongRender()
     glUniformMatrix3fv(glGetUniformLocation(currentShaderProgram, "NormalMatrix"), 1, GL_FALSE, glm::value_ptr(normalMat));
 
     scene.render(currentShaderProgram);
-    std::cout << "time after render: " << std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - timeStart).count() << "ms" << std::endl;
+    std::cout << "time after render: " << std::chrono::duration_cast<std::chrono::nanoseconds>(Clock::now() - timeStart).count() << "ns" << std::endl;
 
 }
 
@@ -51,17 +51,9 @@ Renderer::Renderer(GLFWwindow * window, unsigned int viewHeight, unsigned int vi
     phongShader.generateShader("./Shaders/Phong.vert", ShaderProgram::VERTEX);
     phongShader.generateShader("./Shaders/Phong.frag", ShaderProgram::FRAGMENT);
     phongShader.linkCompileValidate();
-    
-    int w = 1, h = 1;
-    unsigned char image[4] = { 255, 255, 255, 255 };
-    glGenTextures(1, &nullTextureId);
-    glBindTexture(GL_TEXTURE_2D, nullTextureId);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, &image);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    scene.nullTextureId = nullTextureId;
 
-    //setToPhongShader();
-    setToVoxelizeShader();
+    setToPhongShader();
+    //setToVoxelizeShader();
 }
 
 Renderer::~Renderer()

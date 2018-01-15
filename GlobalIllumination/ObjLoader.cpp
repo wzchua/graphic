@@ -9,7 +9,7 @@ static bool fileExists(const std::string & fileName)
     return 0 == ret;
 }
 
-bool ObjLoader::loadObj(const std::string & path, std::vector<Shape>& meshList, std::map<std::string, GLuint> &textureMap, glm::vec3 & min, glm::vec3 & max)
+bool ObjLoader::loadObj(const std::string & path, SceneMaterialManager & sceneMatManager, glm::vec3 & min, glm::vec3 & max)
 {
     tinyobj::attrib_t attrib;
     min = glm::vec3(std::numeric_limits<float>::max());
@@ -46,27 +46,28 @@ bool ObjLoader::loadObj(const std::string & path, std::vector<Shape>& meshList, 
 
     std::cout << baseDir << "\n";
     for (auto const& m : materials) {
+        printf("material name: %s\n", m.name.c_str());
         if (m.ambient_texname.length() > 0) {
-            loadTexture(textureMap, m.ambient_texname, baseDir);
+            loadTexture(sceneMatManager.textureMap, m.ambient_texname, baseDir);
         }
         if (m.diffuse_texname.length() > 0) {
-            loadTexture(textureMap, m.diffuse_texname, baseDir);
+            loadTexture(sceneMatManager.textureMap, m.diffuse_texname, baseDir);
         }
         if (m.bump_texname.length() > 0) {
-            loadTexture(textureMap, m.bump_texname, baseDir);
+            loadTexture(sceneMatManager.textureMap, m.bump_texname, baseDir);
         }
         if (m.alpha_texname.length() > 0) {
-            loadTexture(textureMap, m.alpha_texname, baseDir);
+            loadTexture(sceneMatManager.textureMap, m.alpha_texname, baseDir);
         }
         if (m.specular_texname.length() > 0) {
-            loadTexture(textureMap, m.specular_texname, baseDir);
+            loadTexture(sceneMatManager.textureMap, m.specular_texname, baseDir);
         }
     }
 
 
     for (auto const& shape : shapes) {
         std::vector<tinyobj::material_t> matList;
-        std::map<int, int> matMap;
+        std::map<int, size_t> matMap;
         if (shape.mesh.material_ids.size() == 0) {
             matList.push_back(materials[materials.size() - 1]);
         }
@@ -88,7 +89,7 @@ bool ObjLoader::loadObj(const std::string & path, std::vector<Shape>& meshList, 
             }
             for (int i = 0; i < shape.mesh.material_ids.size(); i++) {
                 int id = shape.mesh.material_ids[i];
-                int index = matMap[id];
+                size_t index = matMap[id];
                 newShapes[index].mesh.material_ids.push_back(shape.mesh.material_ids[i]);
                 newShapes[index].mesh.num_face_vertices.push_back(shape.mesh.num_face_vertices[i]);
                 newShapes[index].mesh.indices.push_back(shape.mesh.indices[i * 3 + 0]);
@@ -97,13 +98,17 @@ bool ObjLoader::loadObj(const std::string & path, std::vector<Shape>& meshList, 
             }
 
             for (int i = 0; i < matList.size(); i++) {
-                meshList.push_back(Shape());
-                meshList.back().buildVBO(newShapes[i], attrib, matList[i], min, max);
+                GLuint64 texAmbient, texDiffuse, texAlpha, texHeight;
+                sceneMatManager.getTextureHandles(matList[i], texAmbient, texDiffuse, texAlpha, texHeight);
+                GLuint64 texHandles[4] = { texAmbient, texDiffuse, texAlpha, texHeight };
+                sceneMatManager.addMaterialShapeGroup(newShapes[i], attrib, matList[i], texHandles);
             }
         }
         else {
-            meshList.push_back(Shape());
-            meshList.back().buildVBO(shape, attrib, matList[0], min, max);
+            GLuint64 texAmbient, texDiffuse, texAlpha, texHeight;
+            sceneMatManager.getTextureHandles(matList[0], texAmbient, texDiffuse, texAlpha, texHeight);
+            GLuint64 texHandles[4] = { texAmbient, texDiffuse, texAlpha, texHeight };
+            sceneMatManager.addMaterialShapeGroup(shape, attrib, matList[0], texHandles);
         }
 	}
 
