@@ -140,9 +140,6 @@ void ShapeGroup::generateGPUBuffers()
 
 void ShapeGroup::render() const
 {
-    if (mIndices.size() == 0) {
-        return;
-    }
     //CheckGLError2();
     glBindVertexArray(mVAOId);
     //glMultiDrawElements(GL_TRIANGLES, mListOfShapeCounts.data(), GL_UNSIGNED_INT, mListOfShapeStarts.data(), mListOfShapeCounts.size());
