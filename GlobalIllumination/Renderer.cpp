@@ -29,7 +29,7 @@ void Renderer::phongRender()
     glUniformMatrix3fv(glGetUniformLocation(currentShaderProgram, "NormalMatrix"), 1, GL_FALSE, glm::value_ptr(normalMat));
 
     scene.render(currentShaderProgram);
-    std::cout << "time after render: " << std::chrono::duration_cast<std::chrono::nanoseconds>(Clock::now() - timeStart).count() << "ns" << std::endl;
+    std::cout << "time after render: " << std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - timeStart).count() << "ms" << std::endl;
 
 }
 

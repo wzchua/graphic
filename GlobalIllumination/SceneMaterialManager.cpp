@@ -4,22 +4,32 @@
 
 void SceneMaterialManager::addMaterialShapeGroup(const tinyobj::shape_t & shape, const tinyobj::attrib_t & attrib, const tinyobj::material_t & material, const GLuint64 textureIds[4])
 {
-    ShapeGroup& group = mMatGroupMap[material.name];
+    auto const & result = mMatGroupMap.find(material.name);
+    GLuint index = -1;
+    if (result == mMatGroupMap.end()) {
+        index = mGroupList.size();
+        mGroupList.emplace_back();
+    }
+    else {
+        index = result->second;
+    }
+    
+    ShapeGroup& group = mGroupList[index];
     group.addShape(shape, attrib, textureIds, material);
 
 }
 
 void SceneMaterialManager::generateGPUBuffers()
 {
-    for (auto & g : mMatGroupMap) {
-        g.second.generateGPUBuffers();
+    for (auto & g : mGroupList) {
+        g.generateGPUBuffers();
     }
 }
 
 void SceneMaterialManager::render()
 {
-    for (auto & gIter : mMatGroupMap) {
-        gIter.second.render();
+    for (auto & g : mGroupList) {
+        g.render();
     }
 }
 
@@ -99,4 +109,7 @@ SceneMaterialManager::~SceneMaterialManager()
 {
     glDeleteTextures(1, &nullTextureId);
     resetTextureMap();
+    for (int i = 0; i < mGroupList.size(); i++) {
+        mGroupList[i].destroyData();
+    }
 }

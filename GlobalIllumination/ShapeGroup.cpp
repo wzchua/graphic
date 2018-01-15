@@ -143,17 +143,25 @@ void ShapeGroup::render() const
     if (mIndices.size() == 0) {
         return;
     }
-    CheckGLError2();
+    //CheckGLError2();
     glBindVertexArray(mVAOId);
     //glMultiDrawElements(GL_TRIANGLES, mListOfShapeCounts.data(), GL_UNSIGNED_INT, mListOfShapeStarts.data(), mListOfShapeCounts.size());
     glDrawElements(GL_TRIANGLES, mIndices.size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
-    CheckGLError2();
+    //CheckGLError2();
 }
 
 std::pair<glm::vec3, glm::vec3> ShapeGroup::getMinMaxCoords() const
 {
     return std::pair<glm::vec3, glm::vec3>(min, max);
+}
+
+void ShapeGroup::destroyData()
+{
+    if (mUploadedToGPU) {
+        glDeleteBuffers(1, &mVBOId);
+        glDeleteVertexArrays(1, &mVAOId);
+    }
 }
 
 ShapeGroup::ShapeGroup()
@@ -163,8 +171,4 @@ ShapeGroup::ShapeGroup()
 
 ShapeGroup::~ShapeGroup()
 {
-    if (mUploadedToGPU) {
-        glDeleteBuffers(1, &mVBOId);
-        glDeleteVertexArrays(1, &mVAOId);
-    }
 }

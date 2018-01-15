@@ -8,7 +8,8 @@ class SceneMaterialManager
 {
 private:
     GLuint nullTextureId;
-    std::map<std::string, ShapeGroup> mMatGroupMap;
+    std::map<std::string, GLuint> mMatGroupMap;
+    std::vector<ShapeGroup> mGroupList;
     std::map<std::string, GLuint64> mTextureResident;
 
     // prevent copying 

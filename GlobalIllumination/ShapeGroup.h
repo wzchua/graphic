@@ -20,14 +20,12 @@ private:
     glm::vec3 min;
     glm::vec3 max;
     GLuint64 textureHandles[4];
-    // prevent copying 
-    ShapeGroup(const ShapeGroup&) = delete; // no implementation 
-    ShapeGroup& operator=(const ShapeGroup&) = delete; // no implementation 
 public:
     void addShape(const tinyobj::shape_t & shape, const tinyobj::attrib_t & attrib, const GLuint64 textureIds[4], tinyobj::material_t const & mat);
     void generateGPUBuffers();
     void render() const;
     std::pair<glm::vec3, glm::vec3> getMinMaxCoords() const;
+    void destroyData();
     ShapeGroup();
     ~ShapeGroup();
 };
