@@ -9,6 +9,7 @@ void SceneMaterialManager::addMaterialShapeGroup(const tinyobj::shape_t & shape,
     if (result == mMatGroupMap.end()) {
         index = mGroupList.size();
         mGroupList.emplace_back();
+        mMatGroupMap[material.name] = index;
     }
     else {
         index = result->second;
