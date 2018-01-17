@@ -31,6 +31,9 @@ bool Scene::LoadObjScene(std::string filename)
 
     mSceneMatManager.generateGPUBuffers();
     mSceneMatManager.makeAllTextureResident();
+    auto minmax = mSceneMatManager.getSceneMinMaxCoords();
+    sceneMin = minmax.first;
+    sceneMax = minmax.second;
     return true;
 }
 
@@ -56,11 +59,7 @@ void Scene::updateMatrixBuffer()
     matrixBlock.modelViewProjMatrix = cam.getProjMatrix() * matrixBlock.modelViewMatrix;
     matrixBlock.normalMatrix = glm::mat4(glm::transpose(glm::inverse(glm::mat3(matrixBlock.modelViewMatrix))));
 
-    glNamedBufferData(matrixBuffer, sizeof(MatrixBlock), &matrixBlock, GL_DYNAMIC_DRAW);
-    /*
-    glBindBuffer(GL_UNIFORM_BUFFER, matrixBuffer);
-    glBufferData(GL_UNIFORM_BUFFER, sizeof(MatrixBlock), &matrixBlock, GL_DYNAMIC_DRAW);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);*/
+    glNamedBufferSubData(matrixBuffer, 0, sizeof(MatrixBlock), &matrixBlock);
 }
 
 GLuint Scene::getMatrixBuffer() {

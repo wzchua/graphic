@@ -36,6 +36,7 @@ public:
     void makeAllTextureResident();
     void resetTextureMap();
     void getTextureHandles(const tinyobj::material_t & material, GLuint64 & texAmbient, GLuint64 & texDiffuse, GLuint64 & texAlpha, GLuint64 & texHeight);
+    std::pair<glm::vec3, glm::vec3> getSceneMinMaxCoords() const;
     SceneMaterialManager();
     ~SceneMaterialManager();
 };

@@ -116,6 +116,19 @@ void SceneMaterialManager::getTextureHandles(const tinyobj::material_t & materia
     }
 }
 
+std::pair<glm::vec3, glm::vec3> SceneMaterialManager::getSceneMinMaxCoords() const
+{
+    std::pair<glm::vec3, glm::vec3> minmax = mGroupList[0].getMinMaxCoords();
+
+    for (auto & g : mGroupList) {
+        auto newMinMax = g.getMinMaxCoords();
+        minmax.first = glm::min(minmax.first, newMinMax.first);
+        minmax.second = glm::min(minmax.second, newMinMax.second);
+    }
+
+    return std::pair<glm::vec3, glm::vec3>();
+}
+
 SceneMaterialManager::SceneMaterialManager()
 {
     int w = 1, h = 1;

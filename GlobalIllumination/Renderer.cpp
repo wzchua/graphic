@@ -13,8 +13,8 @@ void Renderer::phongRender()
 
     mModuleRenderPhong.run(scene);
 
-    auto timeEnd = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - timeStart).count();
-    std::cout << "time after render: " << timeEnd << "ms" << std::endl;
+    auto timeEnd = std::chrono::duration_cast<std::chrono::nanoseconds>(Clock::now() - timeStart).count();
+    std::cout << "time after render: " << timeEnd << "ns" << std::endl;
 
 }
 
