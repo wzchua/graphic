@@ -20,23 +20,15 @@ void RenderPhong::setup(Scene & scene, GLuint viewWidth, GLuint viewHeight)
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
 
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene.getMatrixBuffer());
     glBindBufferBase(GL_UNIFORM_BUFFER, 2, scene.getLightBuffer());
 }
 
 void RenderPhong::run(Scene & scene)
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    int currentShaderProgram = phongShader.getProgramId();
-
-    glm::mat4 modelViewMat = scene.cam.getViewMatrix() * scene.getSceneModelMat();
-    glm::mat4 modelViewProjMat = scene.cam.getProjMatrix() * modelViewMat;
-    glm::mat3 normalMat = glm::transpose(glm::inverse(glm::mat3(modelViewMat)));
-
-    glUniformMatrix4fv(glGetUniformLocation(currentShaderProgram, "ModelViewMatrix"), 1, GL_FALSE, glm::value_ptr(modelViewMat));
-    glUniformMatrix4fv(glGetUniformLocation(currentShaderProgram, "ModelViewProjMatrix"), 1, GL_FALSE, glm::value_ptr(modelViewProjMat));
-    glUniformMatrix3fv(glGetUniformLocation(currentShaderProgram, "NormalMatrix"), 1, GL_FALSE, glm::value_ptr(normalMat));
-
-    scene.render(currentShaderProgram);
+    scene.updateMatrixBuffer();
+    scene.render(phongShader.getProgramId());
 }
 
 RenderPhong::RenderPhong()

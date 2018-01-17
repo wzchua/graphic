@@ -14,11 +14,11 @@ layout (location = 9) in vec3 vDiffuse;
 layout (location = 10) in vec3 vSpecular;
 layout (location = 11) in float vShininess;
 
-//layout(binding = 0) uniform MatrixBlock {
-    uniform mat4 ModelViewMatrix;     // ModelView matrix.
-    uniform mat4 ModelViewProjMatrix; // ModelView matrix * Projection matrix.
-    uniform mat3 NormalMatrix;        // For transforming object-space direction 
-//};                                    //   vector to eye space.
+layout(binding = 0, std140) uniform MatrixBlock {
+    mat4 ModelViewMatrix;     // ModelView matrix.
+    mat4 ModelViewProjMatrix; // ModelView matrix * Projection matrix.
+    mat3 NormalMatrix;        // For transforming object-space direction 
+};                                    //   vector to eye space.
 
 layout (location = 0) out vec3 ecPosition;   // Vertex position in eye space.
 layout (location = 1) out vec3 ecNormal;     // Vertex normal in eye space.
