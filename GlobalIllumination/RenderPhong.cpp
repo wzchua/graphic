@@ -7,9 +7,10 @@ void RenderPhong::initialize()
     phongShader.generateShader("./Shaders/Phong.vert", ShaderProgram::VERTEX);
     phongShader.generateShader("./Shaders/Phong.frag", ShaderProgram::FRAGMENT);
     phongShader.linkCompileValidate();
+
 }
 
-void RenderPhong::run(Scene & scene, GLuint viewWidth, GLuint viewHeight)
+void RenderPhong::setup(Scene & scene, GLuint viewWidth, GLuint viewHeight)
 {
     int currentShaderProgram = phongShader.use();
 
@@ -18,9 +19,14 @@ void RenderPhong::run(Scene & scene, GLuint viewWidth, GLuint viewHeight)
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
-    scene.updateLightToGPU(currentShaderProgram);
 
+    glBindBufferBase(GL_UNIFORM_BUFFER, 2, scene.getLightBuffer());
+}
+
+void RenderPhong::run(Scene & scene)
+{
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    int currentShaderProgram = phongShader.getProgramId();
 
     glm::mat4 modelViewMat = scene.cam.getViewMatrix() * scene.getSceneModelMat();
     glm::mat4 modelViewProjMat = scene.cam.getProjMatrix() * modelViewMat;

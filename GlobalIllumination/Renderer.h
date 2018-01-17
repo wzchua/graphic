@@ -8,6 +8,7 @@
 #include "Scene.h"
 #include "ShaderProgram.h"
 #include "Voxelizer.h"
+#include "RenderPhong.h"
 
 class Renderer
 {
@@ -16,7 +17,6 @@ private:
     RenderType type;
     GLFWwindow * window;
     Scene scene;
-    ShaderProgram phongShader;
     void phongRender();
     void voxelRender();
     unsigned int currentShaderProgram;
@@ -24,6 +24,7 @@ private:
     unsigned int viewWidth;
     GLuint nullTextureId;
     Voxelizer voxelizer;
+    RenderPhong mModuleRenderPhong;
 
     void onCursorPosition(GLFWwindow* window, double xpos, double ypos);
     void onKey(GLFWwindow* window, int key, int scancode, int action, int mods);

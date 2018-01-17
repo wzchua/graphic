@@ -27,12 +27,12 @@ layout(binding = 1) uniform MatBlock {
     float shininess;
 };
 
-//layout(binding = 2) uniform LightBlock {                            
-    uniform vec4 LightPosition; // Given in eye space. Can be directional.
-    uniform vec4 LightAmbient; 
-    uniform vec4 LightDiffuse;
-    uniform vec4 LightSpecular;
-//};
+layout(binding = 2) uniform LightBlock {                            
+    vec4 LightPosition; // Given in eye space. Can be directional.
+    vec4 LightAmbient; 
+    vec4 LightDiffuse;
+    vec4 LightSpecular;
+};
 
 /*
 layout (binding=0) uniform sampler2D ambientTexture;

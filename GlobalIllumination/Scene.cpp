@@ -4,11 +4,16 @@
 
 Scene::Scene()
 {
+    glGenBuffers(1, &lightBuffer);
+    glBindBuffer(GL_UNIFORM_BUFFER, lightBuffer);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(LightBlock), &light, GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
 
 Scene::~Scene()
 {
+    glDeleteBuffers(1, &lightBuffer);
 }
 
 bool Scene::LoadObjScene(std::string filename)
@@ -34,10 +39,7 @@ glm::mat4 Scene::getSceneModelMat()
     return modelMat;
 }
 
-void Scene::updateLightToGPU(int currentShaderProgram)
+GLuint Scene::getLightBuffer()
 {
-    glUniform4fv(glGetUniformLocation(currentShaderProgram, "LightPosition"), 1, lightPosition);
-    glUniform4fv(glGetUniformLocation(currentShaderProgram, "LightAmbient"), 1, lightAmbient);
-    glUniform4fv(glGetUniformLocation(currentShaderProgram, "LightDiffuse"), 1, lightDiffuse);
-    glUniform4fv(glGetUniformLocation(currentShaderProgram, "LightSpecular"), 1, lightSpecular);
+    return lightBuffer;
 }

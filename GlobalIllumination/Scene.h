@@ -12,10 +12,14 @@
 class Scene
 {
 private:
-    const GLfloat lightPosition[4] = { 10.0f, 5.0f, 10.0f, 0.0f };   // Directional light. Given in eye space.
-    const GLfloat lightAmbient[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
-    const GLfloat lightDiffuse[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
-    const GLfloat lightSpecular[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+    struct LightBlock {
+        glm::vec4 position;
+        glm::vec4 ambient;
+        glm::vec4 diffuse;
+        glm::vec4 specular;
+    };
+    LightBlock light{ { 10.0f, 5.0f, 10.0f, 0.0f }, { 0.1f, 0.1f, 0.1f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } };
+    GLuint lightBuffer;
     std::map<std::string, GLuint> textureMap;
     std::vector<Shape> list;
     glm::mat4 modelMat = glm::scale(glm::mat4(1.0f), glm::vec3(0.2, 0.2, 0.2));
@@ -32,7 +36,7 @@ public:
     bool LoadObjScene(std::string filename);
     void render(int programId);
     glm::mat4 getSceneModelMat();
-    void updateLightToGPU(int currentShaderProgram);
+    GLuint getLightBuffer();
     glm::vec3 getSceneMinCoords() { return sceneMin; }
     glm::vec3 getSceneMaxCoords() { return sceneMax; }
 };

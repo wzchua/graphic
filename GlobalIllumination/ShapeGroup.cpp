@@ -99,6 +99,21 @@ void ShapeGroup::generateGPUBuffers()
     glBindBuffer(GL_ARRAY_BUFFER, mVBOId);
     glBufferData(GL_ARRAY_BUFFER, mVertexBuffer.size() * vertexSize, mVertexBuffer.data(), GL_DYNAMIC_DRAW);
 
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+    glEnableVertexAttribArray(2);
+    glVertexAttribFormat(0, 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, Vertex::position));
+    glVertexAttribFormat(1, 3, GL_FLOAT, GL_FALSE, offsetof(Vertex, Vertex::normal));
+    glVertexAttribFormat(2, 2, GL_FLOAT, GL_FALSE, offsetof(Vertex, Vertex::texCoord));
+    glVertexAttribBinding(0, 0);
+    glVertexAttribBinding(1, 0);
+    glVertexAttribBinding(2, 0);
+    glBindVertexBuffer(0, mVBOId, 0, vertexSize);
+    
+    /*
+    glBindBuffer(GL_ARRAY_BUFFER, mVBOId);
+    glBufferData(GL_ARRAY_BUFFER, mVertexBuffer.size() * vertexSize, mVertexBuffer.data(), GL_DYNAMIC_DRAW);
+
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, vertexSize, (GLvoid*)offsetof(Vertex, Vertex::position));
     glEnableVertexAttribArray(0);
 
@@ -106,7 +121,8 @@ void ShapeGroup::generateGPUBuffers()
     glEnableVertexAttribArray(1);
 
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, vertexSize, (GLvoid*)offsetof(Vertex, Vertex::texCoord));
-    glEnableVertexAttribArray(2);
+    glEnableVertexAttribArray(2);*/
+    
     /*
     glVertexAttribLPointer(3, 1, GL_UNSIGNED_INT64_ARB, vertexSize, (GLvoid*)offsetof(Vertex, Vertex::texAmbient));
     glEnableVertexAttribArray(3);

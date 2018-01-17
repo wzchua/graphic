@@ -33,13 +33,13 @@ void SceneMaterialManager::addMaterialShapeGroup(const tinyobj::shape_t & shape,
 
 void SceneMaterialManager::generateGPUBuffers()
 {
+    auto matSize = sizeof(Mat);
     //Mat UBO
     for (auto & m : mMat) {
         GLuint buffer;
-
         glGenBuffers(1, &buffer);
         glBindBuffer(GL_UNIFORM_BUFFER, buffer);
-        glBufferData(GL_UNIFORM_BUFFER, sizeof(m), &m, GL_DYNAMIC_DRAW);
+        glBufferData(GL_UNIFORM_BUFFER, matSize, &m, GL_STATIC_DRAW);
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
         mMatBufferList.push_back(buffer);
     }
