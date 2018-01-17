@@ -4,6 +4,7 @@
 layout (location = 0) in vec3 ecPosition;   // Fragment's 3D position in eye space.
 layout (location = 1) in vec3 ecNormal;     // Fragment's normal vector in eye space.
 layout (location = 2) in vec2 fTexCoord;
+/*
 layout (location = 3) flat in sampler2D texAmbient;
 layout (location = 4) flat in sampler2D texDiffuse;
 layout (location = 5) flat in sampler2D texAlpha;
@@ -12,19 +13,26 @@ layout (location = 7) flat in int useBumpMap;
 layout (location = 8) flat in vec3 ambient;
 layout (location = 9) flat in vec3 diffuse;
 layout (location = 10) flat in vec3 specular;
-layout (location = 11) flat in float shininess;
+layout (location = 11) flat in float shininess;*/
 
-layout(binding = 0) uniform atomic_uint fragListPtr;
+layout(binding = 1) uniform MatBlock {
+    sampler2D texAmbient;
+    sampler2D texDiffuse;
+    sampler2D texAlpha;
+    sampler2D texHeight;
+    vec4 ambient;
+    vec4 diffuse;
+    vec4 specular;
+    int useBumpMap;
+    float shininess;
+};
 
-uniform mat4 ModelViewMatrix;     // ModelView matrix.
-uniform mat4 ModelViewProjMatrix; // ModelView matrix * Projection matrix.
-uniform mat3 NormalMatrix;        // For transforming object-space direction 
-                                  //   vector to eye space.
-                            
-uniform vec4 LightPosition; // Given in eye space. Can be directional.
-uniform vec4 LightAmbient; 
-uniform vec4 LightDiffuse;
-uniform vec4 LightSpecular;
+//layout(binding = 2) uniform LightBlock {                            
+    uniform vec4 LightPosition; // Given in eye space. Can be directional.
+    uniform vec4 LightAmbient; 
+    uniform vec4 LightDiffuse;
+    uniform vec4 LightSpecular;
+//};
 
 /*
 layout (binding=0) uniform sampler2D ambientTexture;
@@ -51,7 +59,6 @@ void main()
     if(texture(texAlpha, fTexCoord).r < 0.5f) {
         discard;
     }
-    atomicCounterIncrement(fragListPtr);
     vec3 viewVec = -normalize(ecPosition);
     vec3 necNormal = normalize(ecNormal);
 
@@ -78,8 +85,8 @@ void main()
     float N_L = max(0.0, dot(necNormal, lightVec));
     float R_V = max(0.0, dot(reflectVec, viewVec));
     float spec = (R_V == 0.0) ? 0.0 : pow(R_V, shininess);
-    vec3 color = LightAmbient.rgb  * (ambient * texture(texAmbient, fTexCoord).rgb)
-        + LightDiffuse.rgb * (diffuse * texture(texDiffuse, fTexCoord).rgb) * N_L 
-        + LightSpecular.rgb * specular * spec;
+    vec3 color = LightAmbient.rgb  * (ambient.rgb * texture(texAmbient, fTexCoord).rgb)
+        + LightDiffuse.rgb * (diffuse.rgb * texture(texDiffuse, fTexCoord).rgb) * N_L 
+        + LightSpecular.rgb * specular.rgb * spec;
     FragColor = vec4(color, 1.0);
 }

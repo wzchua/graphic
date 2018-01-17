@@ -7,6 +7,7 @@ struct Vertex {
     glm::vec3 position;
     glm::vec3 normal;
     glm::vec2 texCoord;
+    /*
     GLuint64 texAmbient;
     GLuint64 texDiffuse;
     GLuint64 texAlpha;
@@ -15,12 +16,13 @@ struct Vertex {
     glm::vec3 ambient;
     glm::vec3 diffuse;
     glm::vec3 specular;
-    GLfloat shininess;
+    GLfloat shininess;*/
 
     bool operator==(const Vertex& other) const {
-        return position == other.position && normal == other.normal && texCoord == other.texCoord 
+        return position == other.position && normal == other.normal && texCoord == other.texCoord;
+        /*
             && texAmbient == other.texAmbient && texDiffuse == other.texDiffuse && texAlpha == other.texAlpha && texHeight == other.texHeight
-            && useBumpMap == other.useBumpMap && ambient == other.ambient && diffuse == other.diffuse && specular == other.specular && shininess == other.shininess;
+            && useBumpMap == other.useBumpMap && ambient == other.ambient && diffuse == other.diffuse && specular == other.specular && shininess == other.shininess;*/
     }
 };
 
@@ -37,9 +39,10 @@ namespace std {
     template<> struct hash<Vertex> {
         size_t operator()(Vertex const& vertex) const {
             std::size_t h = 0;
-            hash_combine(h, vertex.position, vertex.normal, vertex.texCoord, 
+            hash_combine(h, vertex.position, vertex.normal, vertex.texCoord);
+            /*
                 vertex.texAmbient, vertex.texDiffuse, vertex.texAlpha, vertex.texHeight, vertex.useBumpMap, 
-                vertex.ambient, vertex.diffuse, vertex.specular, vertex.shininess);
+                vertex.ambient, vertex.diffuse, vertex.specular, vertex.shininess);*/
             return h;
         }
     };

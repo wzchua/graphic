@@ -106,6 +106,7 @@ void ShaderProgram::Shader::initialize(std::string filename, ShaderType type)
     shaderId = glCreateShader(type);
     this->type = type;
     std::ifstream in(filename, std::ifstream::in);
+    std::cout << filename << "\n";
     std::stringstream buffer;
     buffer << in.rdbuf();
     in.close();

@@ -20,6 +20,7 @@ public:
         ShaderType type;
     public:
         ~Shader();
+        static std::string shaderRootPath;
         GLuint getShaderId();    
         void initialize(std::string filename, ShaderType shaderType);
         Shader() : shaderId(0) {}

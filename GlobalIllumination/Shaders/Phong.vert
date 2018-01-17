@@ -14,14 +14,16 @@ layout (location = 9) in vec3 vDiffuse;
 layout (location = 10) in vec3 vSpecular;
 layout (location = 11) in float vShininess;
 
-uniform mat4 ModelViewMatrix;     // ModelView matrix.
-uniform mat4 ModelViewProjMatrix; // ModelView matrix * Projection matrix.
-uniform mat3 NormalMatrix;        // For transforming object-space direction 
-                                  //   vector to eye space.
+//layout(binding = 0) uniform MatrixBlock {
+    uniform mat4 ModelViewMatrix;     // ModelView matrix.
+    uniform mat4 ModelViewProjMatrix; // ModelView matrix * Projection matrix.
+    uniform mat3 NormalMatrix;        // For transforming object-space direction 
+//};                                    //   vector to eye space.
 
 layout (location = 0) out vec3 ecPosition;   // Vertex position in eye space.
 layout (location = 1) out vec3 ecNormal;     // Vertex normal in eye space.
 layout (location = 2) out vec2 fTexCoord;
+/*
 layout (location = 3) flat out sampler2D texAmbient;
 layout (location = 4) flat out sampler2D texDiffuse;
 layout (location = 5) flat out sampler2D texAlpha;
@@ -30,10 +32,11 @@ layout (location = 7) flat out int useBumpMap;
 layout (location = 8) flat out vec3 ambient;
 layout (location = 9) flat out vec3 diffuse;
 layout (location = 10) flat out vec3 specular;
-layout (location = 11) flat out float shininess;
+layout (location = 11) flat out float shininess;*/
 
 void main()
 {
+    /*
     texAmbient = vTexAmbient;
     texDiffuse = vTexDiffuse;
     texAlpha = vTexAlpha;
@@ -42,7 +45,7 @@ void main()
     ambient = vAmbient;
     diffuse = vDiffuse;
     specular = vSpecular;
-    shininess = vShininess;
+    shininess = vShininess;*/
     
     vec4 ecPosition4 = ModelViewMatrix * vec4(vPosition, 1.0);
     ecPosition = vec3( ecPosition4 ) / ecPosition4.w;

@@ -23,6 +23,7 @@ int main(int argc, char** argv)
         exit(-1);
     }
     filepath = std::string(argv[1]);
+    //get app root and set ShaderProgram shaderRootPath
     std::cout << filepath << std::endl;
     atexit(WaitForEnterKeyBeforeExit); // std::atexit() is declared in cstdlib
     // glfw: initialize and configure

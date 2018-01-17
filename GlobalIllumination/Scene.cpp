@@ -26,7 +26,7 @@ bool Scene::LoadObjScene(std::string filename)
 
 void Scene::render(int programId)
 {
-    mSceneMatManager.render();
+    mSceneMatManager.render(programId);
 }
 
 glm::mat4 Scene::getSceneModelMat()

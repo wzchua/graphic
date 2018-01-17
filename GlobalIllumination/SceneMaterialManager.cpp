@@ -9,7 +9,18 @@ void SceneMaterialManager::addMaterialShapeGroup(const tinyobj::shape_t & shape,
     if (result == mMatGroupMap.end()) {
         index = mGroupList.size();
         mGroupList.emplace_back();
+        mMat.emplace_back();
         mMatGroupMap[material.name] = index;
+        Mat & mat = mMat[index];
+        mat.texAmbient = textureIds[0];
+        mat.texDiffuse = textureIds[1];
+        mat.texAlpha = textureIds[2];
+        mat.texHeight = textureIds[3];
+        mat.ambient = { material.ambient[0], material.ambient[1], material.ambient[2], 1.0f };
+        mat.diffuse = { material.diffuse[0], material.diffuse[1], material.diffuse[2], 1.0f };
+        mat.specular = { material.specular[0], material.specular[1], material.specular[2], 1.0f };
+        mat.shininess = material.shininess;
+        mat.useBumpMap = (material.bump_texname.length() > 0) ? 1 : 0;
     }
     else {
         index = result->second;
@@ -22,15 +33,28 @@ void SceneMaterialManager::addMaterialShapeGroup(const tinyobj::shape_t & shape,
 
 void SceneMaterialManager::generateGPUBuffers()
 {
+    //Mat UBO
+    for (auto & m : mMat) {
+        GLuint buffer;
+
+        glGenBuffers(1, &buffer);
+        glBindBuffer(GL_UNIFORM_BUFFER, buffer);
+        glBufferData(GL_UNIFORM_BUFFER, sizeof(m), &m, GL_DYNAMIC_DRAW);
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+        mMatBufferList.push_back(buffer);
+    }
+
+    //VBO, EBO, VAO
     for (auto & g : mGroupList) {
         g.generateGPUBuffers();
     }
 }
 
-void SceneMaterialManager::render()
+void SceneMaterialManager::render(GLuint programId)
 {
-    for (auto & g : mGroupList) {
-        g.render();
+    for (int i = 0; i < mGroupList.size(); i++) {
+        glBindBufferBase(GL_UNIFORM_BUFFER, 1, mMatBufferList[i]);
+        mGroupList[i].render();
     }
 }
 

@@ -45,6 +45,7 @@ void ShapeGroup::addShape(const tinyobj::shape_t & shape, const tinyobj::attrib_
             attrib.texcoords[2 * index.texcoord_index + 0],
             attrib.texcoords[2 * index.texcoord_index + 1]
         };
+        /*
         vertex.texAmbient = textureIds[0];
         vertex.texDiffuse = textureIds[1];
         vertex.texAlpha = textureIds[2];
@@ -59,7 +60,7 @@ void ShapeGroup::addShape(const tinyobj::shape_t & shape, const tinyobj::attrib_
         vertex.specular = {
             mat.specular[0], mat.specular[1], mat.specular[2]
         };
-        vertex.shininess = mat.shininess;
+        vertex.shininess = mat.shininess;*/
 
         if (mUniqueVertices.count(vertex) == 0) {
             mUniqueVertices[vertex] = static_cast<GLuint>(mVertexBuffer.size());
@@ -106,7 +107,7 @@ void ShapeGroup::generateGPUBuffers()
 
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, vertexSize, (GLvoid*)offsetof(Vertex, Vertex::texCoord));
     glEnableVertexAttribArray(2);
-
+    /*
     glVertexAttribLPointer(3, 1, GL_UNSIGNED_INT64_ARB, vertexSize, (GLvoid*)offsetof(Vertex, Vertex::texAmbient));
     glEnableVertexAttribArray(3);
 
@@ -132,7 +133,7 @@ void ShapeGroup::generateGPUBuffers()
     glEnableVertexAttribArray(10);
 
     glVertexAttribPointer(11, 1, GL_FLOAT, GL_FALSE, vertexSize, (GLvoid*)offsetof(Vertex, Vertex::shininess));
-    glEnableVertexAttribArray(11);
+    glEnableVertexAttribArray(11);*/
 
     mUploadedToGPU = true;
     glBindVertexArray(0);
