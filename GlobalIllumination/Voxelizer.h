@@ -10,6 +10,7 @@
 #include "Scene.h"
 #include "GLBufferObject.h"
 #include "RenderToFragmentList.h"
+#include "CounterBlock.h"
 
 class Voxelizer
 {
@@ -53,11 +54,15 @@ private:
 
     VoxelMatrixBlock voxelMatrixData;
     LogBlock voxelLogCountData = { maxLogCount };
+    const CounterBlock mZeroedCounterBlock = { 0, 0 };
+    CounterBlock mCounterBlock = mZeroedCounterBlock;
 
     GLuint voxelMatrixUniformBuffer;
     GLuint voxelLogUniformBuffer;
 
     RenderToFragmentList mModuleToFragList;
+
+    GLuint atomicFragCounterTest;
 
     GLBufferObject<GLuint> atomicFragCounter;
     GLBufferObject<GLuint> atomicNodeCounter;
@@ -65,6 +70,7 @@ private:
     GLBufferObject<GLuint> atomicLeafNodeCounter;
     GLBufferObject<GLuint> atomicLogCounter;
 
+    GLBufferObject<CounterBlock> ssboCounterSet;
     GLBufferObject<FragStruct> ssboFragmentList;
     GLBufferObject<FragStruct> ssboFragmentList2;
     GLBufferObject<LogStruct> ssboLogList;

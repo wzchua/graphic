@@ -35,17 +35,15 @@ void RenderToFragmentList::initialize()
     voxelizeListShader.linkCompileValidate();
 }
 
-void RenderToFragmentList::run(Scene& inputScene, GLBufferObject<GLuint> & atomicFragCounter,
-                                GLBufferObject<FragStruct> & ssboFragList, GLuint voxelizeMatrixBlock, GLuint logUniformBlock, GLBufferObject<GLuint> & atomicLogCounter, GLBufferObject<LogStruct> & ssboLogList)
+void RenderToFragmentList::run(Scene& inputScene, GLBufferObject<CounterBlock> & counterSet,
+                                GLBufferObject<FragStruct> & ssboFragList, GLuint voxelizeMatrixBlock, GLuint logUniformBlock, GLBufferObject<LogStruct> & ssboLogList)
 {
     GLuint currentShaderProgram = voxelizeListShader.use();
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, voxelizeMatrixBlock);
     glBindBufferBase(GL_UNIFORM_BUFFER, 7, logUniformBlock);
 
-    atomicFragCounter.bind(0);
-    atomicLogCounter.bind(7);
-
     ssboFragList.bind(0);
+    counterSet.bind(1);
     ssboLogList.bind(7);
 
     glViewport(0, 0, 512, 512);
@@ -57,6 +55,15 @@ void RenderToFragmentList::run(Scene& inputScene, GLBufferObject<GLuint> & atomi
 
     inputScene.render(currentShaderProgram);
     glMemoryBarrier(GL_ATOMIC_COUNTER_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
+    /*
+   auto syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+   GLenum waitReturn = GL_UNSIGNALED;
+   while (waitReturn != GL_ALREADY_SIGNALED && waitReturn != GL_CONDITION_SATISFIED)
+   {
+       waitReturn = glClientWaitSync(syncObj, GL_SYNC_FLUSH_COMMANDS_BIT, 20);
+   }
+   glDeleteSync(syncObj);*/
+   
 }
 
 RenderToFragmentList::RenderToFragmentList()

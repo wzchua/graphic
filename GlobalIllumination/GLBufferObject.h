@@ -8,12 +8,14 @@ private:
     bool hasInitialized = false;
     bool isPersistent = false;
     GLuint id;
+    GLsizeiptr mSize;
     T* bufferPtr;
     GLenum mTarget;
 public:
-    void initialize(GLenum target, GLsizeiptr size, const void* data, GLbitfield flag, bool isPersistent = false);
+    void initialize(GLenum target, GLsizeiptr size, const void* data, GLbitfield flag, GLbitfield access);
     void bind(GLuint binding);
     T* getPtr();
+    void unMapPtr();
     GLuint getId();
     GLBufferObject();
     ~GLBufferObject();
@@ -24,19 +26,20 @@ public:
 
 
 template<class T>
-void GLBufferObject<T>::initialize(GLenum target, GLsizeiptr size, const void* data, GLbitfield flags, bool isPersistent)
+void GLBufferObject<T>::initialize(GLenum target, GLsizeiptr size, const void* data, GLbitfield flags, GLbitfield access)
 {
     if (hasInitialized) {
         return;
     }
     mTarget = target;
-    this->isPersistent = isPersistent;
+    mSize = size;
+    isPersistent = access & GL_MAP_PERSISTENT_BIT != 0;
     glGenBuffers(1, &id);
     // bind the buffer and define its initial storage capacity
     glBindBuffer(target, id);
     glBufferStorage(target, size, data, flags);
     if (isPersistent) {
-        bufferPtr = (T*)glMapBufferRange(target, 0, size, flags);
+        bufferPtr = (T*)glMapBufferRange(target, 0, size, access);
     }
     glBindBuffer(target, 0);
 
@@ -52,10 +55,20 @@ void GLBufferObject<T>::bind(GLuint binding)
 template<class T>
 T * GLBufferObject<T>::getPtr()
 {
-    if (!isPersistent) {
-        throw new std::exception("not persistent");
+    if (!isPersistent) {        
+        T* ptr = (T*)glMapNamedBufferRange(id, 0, mSize, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT);
+        return ptr;
     }
     return bufferPtr;
+}
+
+template<class T>
+inline void GLBufferObject<T>::unMapPtr()
+{
+    if (isPersistent) {
+        return;
+    }
+    glUnmapNamedBuffer(id);
 }
 
 template<class T>

@@ -6,9 +6,6 @@ in vec3 wcPosition;   // Vertex position in scaled world space.
 in vec3 wcNormal;     // Vertex normal in world space.
 in vec2 fTexCoord;
 
-layout(binding = 0) uniform atomic_uint fragListPtr;
-layout(binding = 7) uniform atomic_uint logPtr;
-
 layout(binding = 1) uniform MatBlock {
     sampler2D texAmbient;
     sampler2D texDiffuse;
@@ -41,12 +38,16 @@ struct LogStruct {
 layout(binding = 0) coherent buffer FragmentListBlock {
     FragmentStruct frag[];
 };
+layout(binding = 1) coherent buffer CounterBlock {
+    uint fragmentCounter;
+    uint logCounter;
+};
 layout(binding = 7) coherent buffer LogBlock {
     LogStruct logList[];
 };
 
 void logFragment(vec4 pos, vec4 color, uint nodeIndex, uint brickPtr, uint index1, uint index2) {
-    uint index = atomicCounterIncrement(logPtr);
+    uint index = atomicAdd(logCounter, 1);
     if(index < maxNoOfLogs) {        
         logList[index].position = pos;
         logList[index].color = color;
@@ -55,7 +56,7 @@ void logFragment(vec4 pos, vec4 color, uint nodeIndex, uint brickPtr, uint index
         logList[index].index1 = index1;
         logList[index].index2 = index2;
     } else {
-        atomicCounterDecrement(logPtr);
+        atomicAdd(logCounter, -1);
     }
 }
 
@@ -63,11 +64,11 @@ const vec2 size = vec2(2.0,0.0);
 const ivec3 off = ivec3(-1,0,1);
 
 void deferFragment(vec4 color, vec3 normal) {
-    uint index = atomicCounterIncrement(fragListPtr);
+    uint index = atomicAdd(fragmentCounter, 1);
     frag[index].position = vec4(floor(wcPosition), 1.0f);
     frag[index].color = color;
     frag[index].normal = vec4(normal, 1.0f);
-    logFragment(vec4(wcPosition, 1.0f), color, 0, 0, 0, 0);
+    //logFragment(vec4(wcPosition, 1.0f), color, 0, 0, 0, 0);
 }
 //Generates a voxel list from rasterization
 void main() {    

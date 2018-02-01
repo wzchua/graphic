@@ -38,6 +38,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="CounterBlock.h" />
     <ClInclude Include="FragmentToGrid.h" />
     <ClInclude Include="FragStruct.h" />
     <ClInclude Include="GLBufferObject.h" />

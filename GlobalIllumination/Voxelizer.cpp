@@ -63,22 +63,30 @@ Voxelizer::Voxelizer()
     
     GLuint zero = 0;
     GLuint one = 1;
+    
+    //atomic counter buffer
+    glGenBuffers(1, &atomicFragCounterTest);
+    // bind the buffer and define its initial storage capacity
+    glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomicFragCounterTest);
+    glBufferData(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &zero, GL_DYNAMIC_DRAW);
+    glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 0, atomicFragCounterTest);
+    glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
+    
 
-    atomicFragCounter.initialize(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &zero, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, true);
-    atomicFragCounter.bind(0);
-    atomicNodeCounter.initialize(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &one, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, true);
+    //atomicFragCounter.initialize(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &zero, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
+    atomicNodeCounter.initialize(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &one, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
     atomicNodeCounter.bind(1);
-    atomicModelBrickCounter.initialize(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &one, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, true);
+    atomicModelBrickCounter.initialize(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &one, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
     atomicModelBrickCounter.bind(2);
-    atomicLeafNodeCounter.initialize(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &zero, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, true);
+    atomicLeafNodeCounter.initialize(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &zero, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
     atomicLeafNodeCounter.bind(3);
-    atomicLogCounter.initialize(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &zero, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, true);
-    atomicLogCounter.bind(7);
+    //atomicLogCounter.initialize(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &zero, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
 
     mModuleToFragList.initialize();
-    ssboFragmentList.initialize(GL_SHADER_STORAGE_BUFFER, fragCount * sizeof(FragStruct), NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, true);
-    ssboFragmentList2.initialize(GL_SHADER_STORAGE_BUFFER, fragCount * sizeof(FragStruct), NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, true);
-    ssboLogList.initialize(GL_SHADER_STORAGE_BUFFER, sizeof(LogStruct) * maxLogCount, NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, true);
+    ssboCounterSet.initialize(GL_SHADER_STORAGE_BUFFER, sizeof(CounterBlock), &mCounterBlock, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, 0);
+    ssboFragmentList.initialize(GL_SHADER_STORAGE_BUFFER, fragCount * sizeof(FragStruct), NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, 0);
+    ssboFragmentList2.initialize(GL_SHADER_STORAGE_BUFFER, fragCount * sizeof(FragStruct), NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, 0);
+    ssboLogList.initialize(GL_SHADER_STORAGE_BUFFER, sizeof(LogStruct) * maxLogCount, NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
 
     //nodelist buffer
     glGenBuffers(1, &ssboNodeList);
@@ -241,24 +249,30 @@ void Voxelizer::initializeWithScene(glm::vec3 min, glm::vec3 max)
 
 void Voxelizer::voxelizeFragmentList(Scene& scene)
 {
-    CheckGLError();
     using Clock = std::chrono::high_resolution_clock;
     auto timeStart = Clock::now();
     int currentShaderProgram;// = voxelizeListShader.use();
 
     resetAllData();
-    CheckGLError();
-    std::cout << "time after reset: " << std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - timeStart).count() << "ms" << std::endl;
-    mModuleToFragList.run(scene, atomicFragCounter, ssboFragmentList, voxelMatrixUniformBuffer, voxelLogUniformBuffer, atomicLogCounter, ssboLogList);
-    std::cout << "time after render: " << std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - timeStart).count() << "ms" << std::endl;
+    auto timeAfterReset = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - timeStart).count();
+    mModuleToFragList.run(scene, ssboCounterSet, ssboFragmentList, voxelMatrixUniformBuffer, voxelLogUniformBuffer, ssboLogList);
+    auto timeAfterRender= std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - timeStart).count();
 
     // get length of fragment list
-    unsigned int fragmentCount = getAndResetCount(atomicFragCounter);
+    auto set = ssboCounterSet.getPtr();
+    unsigned int fragmentCount = set[0].fragmentCounter;
+    set[0] = mZeroedCounterBlock;
+    ssboCounterSet.unMapPtr();
+    //unsigned int fragmentCount = getAndResetCount(atomicFragCounter);
+
+    //glGetNamedBufferSubData(atomicFragCounterTest, 0, sizeof(GLuint), &fragmentCount);
+    auto timeAfterFragmentCountGet = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - timeStart).count();
+    std::cout << "time after reset: " << timeAfterReset << " ms. time after render: " << timeAfterRender << " ms. time after fragment count get: " << timeAfterFragmentCountGet << " ms" << std::endl;
     /*
     glm::vec4 min = glm::vec4(0.0);
     glm::vec4 max = glm::vec4(0.0);
-    std::vector<fragStruct> fListD;
-    fragStruct* ptrf = (fragStruct*)ssboFragmentList.getPtr();
+    std::vector<FragStruct> fListD;
+    FragStruct* ptrf = ssboFragmentList.getPtr();
     //980216
     for (int i = 0; i < fragmentCount; i++) {
         min.x = glm::min(ptrf[i].position[0], min.x);
@@ -269,11 +283,11 @@ void Voxelizer::voxelizeFragmentList(Scene& scene)
         max.z = glm::max(ptrf[i].position[2], max.z);
         fListD.push_back(ptrf[i]);
     }
-    
     */
+    
 
-    std::vector<LogStruct> logsF;
-    getLogs(logsF);   
+    //std::vector<LogStruct> logsF;
+    //getLogs(logsF);   
 
 
     currentShaderProgram = octreeCompShader.use();
@@ -390,11 +404,13 @@ void Voxelizer::voxelizeFragmentList(Scene& scene)
 
 void Voxelizer::resetAllData()
 {
-    getAndResetCount(atomicFragCounter);
+    GLuint zero = 0;
+    //glNamedBufferSubData(atomicFragCounterTest, 0, sizeof(GLuint), &zero);
+    glNamedBufferSubData(ssboCounterSet.getId(), 0, sizeof(CounterBlock), &mZeroedCounterBlock);
     getAndResetCount(atomicNodeCounter, 1);
     getAndResetCount(atomicModelBrickCounter, 1);
     getAndResetCount(atomicLeafNodeCounter);
-    getAndResetCount(atomicLogCounter);
+    //getAndResetCount(atomicLogCounter);
 
     glInvalidateBufferData(ssboNodeList);
     glClearNamedBufferData(ssboNodeList, GL_R8UI, GL_RED_INTEGER, GL_UNSIGNED_BYTE, NULL);
