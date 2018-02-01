@@ -9,15 +9,11 @@
 #include "ShaderProgram.h"
 #include "Scene.h"
 #include "GLBufferObject.h"
+#include "RenderToFragmentList.h"
 
 class Voxelizer
 {
 public:
-    struct fragStruct {
-        float position[4];
-        float color[4];
-        float normal[4];
-    };
     struct nodeStruct {
         unsigned int parentPtr;
         unsigned int selfPtr;
@@ -27,13 +23,14 @@ public:
         unsigned int lightBit;
         unsigned int lightBrickPtr;
     };
-    struct logStruct {
-        float position[4];
-        float color[4];
-        unsigned int nodeIndex;
-        unsigned int brickIndex;
-        unsigned int index1;
-        unsigned int index2;
+    struct LogBlock {
+        GLuint maxNoOfLogs;
+    };
+    struct VoxelMatrixBlock {
+        glm::mat4 worldToVoxelMat;
+        glm::mat4 viewProjMatrixXY;
+        glm::mat4 viewProjMatrixZY;
+        glm::mat4 viewProjMatrixXZ;
     };
     Voxelizer();
     ~Voxelizer();
@@ -43,9 +40,10 @@ public:
     Camera camVoxel = Camera(glm::vec3(256.0f, 32.0f, 128.0f));
     int projectionAxis = 0;
 private:
-    void getLogs(std::vector<logStruct> & logs, bool reset = false);
-    int getCount(GLBufferObject& counterId);
-    int getAndResetCount(GLBufferObject& counterId, int resetValue = 0);
+    void getLogs(std::vector<LogStruct> & logs, bool reset = false);
+    int getCount(GLBufferObject<GLuint>& counter);
+    int getAndResetCount(GLBufferObject<GLuint>& counter, int resetValue = 0);
+
     unsigned int fragCount = 1024 * 1024 * 8;
     unsigned int nodeCount = 1024 * 1024 * 4;
     int brickDim = 2;
@@ -53,17 +51,26 @@ private:
     int texHeight = 512;
     unsigned int maxLogCount = 500;
 
-    GLBufferObject atomicFragCounter;
-    GLBufferObject atomicNodeCounter;
-    GLBufferObject atomicModelBrickCounter;
-    GLBufferObject atomicLeafNodeCounter;
-    GLBufferObject atomicLogCounter;
+    VoxelMatrixBlock voxelMatrixData;
+    LogBlock voxelLogCountData = { maxLogCount };
+
+    GLuint voxelMatrixUniformBuffer;
+    GLuint voxelLogUniformBuffer;
+
+    RenderToFragmentList mModuleToFragList;
+
+    GLBufferObject<GLuint> atomicFragCounter;
+    GLBufferObject<GLuint> atomicNodeCounter;
+    GLBufferObject<GLuint> atomicModelBrickCounter;
+    GLBufferObject<GLuint> atomicLeafNodeCounter;
+    GLBufferObject<GLuint> atomicLogCounter;
+
+    GLBufferObject<FragStruct> ssboFragmentList;
+    GLBufferObject<FragStruct> ssboFragmentList2;
+    GLBufferObject<LogStruct> ssboLogList;
     
-    GLuint ssboFragmentList;
-    GLuint ssboFragmentList2;
     GLuint ssboNodeList;
     GLuint ssboLeafNodeList;
-    GLuint ssboLogList;
 
     GLuint texture3DrgColorBrickList;
     GLuint texture3DbaColorBrickList;
@@ -74,7 +81,6 @@ private:
     GLuint texture3DColorList;
     GLuint texture3DNormalList;
 
-    ShaderProgram voxelizeListShader;
     ShaderProgram octreeCompShader;
     ShaderProgram octreeAverageCompShader;
     ShaderProgram octreeRenderShader;

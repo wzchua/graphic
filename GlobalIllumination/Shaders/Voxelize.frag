@@ -1,25 +1,34 @@
 #version 450
 #extension GL_ARB_shader_atomic_counter_ops : require
+#extension GL_ARB_bindless_texture : require
 
 in vec3 wcPosition;   // Vertex position in scaled world space.
 in vec3 wcNormal;     // Vertex normal in world space.
 in vec2 fTexCoord;
-flat in int axis;
 
 layout(binding = 0) uniform atomic_uint fragListPtr;
 layout(binding = 7) uniform atomic_uint logPtr;
+
+layout(binding = 1) uniform MatBlock {
+    sampler2D texAmbient;
+    sampler2D texDiffuse;
+    sampler2D texAlpha;
+    sampler2D texHeight;
+    vec4 ambient;
+    vec4 diffuse;
+    vec4 specular;
+    int useBumpMap;
+    float shininess;
+};
+layout(binding = 7, std140) uniform LogUniformBlock {
+    uint maxNoOfLogs;
+};
 
 struct FragmentStruct {
     vec4 position;
     vec4 color;
     vec4 normal;
 };
-
-layout(binding = 0) buffer FragmentListBlock {
-    FragmentStruct frag[];
-};
-
-uniform uint maxNoOfLogs;
 struct LogStruct {
     vec4 position;
     vec4 color;
@@ -29,7 +38,10 @@ struct LogStruct {
     uint index2;
 };
 
-layout(binding = 7) volatile buffer LogBlock {
+layout(binding = 0) coherent buffer FragmentListBlock {
+    FragmentStruct frag[];
+};
+layout(binding = 7) coherent buffer LogBlock {
     LogStruct logList[];
 };
 
@@ -47,15 +59,6 @@ void logFragment(vec4 pos, vec4 color, uint nodeIndex, uint brickPtr, uint index
     }
 }
 
-uniform bool useBumpMap;
-layout (binding=1) uniform sampler2D diffuseTexture;
-layout (binding=2) uniform sampler2D alphaTexture;
-layout (binding=3) uniform sampler2D heightTexture;
-
-uniform vec3 Diffuse;
-
-layout(binding = 0, RGBA8) uniform image3D texture3D;
-
 const vec2 size = vec2(2.0,0.0);
 const ivec3 off = ivec3(-1,0,1);
 
@@ -64,26 +67,26 @@ void deferFragment(vec4 color, vec3 normal) {
     frag[index].position = vec4(floor(wcPosition), 1.0f);
     frag[index].color = color;
     frag[index].normal = vec4(normal, 1.0f);
-    //logFragment(vec4(wcPosition, 1.0f), color, 0, 0, 0, 0);
+    logFragment(vec4(wcPosition, 1.0f), color, 0, 0, 0, 0);
 }
 //Generates a voxel list from rasterization
 void main() {    
-    if(texture(alphaTexture, fTexCoord).r < 0.5f) {
+    if(texture(texAlpha, fTexCoord).r < 0.5f) {
         discard;
     }
     vec3 nwcNormal = normalize(wcNormal);
-    if(useBumpMap) {            
-        float h11 = texture(heightTexture, fTexCoord).r;
-        float h01 = textureOffset(heightTexture, fTexCoord, off.xy).r;
-        float h21 = textureOffset(heightTexture, fTexCoord, off.zy).r;
-        float h10 = textureOffset(heightTexture, fTexCoord, off.yx).r;
-        float h12 = textureOffset(heightTexture, fTexCoord, off.yz).r;
+    if(useBumpMap == 1) {            
+        float h11 = texture(texHeight, fTexCoord).r;
+        float h01 = textureOffset(texHeight, fTexCoord, off.xy).r;
+        float h21 = textureOffset(texHeight, fTexCoord, off.zy).r;
+        float h10 = textureOffset(texHeight, fTexCoord, off.yx).r;
+        float h12 = textureOffset(texHeight, fTexCoord, off.yz).r;
 
         vec3 va = normalize(vec3(size.xy,h21-h01));
         vec3 vb = normalize(vec3(size.yx,h12-h10));
 
         nwcNormal = normalize(nwcNormal + cross(va, vb));
     }
-    vec4 color = vec4(Diffuse * texture(diffuseTexture, fTexCoord).rgb, 1.0f);
+    vec4 color = vec4(diffuse.rgb * texture(texDiffuse, fTexCoord).rgb, 1.0f);
     deferFragment(color, nwcNormal);
 }

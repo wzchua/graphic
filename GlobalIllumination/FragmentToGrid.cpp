@@ -111,7 +111,7 @@ void FragmentToGrid::initialize(GLuint& texture3DColorList, GLuint& texture3DNor
 
 }
 
-void FragmentToGrid::run(GLBufferObject& inputssboFragmentList, GLuint noOfFragments)
+void FragmentToGrid::run(GLBufferObject<FragStruct>& inputssboFragmentList, GLuint noOfFragments)
 {
     GLuint currentShaderProgram = shaderBuildGrid.use();
     atomicVoxelCounter.bind(0);

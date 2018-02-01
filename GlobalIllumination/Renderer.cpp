@@ -36,8 +36,8 @@ Renderer::Renderer(GLFWwindow * window, unsigned int viewHeight, unsigned int vi
 
     mModuleRenderPhong.initialize();
 
-    setToPhongShader();
-    //setToVoxelizeShader();
+    //setToPhongShader();
+    setToVoxelizeShader();
 }
 
 Renderer::~Renderer()

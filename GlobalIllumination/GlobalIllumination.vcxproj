@@ -22,7 +22,6 @@
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="FragmentToGrid.cpp" />
     <ClCompile Include="glad.c" />
-    <ClCompile Include="GLBufferObject.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ObjLoader.cpp" />
     <ClCompile Include="RenderPhong.cpp" />
@@ -40,7 +39,9 @@
   <ItemGroup>
     <ClInclude Include="Camera.h" />
     <ClInclude Include="FragmentToGrid.h" />
+    <ClInclude Include="FragStruct.h" />
     <ClInclude Include="GLBufferObject.h" />
+    <ClInclude Include="LogStruct.h" />
     <ClInclude Include="ObjLoader.h" />
     <ClInclude Include="RenderPhong.h" />
     <ClInclude Include="RenderToFragmentList.h" />

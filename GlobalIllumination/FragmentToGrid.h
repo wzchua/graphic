@@ -4,6 +4,8 @@
 
 #include "GLBufferObject.h"
 #include "ShaderProgram.h"
+#include "LogStruct.h"
+#include "FragStruct.h"
 class FragmentToGrid
 {
 private:
@@ -18,10 +20,10 @@ private:
     GLuint gridDim = 512;
 
     //working memory
-    GLBufferObject atomicVoxelCounter;
-    GLBufferObject atomicLogCounter;
-    GLBufferObject ssboVoxelList;
-    GLBufferObject ssboLogList;
+    GLBufferObject<GLuint> atomicVoxelCounter;
+    GLBufferObject<GLuint> atomicLogCounter;
+    GLBufferObject<glm::ivec4> ssboVoxelList;
+    GLBufferObject<LogStruct> ssboLogList;
     GLuint texture3DrgColorBrickList;
     GLuint texture3DbaColorBrickList;
     GLuint texture3DxyNormalBrickList;
@@ -36,7 +38,7 @@ private:
     ShaderProgram shaderAverageGrid;
 public:
     void initialize(GLuint& texture3DColorList, GLuint& texture3DNormalList);
-    void run(GLBufferObject& inputssboFragmentList, GLuint noOfFragments);
+    void run(GLBufferObject<FragStruct>& inputssboFragmentList, GLuint noOfFragments);
     FragmentToGrid();
     ~FragmentToGrid();
 };

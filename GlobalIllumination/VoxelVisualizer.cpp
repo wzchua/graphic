@@ -14,7 +14,7 @@ void VoxelVisualizer::initialize()
     voxelVisualizerShader.linkCompileValidate();
 }
 
-void VoxelVisualizer::run(Camera& cam, glm::mat4 worldToVoxelMat, GLBufferObject& inputssboVoxelList, GLuint noOfVoxels)
+void VoxelVisualizer::run(Camera& cam, glm::mat4 worldToVoxelMat, GLBufferObject<glm::ivec4>& inputssboVoxelList, GLuint noOfVoxels)
 {
     GLuint currentShaderProgram = voxelVisualizerShader.use();
 

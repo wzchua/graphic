@@ -24,45 +24,13 @@ void CheckGLError()
 
 Voxelizer::Voxelizer()
 {
-    voxelizeListShader.generateShader("./Shaders/Voxelize.vert", ShaderProgram::VERTEX);
-    voxelizeListShader.generateShader("./Shaders/Voxelize.geom", ShaderProgram::GEOMETRY);
-    voxelizeListShader.generateShader("./Shaders/Voxelize.frag", ShaderProgram::FRAGMENT);
-    voxelizeListShader.linkCompileValidate();
-
-    octreeCompShader.generateShader("./Shaders/BuildOctreeSimple.comp", ShaderProgram::COMPUTE);
-    octreeCompShader.linkCompileValidate();
-
-    octreeAverageCompShader.generateShader("./Shaders/AverageOctreeBricks.comp", ShaderProgram::COMPUTE);
-    octreeAverageCompShader.linkCompileValidate();
-
-    octreeRenderShader.generateShader("./Shaders/VoxelOctreeRayCast.vert", ShaderProgram::VERTEX);
-    octreeRenderShader.generateShader("./Shaders/VoxelOctreeRayCast.frag", ShaderProgram::FRAGMENT);
-    octreeRenderShader.linkCompileValidate();
-    GLuint zero = 0;
-    GLuint one = 1;
-
-    atomicFragCounter.initialize(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &zero, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, true);
-    atomicFragCounter.bind(0);
-
-    atomicNodeCounter.initialize(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &one, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, true);
-    atomicNodeCounter.bind(1);
-
-    atomicModelBrickCounter.initialize(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &one, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, true);
-    atomicModelBrickCounter.bind(2);
-
-    atomicLeafNodeCounter.initialize(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &zero, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, true);
-    atomicModelBrickCounter.bind(3);
-
-    atomicLogCounter.initialize(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &zero, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, true);
-    atomicLogCounter.bind(7);
-
     GLint size;
     glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &size);
     std::cout << "GL_MAX_SHADER_STORAGE_BLOCK_SIZE is " << size << " bytes." << std::endl;
-    std::cout << "frag " << size/sizeof(fragStruct) << " ." << std::endl;
-    std::cout << "node " << size/sizeof(nodeStruct) << " ." << std::endl;
-    glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &size);
-    std::cout << "GL_MAX_VERTEX_ATTRIBS  is " << size << "." << std::endl;
+    std::cout << "frag " << size / sizeof(FragStruct) << " ." << std::endl;
+    std::cout << "node " << size / sizeof(nodeStruct) << " ." << std::endl;
+    glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &size);
+    std::cout << "GL_MAX_UNIFORM_BLOCK_SIZE is " << size << " bytes." << std::endl;
     int work_grp_size[3];
     glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 0, &work_grp_size[0]);
     glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 1, &work_grp_size[1]);
@@ -73,19 +41,44 @@ Voxelizer::Voxelizer()
     glGetIntegerv(GL_MAX_GEOMETRY_OUTPUT_VERTICES, &size);
     std::cout << "GL_MAX_GEOMETRY_OUTPUT_VERTICES  is " << size << " ." << std::endl;
 
-    //fragmentlist buffer
-    glGenBuffers(1, &ssboFragmentList);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboFragmentList);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(fragStruct) * fragCount, NULL, GL_DYNAMIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssboFragmentList);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
+    octreeCompShader.generateShader("./Shaders/BuildOctreeSimple.comp", ShaderProgram::COMPUTE);
+    octreeCompShader.linkCompileValidate();
 
-    //fragmentlist buffer
-    glGenBuffers(1, &ssboFragmentList2);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboFragmentList2);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(fragStruct) * fragCount, NULL, GL_DYNAMIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssboFragmentList2);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
+    octreeAverageCompShader.generateShader("./Shaders/AverageOctreeBricks.comp", ShaderProgram::COMPUTE);
+    octreeAverageCompShader.linkCompileValidate();
+
+    octreeRenderShader.generateShader("./Shaders/VoxelOctreeRayCast.vert", ShaderProgram::VERTEX);
+    octreeRenderShader.generateShader("./Shaders/VoxelOctreeRayCast.frag", ShaderProgram::FRAGMENT);
+    octreeRenderShader.linkCompileValidate();
+
+    glGenBuffers(1, &voxelMatrixUniformBuffer);
+    glBindBuffer(GL_UNIFORM_BUFFER, voxelMatrixUniformBuffer);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(VoxelMatrixBlock), &voxelMatrixData, GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+    glGenBuffers(1, &voxelLogUniformBuffer);
+    glBindBuffer(GL_UNIFORM_BUFFER, voxelLogUniformBuffer);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(LogBlock), &voxelLogCountData, GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    
+    GLuint zero = 0;
+    GLuint one = 1;
+
+    atomicFragCounter.initialize(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &zero, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, true);
+    atomicFragCounter.bind(0);
+    atomicNodeCounter.initialize(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &one, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, true);
+    atomicNodeCounter.bind(1);
+    atomicModelBrickCounter.initialize(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &one, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, true);
+    atomicModelBrickCounter.bind(2);
+    atomicLeafNodeCounter.initialize(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &zero, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, true);
+    atomicLeafNodeCounter.bind(3);
+    atomicLogCounter.initialize(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &zero, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, true);
+    atomicLogCounter.bind(7);
+
+    mModuleToFragList.initialize();
+    ssboFragmentList.initialize(GL_SHADER_STORAGE_BUFFER, fragCount * sizeof(FragStruct), NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, true);
+    ssboFragmentList2.initialize(GL_SHADER_STORAGE_BUFFER, fragCount * sizeof(FragStruct), NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, true);
+    ssboLogList.initialize(GL_SHADER_STORAGE_BUFFER, sizeof(LogStruct) * maxLogCount, NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, true);
 
     //nodelist buffer
     glGenBuffers(1, &ssboNodeList);
@@ -101,12 +94,6 @@ Voxelizer::Voxelizer()
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, ssboLeafNodeList);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
 
-    //loglist buffer
-    glGenBuffers(1, &ssboLogList);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboLogList);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(logStruct) * maxLogCount, NULL, GL_DYNAMIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, ssboLogList);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
     
     glGenTextures(1, &texture3DrgColorBrickList);
     glBindTexture(GL_TEXTURE_3D, texture3DrgColorBrickList);
@@ -241,40 +228,28 @@ void Voxelizer::initializeWithScene(glm::vec3 min, glm::vec3 max)
     //fixed ratio scaling
     float smallestScale = glm::min(scale.x, glm::min(scale.y, scale.z));
     scale = glm::vec3(smallestScale);
-    worldToVoxelMat = glm::translate(glm::scale(glm::mat4(1.0f), scale), translate);
+    voxelMatrixData.worldToVoxelMat = glm::translate(glm::scale(glm::mat4(1.0f), scale), translate);
     newMin = worldToVoxelMat * glm::vec4(min, 1.0);
     newMax = worldToVoxelMat * glm::vec4(max, 1.0);
 
-    viewProjMatrixXY = ortho * voxelViewMatriXY;
-    viewProjMatrixZY = ortho * voxelViewMatriZY;
-    viewProjMatrixXZ = ortho * voxelViewMatriXZ;
+    voxelMatrixData.viewProjMatrixXY = ortho * voxelViewMatriXY;
+    voxelMatrixData.viewProjMatrixZY = ortho * voxelViewMatriZY;
+    voxelMatrixData.viewProjMatrixXZ = ortho * voxelViewMatriXZ;
+
+    glNamedBufferSubData(voxelMatrixUniformBuffer, 0, sizeof(VoxelMatrixBlock), &voxelMatrixData);
 }
 
 void Voxelizer::voxelizeFragmentList(Scene& scene)
 {
+    CheckGLError();
     using Clock = std::chrono::high_resolution_clock;
     auto timeStart = Clock::now();
-    int currentShaderProgram = voxelizeListShader.use();
+    int currentShaderProgram;// = voxelizeListShader.use();
 
     resetAllData();
-    atomicFragCounter.bind(0);
+    CheckGLError();
     std::cout << "time after reset: " << std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - timeStart).count() << "ms" << std::endl;
-
-    glViewport(0, 0, 512, 512);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glUniform1ui(glGetUniformLocation(currentShaderProgram, "maxNoOfLogs"), maxLogCount);
-    glUniformMatrix4fv(glGetUniformLocation(currentShaderProgram, "ModelMatrix"), 1, GL_FALSE, glm::value_ptr(worldToVoxelMat));
-    glUniformMatrix4fv(glGetUniformLocation(currentShaderProgram, "ViewProjMatrixXY"), 1, GL_FALSE, glm::value_ptr(viewProjMatrixXY));
-    glUniformMatrix4fv(glGetUniformLocation(currentShaderProgram, "ViewProjMatrixZY"), 1, GL_FALSE, glm::value_ptr(viewProjMatrixZY));
-    glUniformMatrix4fv(glGetUniformLocation(currentShaderProgram, "ViewProjMatrixXZ"), 1, GL_FALSE, glm::value_ptr(viewProjMatrixXZ));
-    glUniform1i(glGetUniformLocation(currentShaderProgram, "projectionAxis"), projectionAxis);
-    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_CULL_FACE);
-    glDisable(GL_BLEND);
-
-    scene.render(currentShaderProgram);
-    glMemoryBarrier(GL_ATOMIC_COUNTER_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
+    mModuleToFragList.run(scene, atomicFragCounter, ssboFragmentList, voxelMatrixUniformBuffer, voxelLogUniformBuffer, atomicLogCounter, ssboLogList);
     std::cout << "time after render: " << std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - timeStart).count() << "ms" << std::endl;
 
     // get length of fragment list
@@ -283,9 +258,7 @@ void Voxelizer::voxelizeFragmentList(Scene& scene)
     glm::vec4 min = glm::vec4(0.0);
     glm::vec4 max = glm::vec4(0.0);
     std::vector<fragStruct> fListD;
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboFragmentList);
-    fragStruct* ptrf = (fragStruct*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(fragStruct),
-        GL_MAP_READ_BIT);
+    fragStruct* ptrf = (fragStruct*)ssboFragmentList.getPtr();
     //980216
     for (int i = 0; i < fragmentCount; i++) {
         min.x = glm::min(ptrf[i].position[0], min.x);
@@ -296,13 +269,11 @@ void Voxelizer::voxelizeFragmentList(Scene& scene)
         max.z = glm::max(ptrf[i].position[2], max.z);
         fListD.push_back(ptrf[i]);
     }
-    glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-    */
     
+    */
 
-    //std::vector<logStruct> logsF;
-    //getLogs(logsF);   
+    std::vector<LogStruct> logsF;
+    getLogs(logsF);   
 
 
     currentShaderProgram = octreeCompShader.use();
@@ -313,7 +284,6 @@ void Voxelizer::voxelizeFragmentList(Scene& scene)
     glBindImageTexture(2, texture3DxyNormalBrickList, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
     glBindImageTexture(3, texture3DzwNormalBrickList, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
     glBindImageTexture(7, texture3DCounterList, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
-    glUniform1ui(glGetUniformLocation(currentShaderProgram, "maxNoOfLogs"), maxLogCount);
     std::cout << "time before iter: " << std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - timeStart).count() << "ms" << std::endl;
 
 
@@ -322,22 +292,12 @@ void Voxelizer::voxelizeFragmentList(Scene& scene)
         glUniform1ui(glGetUniformLocation(currentShaderProgram, "noOfFragments"), fragmentCount);
         //swap bindings
         if (isOdd) {
-            glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboFragmentList);
-            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssboFragmentList);
-            glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
-
-            glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboFragmentList2);
-            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssboFragmentList2);
-            glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
+            ssboFragmentList.bind(0);
+            ssboFragmentList2.bind(1);
         }
         else {
-            glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboFragmentList);
-            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssboFragmentList);
-            glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
-
-            glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboFragmentList2);
-            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssboFragmentList2);
-            glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
+            ssboFragmentList.bind(1);
+            ssboFragmentList2.bind(0);
         }
 
         int workgroupX = std::ceil(fragmentCount / 512.0);
@@ -459,32 +419,28 @@ void Voxelizer::resetAllData()
     glMemoryBarrier(GL_ATOMIC_COUNTER_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
 }
 
-void Voxelizer::getLogs(std::vector<logStruct>& logs, bool reset)
+void Voxelizer::getLogs(std::vector<LogStruct>& logs, bool reset)
 {
     int logCount = (reset) ? getAndResetCount(atomicLogCounter) : getCount(atomicLogCounter);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboLogList);
-    logStruct * ptr = (logStruct*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(logStruct),
-        GL_MAP_READ_BIT);
+    LogStruct * ptr = ssboLogList.getPtr();
 
     for (int i = 0; i < logCount; i++) {
         logs.push_back(ptr[i]);
     }
-    glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
-int Voxelizer::getCount(GLBufferObject& counter)
+int Voxelizer::getCount(GLBufferObject<GLuint>& counter)
 {
     int count;
-    GLuint* ptr = (GLuint*)counter.getPtr();
+    GLuint* ptr = counter.getPtr();
     count = ptr[0];
     return count;
 }
 
-int Voxelizer::getAndResetCount(GLBufferObject& counter, int resetValue)
+int Voxelizer::getAndResetCount(GLBufferObject<GLuint>& counter, int resetValue)
 {
     int count;
-    GLuint* ptr = (GLuint*)counter.getPtr();
+    GLuint* ptr = counter.getPtr();
     count = ptr[0];
     ptr[0] = resetValue;
     return count;

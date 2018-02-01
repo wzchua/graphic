@@ -12,7 +12,7 @@ private:
     bool hasInitialized = false;
 public:
     void initialize();
-    void run(Camera& cam, glm::mat4 worldToVoxelMat, GLBufferObject& inputssboVoxelList, GLuint noOfVoxels);
+    void run(Camera& cam, glm::mat4 worldToVoxelMat, GLBufferObject<glm::ivec4>& inputssboVoxelList, GLuint noOfVoxels);
     VoxelVisualizer();
     ~VoxelVisualizer();
 };
