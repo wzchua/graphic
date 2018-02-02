@@ -65,9 +65,11 @@ const ivec3 off = ivec3(-1,0,1);
 
 void deferFragment(vec4 color, vec3 normal) {
     uint index = atomicAdd(fragmentCounter, 1);
-    frag[index].position = vec4(floor(wcPosition), 1.0f);
-    frag[index].color = color;
-    frag[index].normal = vec4(normal, 1.0f);
+    FragmentStruct f;
+    f.position = vec4(floor(wcPosition), 1.0f);
+    f.color = color;
+    f.normal = vec4(normal, 1.0f);
+    frag[index] = f;
     //logFragment(vec4(wcPosition, 1.0f), color, 0, 0, 0, 0);
 }
 //Generates a voxel list from rasterization
