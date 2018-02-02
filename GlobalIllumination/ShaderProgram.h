@@ -22,11 +22,11 @@ public:
         ~Shader();
         static std::string shaderRootPath;
         GLuint getShaderId();    
-        void initialize(std::string filename, ShaderType shaderType);
+        void initialize(std::string filename, ShaderType shaderType, std::vector<std::string>* newDefines=nullptr);
         Shader() : shaderId(0) {}
         void destroy();
     };
-    void generateShader(std::string filename, ShaderProgram::ShaderType type);
+    void generateShader(std::string filename, ShaderProgram::ShaderType type, std::vector<std::string>* newDefines);
     void linkCompileValidate();
     unsigned int use();
     unsigned int getProgramId();

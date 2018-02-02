@@ -1,4 +1,7 @@
-#define GRID
+/***
+* Possible defines: GRID
+*
+***/
 #version 450
 #extension GL_ARB_shader_atomic_counter_ops : require
 #extension GL_ARB_bindless_texture : require
@@ -86,7 +89,7 @@ void addToFragList(vec4 color, vec3 normal) {
 }
 #ifdef GRID
 void addToGrid(vec4 color, vec3 normal) {
-    ivec3 pos = ivec3(floor(wcPosition));
+    ivec3 pos = ivec3(wcPosition);
     imageAtomicAdd(rgColorBrick, pos, packUnorm2x16(color.rg));
     imageAtomicAdd(baColorBrick, pos, packUnorm2x16(color.ba));
     imageAtomicAdd(xyNormalBrick, pos, packUnorm2x16(normal.xy));

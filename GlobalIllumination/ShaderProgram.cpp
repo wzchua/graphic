@@ -95,19 +95,22 @@ ShaderProgram::~ShaderProgram()
     delete[] shaderNames;
 }
 
-void ShaderProgram::generateShader(std::string filename, ShaderType type)
+void ShaderProgram::generateShader(std::string filename, ShaderType type, std::vector<std::string>* newDefines)
 {
     shaders.push_back(Shader());
-    shaders.back().initialize(filename, type);
+    shaders.back().initialize(filename, type, newDefines);
 }
 
-void ShaderProgram::Shader::initialize(std::string filename, ShaderType type)
+void ShaderProgram::Shader::initialize(std::string filename, ShaderType type, std::vector<std::string>* newDefines)
 {
     shaderId = glCreateShader(type);
     this->type = type;
     std::ifstream in(filename, std::ifstream::in);
     std::cout << filename << "\n";
     std::stringstream buffer;
+    for(std::string& preDef : *newDefines) {
+        buffer << "#define " << preDef << std::endl;
+    }
     buffer << in.rdbuf();
     in.close();
     const auto vString = buffer.str();
