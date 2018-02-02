@@ -1,10 +1,14 @@
 #version 450
 layout (local_size_x = 512) in;
 
-layout(binding = 0) uniform atomic_uint voxelPtr;
-layout(binding = 7) uniform atomic_uint logPtr;
-
-layout(binding = 1) buffer ArrayBlock {
+layout(binding = 7, std140) uniform LogUniformBlock {
+    uint maxNoOfLogs;
+};
+layout(binding = 1) coherent buffer CounterBlock {
+    uint fragmentCounter;
+    uint logCounter;
+};
+layout(binding = 2) buffer ArrayBlock {
     ivec4 voxelList[];
 };
 
@@ -27,12 +31,10 @@ layout(binding = 2, r32ui) uniform uimage3D xyNormalBrick;
 layout(binding = 3, r32ui) uniform uimage3D zwNormalBrick;
 layout(binding = 4, RGBA8) uniform image3D colorBrick;
 layout(binding = 5, RGBA8) uniform image3D normalBrick;
-layout(binding = 7, r32ui) uniform uimage3D fragmentCounter;
-
-uniform uint maxNoOfLogs;
+layout(binding = 7, r32ui) uniform uimage3D fragmentImageCounter;
 
 void logFragment(vec4 pos, vec4 color, uint nodeIndex, uint brickPtr, uint index1, uint index2) {
-    uint index = atomicCounterIncrement(logPtr);
+    uint index = atomicAdd(logCounter, 1);
     if(index < maxNoOfLogs) {        
         logList[index].position = pos;
         logList[index].color = color;
@@ -41,29 +43,27 @@ void logFragment(vec4 pos, vec4 color, uint nodeIndex, uint brickPtr, uint index
         logList[index].index1 = index1;
         logList[index].index2 = index2;
     } else {
-        atomicCounterDecrement(logPtr);
+        atomicAdd(logCounter, uint(-1));
     }
 }
 
-vec2 convRG16ToVec2( uint val) {  
-  return  vec2 ( float(val & 0x0000FFFF), float((val & 0xFFFF0000) >>16U));
-}
-
 void main() {
-  if(gl_GlobalInvocationID.x < atomicCounter(voxelPtr)) {
-        ivec3 voxelPos = voxelList[gl_GlobalInvocationID.x]; 
-        vec2 rg = convRG16ToVec2(imageLoad(rgColorBrick, voxelPos).r);
-        vec2 ba = convRG16ToVec2(imageLoad(baColorBrick, voxelPos).r);
-        vec4 color = vec4(rg, ba) / 255.0f; //normalize to 0 to 1
+  if(gl_GlobalInvocationID.x < fragmentCounter) {
+        ivec3 voxelPos = voxelList[gl_GlobalInvocationID.x].xyz; 
+
+        float count = float(imageLoad(fragmentImageCounter, voxelPos).r);
+        vec2 rg = unpackUnorm2x16(imageLoad(rgColorBrick, voxelPos).r);
+        vec2 ba = unpackUnorm2x16(imageLoad(baColorBrick, voxelPos).r);
+        vec4 color = vec4(rg, ba);
         
-        vec4 avgColor = (color/float(count)); 
+        vec4 avgColor = (color/count); 
         imageStore(colorBrick, voxelPos, avgColor);
 
-        vec2 normalxy = convRG16ToVec2(imageLoad(xyNormalBrick, voxelPos).r);
-        vec2 normalzw = convRG16ToVec2(imageLoad(zwNormalBrick, voxelPos).r);
-        vec4 normal = vec4(normalxy, normalzw) / 255.0f;  //normalize to 0 to 1;
+        vec2 normalxy = unpackUnorm2x16(imageLoad(xyNormalBrick, voxelPos).r);
+        vec2 normalzw = unpackUnorm2x16(imageLoad(zwNormalBrick, voxelPos).r);
+        vec4 normal = vec4(normalxy, normalzw);
 
-        vec4 avgNormal = (normal/float(count));
+        vec4 avgNormal = (normal/count);
         imageStore(normalBrick, voxelPos, avgNormal);      
     }
 }
