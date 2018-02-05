@@ -123,10 +123,10 @@ std::pair<glm::vec3, glm::vec3> SceneMaterialManager::getSceneMinMaxCoords() con
     for (auto & g : mGroupList) {
         auto newMinMax = g.getMinMaxCoords();
         minmax.first = glm::min(minmax.first, newMinMax.first);
-        minmax.second = glm::min(minmax.second, newMinMax.second);
+        minmax.second = glm::max(minmax.second, newMinMax.second);
     }
 
-    return std::pair<glm::vec3, glm::vec3>();
+    return minmax;
 }
 
 SceneMaterialManager::SceneMaterialManager()
