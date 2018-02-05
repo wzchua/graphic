@@ -5,6 +5,7 @@
 in vec3 wcPosition;   // Vertex position in scaled world space.
 in vec3 wcNormal;     // Vertex normal in world space.
 in vec2 fTexCoord;
+layout(binding = 0) uniform atomic_uint fragListPtr;
 
 layout(binding = 1) uniform MatBlock {
     sampler2D texAmbient;
@@ -17,8 +18,9 @@ layout(binding = 1) uniform MatBlock {
     int useBumpMap;
     float shininess;
 };
-layout(binding = 7, std140) uniform LogUniformBlock {
+layout(binding = 7, std140) uniform LimitsUniformBlock {
     uint maxNoOfLogs;
+    uint maxNoOfFragments;
 };
 
 struct FragmentStruct {
@@ -65,17 +67,26 @@ const ivec3 off = ivec3(-1,0,1);
 
 void addToFragList(vec4 color, vec3 normal) {
     uint index = atomicAdd(fragmentCounter, 1);
-    FragmentStruct f;
-    f.position = vec4(floor(wcPosition), 1.0f);
-    f.color = color;
-    f.normal = vec4(normal, 1.0f);
-    frag[index] = f;
-    //logFragment(vec4(wcPosition, 1.0f), color, 0, 0, 0, 0);
+    //uint index = atomicCounterIncrement(fragListPtr);
+    if(index < maxNoOfFragments) {
+        FragmentStruct f;
+        f.position = vec4(floor(wcPosition), 1.0f);
+        f.color = color;
+        f.normal = vec4(normal, 1.0f);
+        frag[index] = f;
+        //logFragment(vec4(wcPosition, 1.0f), color, 0, 0, 0, 0);
+    } else {
+        atomicAdd(fragmentCounter, uint(-1));
+        //atomicCounterDecrement(fragListPtr);
+    }
 }
 
 //Generates a voxel list from rasterization
 void main() {    
-    if(texture(texAlpha, fTexCoord).r < 0.5f) {
+    //if(fragmentCounter >= maxNoOfFragments) {
+        //noOfFrag >= maxNoOfFragments
+    uint noOfFrag = atomicCounter(fragListPtr);
+    if(texture(texAlpha, fTexCoord).r < 0.5f || fragmentCounter >= maxNoOfFragments) {
         discard;
     }
     vec3 nwcNormal = normalize(wcNormal);

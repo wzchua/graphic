@@ -25,8 +25,9 @@ public:
         unsigned int lightBit;
         unsigned int lightBrickPtr;
     };
-    struct LogBlock {
+    struct LimitsBlock {
         GLuint maxNoOfLogs;
+        GLuint maxNoOfFragments;
     };
     struct VoxelMatrixBlock {
         glm::mat4 worldToVoxelMat;
@@ -54,7 +55,7 @@ private:
     unsigned int maxLogCount = 500;
 
     VoxelMatrixBlock voxelMatrixData;
-    LogBlock voxelLogCountData = { maxLogCount };
+    LimitsBlock voxelLogCountData = { maxLogCount, fragCount };
     const CounterBlock mZeroedCounterBlock = { 0, 0 };
     CounterBlock mCounterBlock = mZeroedCounterBlock;
 

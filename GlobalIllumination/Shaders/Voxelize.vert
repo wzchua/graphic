@@ -16,8 +16,9 @@ layout(binding = 1) coherent buffer CounterBlock {
     uint fragmentCounter;
     uint logCounter;
 };
-layout(binding = 7, std140) uniform LogUniformBlock {
+layout(binding = 7, std140) uniform LimitsUniformBlock {
     uint maxNoOfLogs;
+    uint maxNoOfFragments;
 };
 struct LogStruct {
     vec4 position;

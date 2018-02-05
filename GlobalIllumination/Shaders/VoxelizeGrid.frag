@@ -17,8 +17,9 @@ layout(binding = 1) uniform MatBlock {
     int useBumpMap;
     float shininess;
 };
-layout(binding = 7, std140) uniform LogUniformBlock {
+layout(binding = 7, std140) uniform LimitsUniformBlock {
     uint maxNoOfLogs;
+    uint maxNoOfFragments;
 };
 layout(binding = 0, r32ui) coherent uniform uimage3D rgColorBrick;
 layout(binding = 1, r32ui) coherent uniform uimage3D baColorBrick;
