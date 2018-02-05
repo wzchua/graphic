@@ -12,7 +12,7 @@ void RenderToGrid::initialize()
     voxelizeGridShader.generateShader("./Shaders/VoxelizeGrid.frag", ShaderProgram::FRAGMENT);
     voxelizeGridShader.linkCompileValidate();
 
-    shaderAverageGrid.generateShader("./Shaders/AverageGrid.comp", ShaderProgram::COMPUTE);
+    shaderAverageGrid.generateShader("./Shaders/GridAverage.comp", ShaderProgram::COMPUTE);
     shaderAverageGrid.linkCompileValidate();
 
     glGenTextures(1, &texture3DrgColorBrickList);
