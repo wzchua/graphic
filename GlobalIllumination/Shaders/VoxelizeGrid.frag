@@ -20,12 +20,17 @@ layout(binding = 1) uniform MatBlock {
 layout(binding = 7, std140) uniform LogUniformBlock {
     uint maxNoOfLogs;
 };
+layout(binding = 0, r32ui) coherent uniform uimage3D rgColorBrick;
+layout(binding = 1, r32ui) coherent uniform uimage3D baColorBrick;
+layout(binding = 2, r32ui) coherent uniform uimage3D xyNormalBrick;
+layout(binding = 3, r32ui) coherent uniform uimage3D zwNormalBrick;
+layout(binding = 7, r32ui) uniform uimage3D fragmentImageCounter;
 
-struct FragmentStruct {
-    vec4 position;
-    vec4 color;
-    vec4 normal;
+layout(binding = 1) coherent buffer CounterBlock {
+    uint fragmentCounter;
+    uint logCounter;
 };
+
 struct LogStruct {
     vec4 position;
     vec4 color;
@@ -33,14 +38,6 @@ struct LogStruct {
     uint brickPtr;
     uint index1;
     uint index2;
-};
-
-layout(binding = 0) coherent buffer FragmentListBlock {
-    FragmentStruct frag[];
-};
-layout(binding = 1) coherent buffer CounterBlock {
-    uint fragmentCounter;
-    uint logCounter;
 };
 layout(binding = 7) coherent buffer LogBlock {
     LogStruct logList[];
@@ -63,14 +60,21 @@ void logFragment(vec4 pos, vec4 color, uint nodeIndex, uint brickPtr, uint index
 const vec2 size = vec2(2.0,0.0);
 const ivec3 off = ivec3(-1,0,1);
 
-void addToFragList(vec4 color, vec3 normal) {
-    uint index = atomicAdd(fragmentCounter, 1);
-    FragmentStruct f;
-    f.position = vec4(floor(wcPosition), 1.0f);
-    f.color = color;
-    f.normal = vec4(normal, 1.0f);
-    frag[index] = f;
-    //logFragment(vec4(wcPosition, 1.0f), color, 0, 0, 0, 0);
+uint convVec2ToRG16( vec2 val) {
+    val = val * 255.0;
+return  ( uint( val .y ) &0x0000FFFF) <<16U | ( uint( val .x ) &0x0000FFFF);
+}
+
+vec2 convRG16ToVec2( uint val) {  
+  return  vec2 ( float(val & 0x0000FFFF), float((val & 0xFFFF0000) >>16U)) /255.0;
+}
+void addToGrid(vec4 color, vec3 normal) {
+    ivec3 pos = ivec3(wcPosition);
+    imageAtomicAdd(rgColorBrick, pos, convVec2ToRG16(color.rg));
+    imageAtomicAdd(baColorBrick, pos, convVec2ToRG16(color.ba));
+    imageAtomicAdd(xyNormalBrick, pos, convVec2ToRG16(normal.xy));
+    imageAtomicAdd(zwNormalBrick, pos, convVec2ToRG16(vec2(normal.z, 1.0f)));
+    uint count = imageAtomicAdd(fragmentImageCounter, pos, 1);
 }
 
 //Generates a voxel list from rasterization
@@ -92,5 +96,6 @@ void main() {
         nwcNormal = normalize(nwcNormal + cross(va, vb));
     }
     vec4 color = vec4(diffuse.rgb * texture(texDiffuse, fTexCoord).rgb, 1.0f);
-    addToFragList(color, nwcNormal);
+    addToGrid(color, nwcNormal);
+    //logFragment(vec4(wcPosition, 1.0f), color, 0, 0, 0, 0);
 }

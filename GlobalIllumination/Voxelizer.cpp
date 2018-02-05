@@ -88,6 +88,8 @@ Voxelizer::Voxelizer()
     ssboFragmentList2.initialize(GL_SHADER_STORAGE_BUFFER, fragCount * sizeof(FragStruct), NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, 0);
     ssboLogList.initialize(GL_SHADER_STORAGE_BUFFER, sizeof(LogStruct) * maxLogCount, NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
 
+    mModuleRenderToGrid.initialize();
+
     //nodelist buffer
     glGenBuffers(1, &ssboNodeList);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboNodeList);
@@ -187,6 +189,30 @@ Voxelizer::Voxelizer()
     glTexStorage3D(GL_TEXTURE_3D, 2, GL_RGBA8, texWdith * brickDim, texHeight * brickDim, brickDim);
     glBindTexture(GL_TEXTURE_3D, 0);
 
+    glGenTextures(1, &texture3DColorGrid);
+    glBindTexture(GL_TEXTURE_3D, texture3DColorGrid);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
+
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glTexStorage3D(GL_TEXTURE_3D, 2, GL_RGBA8, 512, 512, 512);
+    glBindTexture(GL_TEXTURE_3D, 0);
+
+    glGenTextures(1, &texture3DNormalGrid);
+    glBindTexture(GL_TEXTURE_3D, texture3DNormalGrid);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
+
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glTexStorage3D(GL_TEXTURE_3D, 2, GL_RGBA8, 512, 512, 512);
+    glBindTexture(GL_TEXTURE_3D, 0);
+
     //cube vao
     std::vector<glm::vec3> quadVertices;
     quadVertices.push_back(glm::vec3(1.0, 1.0, 0.0));
@@ -237,8 +263,8 @@ void Voxelizer::initializeWithScene(glm::vec3 min, glm::vec3 max)
     float smallestScale = glm::min(scale.x, glm::min(scale.y, scale.z));
     scale = glm::vec3(smallestScale);
     voxelMatrixData.worldToVoxelMat = glm::translate(glm::scale(glm::mat4(1.0f), scale), translate);
-    newMin = worldToVoxelMat * glm::vec4(min, 1.0);
-    newMax = worldToVoxelMat * glm::vec4(max, 1.0);
+    newMin = voxelMatrixData.worldToVoxelMat * glm::vec4(min, 1.0);
+    newMax = voxelMatrixData.worldToVoxelMat * glm::vec4(max, 1.0);
 
     voxelMatrixData.viewProjMatrixXY = ortho * voxelViewMatriXY;
     voxelMatrixData.viewProjMatrixZY = ortho * voxelViewMatriZY;
@@ -255,14 +281,19 @@ void Voxelizer::voxelizeFragmentList(Scene& scene)
 
     resetAllData();
     auto timeAfterReset = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - timeStart).count();
-    mModuleToFragList.run(scene, ssboCounterSet, ssboFragmentList, voxelMatrixUniformBuffer, voxelLogUniformBuffer, ssboLogList);
+    //mModuleToFragList.run(scene, ssboCounterSet, ssboFragmentList, voxelMatrixUniformBuffer, voxelLogUniformBuffer, ssboLogList);
+    mModuleRenderToGrid.run(scene, ssboCounterSet, voxelMatrixUniformBuffer, voxelLogUniformBuffer, ssboLogList, texture3DColorGrid, texture3DNormalGrid);
     auto timeAfterRender= std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - timeStart).count();
 
     // get length of fragment list
     auto set = ssboCounterSet.getPtr();
     unsigned int fragmentCount = set[0].fragmentCounter;
+    unsigned int logCount = set[0].logCounter;
     set[0] = mZeroedCounterBlock;
     ssboCounterSet.unMapPtr();
+    //std::vector<LogStruct> logs;
+    //ShaderLogger::getLogs(ssboLogList, logCount, logs);
+
     //unsigned int fragmentCount = getAndResetCount(atomicFragCounter);
 
     //glGetNamedBufferSubData(atomicFragCounterTest, 0, sizeof(GLuint), &fragmentCount);
@@ -289,7 +320,7 @@ void Voxelizer::voxelizeFragmentList(Scene& scene)
     //std::vector<LogStruct> logsF;
     //getLogs(logsF);   
 
-
+    /*
     currentShaderProgram = octreeCompShader.use();
     bool isOdd = true;
 
@@ -321,31 +352,6 @@ void Voxelizer::voxelizeFragmentList(Scene& scene)
 
         fragmentCount = getAndResetCount(atomicFragCounter);
         std::cout << "time after iter: " << std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - timeStart).count() << "ms" << std::endl;
-
-
-        //std::vector<logStruct> logs;
-        //getLogs(logs);
-
-        /*
-        unsigned int nodeCount = 0;
-        std::vector<nodeStruct> nList;
-        glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, atomicNodeCountPtr);
-        GLuint* ptr2 = (GLuint*)glMapBufferRange(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint),
-            GL_MAP_READ_BIT | GL_MAP_WRITE_BIT);
-        nodeCount = ptr2[0];
-        glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER);
-        glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
-        std::cout << "nodeCount: " << nodeCount << std::endl;
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboNodeList);
-        nodeStruct* ptrn = (nodeStruct*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(nodeStruct),
-            GL_MAP_READ_BIT);
-        for (int i = 0; i < nodeCount; i++) {
-            nList.push_back(ptrn[i]);
-        }
-        glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-        */
-
     }
     std::cout << "time after octree: " << std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - timeStart).count() << "ms" << std::endl;
 
@@ -397,7 +403,7 @@ void Voxelizer::voxelizeFragmentList(Scene& scene)
 
     //logs2.clear();
     //getLogs(logs2, true);
-
+    */
     auto timeEnd = Clock::now();
     std::cout << "time end: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeEnd - timeStart).count() << "ms" << std::endl;
 }

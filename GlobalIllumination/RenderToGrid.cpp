@@ -1,25 +1,19 @@
-#include "FragmentToGrid.h"
+#include "RenderToGrid.h"
 
 
 
-void FragmentToGrid::initialize(GLuint& texture3DColorList, GLuint& texture3DNormalList)
+void RenderToGrid::initialize()
 {
     if (hasInitialized) {
         return;
     }
-
-    shaderBuildGrid.generateShader("./Shaders/BuildGrid.comp", ShaderProgram::COMPUTE);
-    shaderBuildGrid.linkCompileValidate();
+    voxelizeGridShader.generateShader("./Shaders/Voxelize.vert", ShaderProgram::VERTEX);
+    voxelizeGridShader.generateShader("./Shaders/Voxelize.geom", ShaderProgram::GEOMETRY);
+    voxelizeGridShader.generateShader("./Shaders/VoxelizeGrid.frag", ShaderProgram::FRAGMENT);
+    voxelizeGridShader.linkCompileValidate();
 
     shaderAverageGrid.generateShader("./Shaders/AverageGrid.comp", ShaderProgram::COMPUTE);
     shaderAverageGrid.linkCompileValidate();
-    GLuint zero = 0;
-
-    atomicVoxelCounter.initialize(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &zero, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, true);
-    atomicLogCounter.initialize(GL_ATOMIC_COUNTER_BUFFER, sizeof(GLuint), &zero, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, true);
-
-    ssboVoxelList.initialize(GL_SHADER_STORAGE_BUFFER, sizeof(glm::ivec4) * maxVoxelCount, NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, true);
-    ssboLogList.initialize(GL_SHADER_STORAGE_BUFFER, sizeof(logStruct) * maxLogCount, NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, true);
 
     glGenTextures(1, &texture3DrgColorBrickList);
     glBindTexture(GL_TEXTURE_3D, texture3DrgColorBrickList);
@@ -80,45 +74,15 @@ void FragmentToGrid::initialize(GLuint& texture3DColorList, GLuint& texture3DNor
 
     glTexStorage3D(GL_TEXTURE_3D, 1, GL_R32UI, gridDim, gridDim, gridDim);
     glBindTexture(GL_TEXTURE_3D, 0);
-
-
-    //output texture
-    glGenTextures(1, &texture3DColorList);
-    glBindTexture(GL_TEXTURE_3D, texture3DColorList);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
-
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-    glTexStorage3D(GL_TEXTURE_3D, 1, GL_RGBA8, gridDim, gridDim, gridDim);
-    glBindTexture(GL_TEXTURE_3D, 0);
-    texture3DColorListRef = texture3DColorList;
-
-    glGenTextures(1, &texture3DNormalList);
-    glBindTexture(GL_TEXTURE_3D, texture3DNormalList);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
-
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-    glTexStorage3D(GL_TEXTURE_3D, 1, GL_RGBA8, gridDim, gridDim, gridDim);
-    glBindTexture(GL_TEXTURE_3D, 0);
-    texture3DNormalListRef = texture3DNormalList;
-
 }
 
-void FragmentToGrid::run(GLBufferObject<FragStruct>& inputssboFragmentList, GLuint noOfFragments)
+void RenderToGrid::run(Scene& inputScene, GLBufferObject<CounterBlock> & ssboCounterSet, GLuint voxelizeMatrixBlock, GLuint logUniformBlock, GLBufferObject<LogStruct> & ssboLogList, GLuint texture3DColor, GLuint texture3DNormal)
 {
-    GLuint currentShaderProgram = shaderBuildGrid.use();
-    atomicVoxelCounter.bind(0);
-    atomicLogCounter.bind(7);
+    GLuint currentShaderProgram = voxelizeGridShader.use();
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, voxelizeMatrixBlock);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 7, logUniformBlock);
 
-    inputssboFragmentList.bind(0);
-    ssboVoxelList.bind(1);
+    ssboCounterSet.bind(1);
     ssboLogList.bind(7);
 
     glBindImageTexture(0, texture3DrgColorBrickList, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
@@ -127,29 +91,38 @@ void FragmentToGrid::run(GLBufferObject<FragStruct>& inputssboFragmentList, GLui
     glBindImageTexture(3, texture3DzwNormalBrickList, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
     glBindImageTexture(7, texture3DCounterList, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
 
-    glUniform1ui(glGetUniformLocation(currentShaderProgram, "noOfFragments"), noOfFragments);
-    glUniform1ui(glGetUniformLocation(currentShaderProgram, "maxNoOfLogs"), maxLogCount);
+    glViewport(0, 0, 512, 512);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_BLEND);
 
-    int workgroupX = std::ceil(noOfFragments / 512.0);
-    glDispatchCompute(workgroupX, 1, 1);
-    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT);
-    GLuint voxelCount = ((GLuint*)atomicVoxelCounter.getPtr())[0];
+    inputScene.render(currentShaderProgram);
+    glMemoryBarrier(GL_ATOMIC_COUNTER_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
 
     currentShaderProgram = shaderAverageGrid.use();
-    glBindImageTexture(4, texture3DColorListRef, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
-    glBindImageTexture(5, texture3DNormalListRef, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
-    glUniform1ui(glGetUniformLocation(currentShaderProgram, "maxNoOfLogs"), maxLogCount);
+    glBindImageTexture(4, texture3DColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
+    glBindImageTexture(5, texture3DNormal, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
 
-    workgroupX = std::ceil(voxelCount / 512.0);
-    glDispatchCompute(workgroupX, 1, 1);
+    int workgroupX = 512 / 8;
+    glDispatchCompute(workgroupX, workgroupX, workgroupX);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_ATOMIC_COUNTER_BARRIER_BIT);
+    /*
+    auto set = ssboCounterSet.getPtr();
+    unsigned int fragmentCount = set[0].fragmentCounter;
+    unsigned int logCount = set[0].logCounter;
+    ssboCounterSet.unMapPtr();
+    */
+    //std::vector<LogStruct> logs;
+    //ShaderLogger::getLogs(ssboLogList, logCount, logs);
 }
 
-FragmentToGrid::FragmentToGrid()
+RenderToGrid::RenderToGrid()
 {
 }
 
 
-FragmentToGrid::~FragmentToGrid()
+RenderToGrid::~RenderToGrid()
 {
 }

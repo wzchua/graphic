@@ -33,7 +33,7 @@ void GLBufferObject<T>::initialize(GLenum target, GLsizeiptr size, const void* d
     }
     mTarget = target;
     mSize = size;
-    isPersistent = access & GL_MAP_PERSISTENT_BIT != 0;
+    isPersistent = (access & GL_MAP_PERSISTENT_BIT) != 0;
     glGenBuffers(1, &id);
     // bind the buffer and define its initial storage capacity
     glBindBuffer(target, id);

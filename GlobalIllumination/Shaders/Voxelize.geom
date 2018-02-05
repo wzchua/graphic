@@ -10,8 +10,8 @@ in vec3 geomwcPosition[];
 in vec3 geomwcNormal[];
 in vec2 geomTexCoord[];
 
-layout(binding = 0, std140) uniform VoxelizeMatrixBlock {
-    mat4 ModelMatrix;
+layout(binding = 0) uniform VoxelizeMatrixBlock {
+    mat4 WorldToVoxelMat;
     mat4 ViewProjMatrixXY; 
     mat4 ViewProjMatrixZY; 
     mat4 ViewProjMatrixXZ;

@@ -9,8 +9,9 @@
 #include "ShaderProgram.h"
 #include "Scene.h"
 #include "GLBufferObject.h"
-#include "RenderToFragmentList.h"
 #include "CounterBlock.h"
+#include "RenderToFragmentList.h"
+#include "RenderToGrid.h"
 
 class Voxelizer
 {
@@ -61,6 +62,7 @@ private:
     GLuint voxelLogUniformBuffer;
 
     RenderToFragmentList mModuleToFragList;
+    RenderToGrid mModuleRenderToGrid;
 
     GLuint atomicFragCounterTest;
 
@@ -87,6 +89,9 @@ private:
     GLuint texture3DColorList;
     GLuint texture3DNormalList;
 
+    GLuint texture3DColorGrid;
+    GLuint texture3DNormalGrid;
+
     ShaderProgram octreeCompShader;
     ShaderProgram octreeAverageCompShader;
     ShaderProgram octreeRenderShader;
@@ -103,8 +108,8 @@ private:
     glm::mat4 viewProjMatrixXY;
     glm::mat4 viewProjMatrixZY;
     glm::mat4 viewProjMatrixXZ;
-    glm::vec3 newMin;
-    glm::vec3 newMax;
+    glm::vec4 newMin;
+    glm::vec4 newMax;
 
 };
 
