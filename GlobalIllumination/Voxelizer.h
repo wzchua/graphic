@@ -47,8 +47,8 @@ private:
     int getCount(GLBufferObject<GLuint>& counter);
     int getAndResetCount(GLBufferObject<GLuint>& counter, int resetValue = 0);
 
-    unsigned int fragCount = 1024 * 1024 * 8;
-    unsigned int nodeCount = 1024 * 1024 * 4;
+    unsigned int fragCount = 1024 * 1024 * 4;
+    unsigned int nodeCount = 1024 * 1024 * 2;
     int brickDim = 2;
     int texWdith = 512;
     int texHeight = 512;
@@ -77,6 +77,7 @@ private:
     GLBufferObject<FragStruct> ssboFragmentList;
     GLBufferObject<FragStruct> ssboFragmentList2;
     GLBufferObject<LogStruct> ssboLogList;
+    GLBufferObject<glm::ivec4> ssboVoxelList;
     
     GLuint ssboNodeList;
     GLuint ssboLeafNodeList;

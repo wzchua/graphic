@@ -21,15 +21,18 @@ layout(binding = 7, std140) uniform LimitsUniformBlock {
     uint maxNoOfLogs;
     uint maxNoOfFragments;
 };
-layout(binding = 0, r32ui) coherent uniform uimage3D rgColorBrick;
-layout(binding = 1, r32ui) coherent uniform uimage3D baColorBrick;
-layout(binding = 2, r32ui) coherent uniform uimage3D xyNormalBrick;
-layout(binding = 3, r32ui) coherent uniform uimage3D zwNormalBrick;
-layout(binding = 7, r32ui) uniform uimage3D fragmentImageCounter;
+
+layout(binding = 4, r32ui) uniform coherent volatile uimage3D colorBrick;
+layout(binding = 5, r32ui) uniform coherent volatile uimage3D normalBrick;
+layout(binding = 7, r32ui) uniform coherent volatile uimage3D fragmentImageCounter;
+
 
 layout(binding = 1) coherent buffer CounterBlock {
     uint fragmentCounter;
     uint logCounter;
+};
+layout(binding = 2) coherent buffer VoxelListBlock {
+    ivec4 voxelList[];
 };
 
 struct LogStruct {
@@ -61,22 +64,64 @@ void logFragment(vec4 pos, vec4 color, uint nodeIndex, uint brickPtr, uint index
 const vec2 size = vec2(2.0,0.0);
 const ivec3 off = ivec3(-1,0,1);
 
-uint convVec2ToRG16( vec2 val) {
-    val = val * 255.0;
-return  ( uint( val .y ) &0x0000FFFF) <<16U | ( uint( val .x ) &0x0000FFFF);
+//Referenced from: OpenGL Insight Chapter 22
+vec4 convRGBA8ToVec4( uint val) {
+    return vec4 ( float (( val &0x000000FF)) , float (( val &0x0000FF00) >>8U) , float (( val &0x00FF0000) >>16U) , float (( val &0xFF000000) >>24U) );
+}
+uint convVec4ToRGBA8( vec4 val) {
+    return ( uint ( val.w) &0x000000FF) <<24U | ( uint( val.z) &0x000000FF) <<16U | ( uint( val.y ) &0x000000FF) <<8U | ( uint( val.x) &0x000000FF);
+}
+void imageAtomicRGBA8Avg( layout ( r32ui ) coherent volatile uimage3D imgUI , ivec3 coords , vec4 val ) {
+    val.rgb *=255.0f; // Optimise following calculations
+    uint newVal = convVec4ToRGBA8( val );
+    uint prevStoredVal = 0; uint curStoredVal;
+    // Loop as long as destination value gets changed by other threads
+    while ( ( curStoredVal = imageAtomicCompSwap( imgUI , coords , prevStoredVal , newVal )) != prevStoredVal) {
+        prevStoredVal = curStoredVal;
+        vec4 rval = convRGBA8ToVec4( curStoredVal);
+        rval.xyz =( rval.xyz * rval.w) ; // Denormalize
+        vec4 curValF = rval + val; // Add new value
+        curValF.xyz /=( curValF.w); // Renormalize
+        newVal = convVec4ToRGBA8( curValF );
+    }
 }
 
-vec2 convRG16ToVec2( uint val) {  
-  return  vec2 ( float(val & 0x0000FFFF), float((val & 0xFFFF0000) >>16U)) /255.0;
+// includes -127.0f to 127.0f
+vec4 convXYZWToVec4( uint val) {
+    vec3 xyz = vec3(float (( val &0x000000FF)) , float (( val &0x0000FF00) >>8U) , float (( val &0x00FF0000) >>16U));
+    xyz = xyz - 128.0f;
+    return vec4 (  xyz, float (( val &0xFF000000) >>24U) );
 }
+uint convVec4ToXYZW( vec4 val) {
+    val.xyz = (val.xyz + 128.0f);
+    return ( uint ( val.w) &0x000000FF) <<24U | ( uint( val.z) &0x000000FF) <<16U | ( uint( val.y ) &0x000000FF) <<8U | ( uint( val.x) &0x000000FF);
+}
+void imageAtomicXYZWAvg( layout ( r32ui ) coherent volatile uimage3D imgUI , ivec3 coords , vec4 val ) {
+    val.rgb *= 127.0f;
+    uint newVal = convVec4ToXYZW( val );
+    uint prevStoredVal = 0; uint curStoredVal;
+    // Loop as long as destination value gets changed by other threads
+    while ( ( curStoredVal = imageAtomicCompSwap( imgUI , coords , prevStoredVal , newVal )) != prevStoredVal) {
+        prevStoredVal = curStoredVal;
+        vec4 rval = convXYZWToVec4( curStoredVal);
+        rval.xyz =( rval.xyz * rval.w) ; // Denormalize
+        vec4 curValF = rval + val; // Add new value
+        curValF.xyz /=( curValF.w); // Renormalize
+        newVal = convVec4ToXYZW( curValF );
+    }
+}
+
 void addToGrid(vec4 color, vec3 normal) {
-    ivec3 pos = ivec3(wcPosition);
-    imageAtomicAdd(rgColorBrick, pos, convVec2ToRG16(color.rg));
-    imageAtomicAdd(baColorBrick, pos, convVec2ToRG16(color.ba));
-    imageAtomicAdd(xyNormalBrick, pos, convVec2ToRG16(normal.xy));
-    imageAtomicAdd(zwNormalBrick, pos, convVec2ToRG16(vec2(normal.z, 1.0f)));
+    ivec3 pos = ivec3(wcPosition);    
+    imageAtomicRGBA8Avg(colorBrick, pos, color);
+    imageAtomicXYZWAvg(normalBrick, pos, vec4(normal, 1.0f));
     uint count = imageAtomicAdd(fragmentImageCounter, pos, 1);
+    if(count == 0) {
+        uint index = atomicAdd(fragmentCounter, 1);
+        voxelList[index] = ivec4(pos, 1);
+    }
 }
+
 
 //Generates a voxel list from rasterization
 void main() {    
@@ -98,5 +143,5 @@ void main() {
     }
     vec4 color = vec4(diffuse.rgb * texture(texDiffuse, fTexCoord).rgb, 1.0f);
     addToGrid(color, nwcNormal);
-    //logFragment(vec4(wcPosition, 1.0f), color, 0, 0, 0, 0);
+    //logFragment(vec4(convRG16ToVec2(convVec2ToRG16(nwcNormal.rg)), nwcNormal.rg), vec4(convRG16ToVec2(convVec2ToRG16(color.rg)), color.rg), 0, 0, 0, 0);
 }

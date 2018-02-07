@@ -16,6 +16,9 @@
     <Filter Include="Source Files\Modules">
       <UniqueIdentifier>{ff61aaf3-9dbc-4a06-af3c-ff772ecc117d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Modules">
+      <UniqueIdentifier>{ead99924-6dcb-43a0-9324-9b294fb69054}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -92,15 +95,6 @@
     <ClInclude Include="GLBufferObject.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="RenderToFragmentList.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="VoxelVisualizer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="RenderPhong.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="SceneMaterialManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -119,8 +113,17 @@
     <ClInclude Include="CounterBlock.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="RenderPhong.h">
+      <Filter>Header Files\Modules</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderToFragmentList.h">
+      <Filter>Header Files\Modules</Filter>
+    </ClInclude>
     <ClInclude Include="RenderToGrid.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Modules</Filter>
+    </ClInclude>
+    <ClInclude Include="VoxelVisualizer.h">
+      <Filter>Header Files\Modules</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
