@@ -5,7 +5,7 @@ layout(triangle_strip, max_vertices = 36) out;
 
 uniform mat4 ModelViewProjMat;
 
-out ivec3 voxelPos;
+out flat ivec3 voxelPos;
 
 void main() {
     vec3 pos = gl_in[0].gl_Position.xyz;

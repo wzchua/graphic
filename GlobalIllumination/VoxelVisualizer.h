@@ -7,12 +7,30 @@
 class VoxelVisualizer
 {
 private:
+    struct RayCastBlock {
+        glm::mat4 viewToVoxelMat;
+        glm::vec4 camPosition;
+        glm::vec4 camForward;
+        glm::vec4 camUp;
+        int height;
+        int width;
+    };
 
     ShaderProgram voxelVisualizerShader;
+    GLuint uniformLocModelViewProjMat;
+
+    ShaderProgram voxelRayCastGridShader;
+    GLuint uniformBufferRaycastBlock;
+
     bool hasInitialized = false;
+
+    GLuint quadVAOId;
+    GLuint quadVBOId;
+    GLuint quadEBOId;
 public:
     void initialize();
-    void run(Camera& cam, glm::mat4 worldToVoxelMat, GLBufferObject<glm::ivec4>& inputssboVoxelList, GLuint noOfVoxels);
+    void rasterizeVoxels(Camera& cam, glm::mat4 worldToVoxelMat, GLBufferObject<glm::vec4>& inputssboVoxelList, GLuint noOfVoxels, GLuint colorTextureId);
+    void rayCastVoxels(Camera& cam, glm::mat4 worldToVoxelMat, GLuint colorTextureId);
     VoxelVisualizer();
     ~VoxelVisualizer();
 };

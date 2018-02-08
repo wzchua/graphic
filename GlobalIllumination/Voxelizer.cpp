@@ -78,9 +78,10 @@ Voxelizer::Voxelizer()
     ssboFragmentList.initialize(GL_SHADER_STORAGE_BUFFER, fragCount * sizeof(FragStruct), NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, 0);
     ssboFragmentList2.initialize(GL_SHADER_STORAGE_BUFFER, fragCount * sizeof(FragStruct), NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, 0);
     ssboLogList.initialize(GL_SHADER_STORAGE_BUFFER, sizeof(LogStruct) * maxLogCount, NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
-    ssboVoxelList.initialize(GL_SHADER_STORAGE_BUFFER, sizeof(glm::ivec4) * 1024 * 1024, NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT);
+    ssboVoxelList.initialize(GL_SHADER_STORAGE_BUFFER, sizeof(glm::vec4) * 1024 * 1024, NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT);
 
     mModuleRenderToGrid.initialize();
+    mModuleVoxelVisualizer.initialize();
     /*
     //nodelist buffer
     glGenBuffers(1, &ssboNodeList);
@@ -280,14 +281,14 @@ void Voxelizer::voxelizeFragmentList(Scene& scene)
 
     // get length of fragment list
     auto set = ssboCounterSet.getPtr();
-    unsigned int fragmentCount = set[0].fragmentCounter;
+    unsigned int voxelCount = set[0].fragmentCounter;
     unsigned int logCount = set[0].logCounter;
     set[0] = mZeroedCounterBlock;
     ssboCounterSet.unMapPtr();
 
     auto vPtr = ssboVoxelList.getPtr();
-    std::vector<glm::ivec4> voxels;
-    for (int i = 0; i < fragmentCount; i++) {
+    std::vector<glm::vec4> voxels;
+    for (int i = 0; i < voxelCount; i++) {
         voxels.push_back(vPtr[i]);
     }
     ssboVoxelList.unMapPtr();
@@ -296,14 +297,27 @@ void Voxelizer::voxelizeFragmentList(Scene& scene)
     //ptrfrag[0] = 0;
     //atomicFragCounter.unMapPtr();
     std::vector<LogStruct> logs;
-    ShaderLogger::getLogs(ssboLogList, logCount, logs);
+    //ShaderLogger::getLogs(ssboLogList, logCount, logs);
 
     //unsigned int fragmentCount = getAndResetCount(atomicFragCounter);
 
     //glGetNamedBufferSubData(atomicFragCounterTest, 0, sizeof(GLuint), &fragmentCount);
     auto timeAfterFragmentCountGet = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - timeStart).count();
     std::cout << "time after reset: " << timeAfterReset << " ms. time after render: " << timeAfterRender << " ms. time after fragment count get: " << timeAfterFragmentCountGet << " ms" << std::endl;
+    mModuleVoxelVisualizer.rayCastVoxels(scene.cam, voxelMatrixData.worldToVoxelMat, texture3DColorGrid);
+    set = ssboCounterSet.getPtr();
+    logCount = set[0].logCounter;
+    set[0] = mZeroedCounterBlock;
+    ssboCounterSet.unMapPtr();
+    ShaderLogger::getLogs(ssboLogList, logCount, logs);
+    auto timeAfterVoxelRayCast = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - timeStart).count();
+    std::cout << "time after voxel ray cast : " << timeAfterVoxelRayCast << " ms" << std::endl;
+
     mModuleRenderToGrid.resetData();
+    glInvalidateTexImage(texture3DColorGrid, 0);
+    glClearTexImage(texture3DColorGrid, 0, GL_RGBA, GL_FLOAT, NULL);
+    glInvalidateTexImage(texture3DNormalGrid, 0);
+    glClearTexImage(texture3DNormalGrid, 0, GL_RGBA, GL_FLOAT, NULL);
     /*
     glm::vec4 min = glm::vec4(0.0);
     glm::vec4 max = glm::vec4(0.0);

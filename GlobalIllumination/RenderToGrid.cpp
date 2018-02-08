@@ -25,7 +25,7 @@ void RenderToGrid::initialize()
     glBindTexture(GL_TEXTURE_3D, 0);
 }
 
-void RenderToGrid::run(Scene& inputScene, GLBufferObject<CounterBlock> & ssboCounterSet, GLuint voxelizeMatrixBlock, GLuint logUniformBlock, GLBufferObject<LogStruct> & ssboLogList, GLuint texture3DColor, GLuint texture3DNormal, GLBufferObject<glm::ivec4> & voxelList)
+void RenderToGrid::run(Scene& inputScene, GLBufferObject<CounterBlock> & ssboCounterSet, GLuint voxelizeMatrixBlock, GLuint logUniformBlock, GLBufferObject<LogStruct> & ssboLogList, GLuint texture3DColor, GLuint texture3DNormal, GLBufferObject<glm::vec4> & voxelList)
 {
     GLuint currentShaderProgram = voxelizeGridShader.use();
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, voxelizeMatrixBlock);

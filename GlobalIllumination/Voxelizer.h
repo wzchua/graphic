@@ -12,6 +12,7 @@
 #include "CounterBlock.h"
 #include "RenderToFragmentList.h"
 #include "RenderToGrid.h"
+#include "VoxelVisualizer.h"
 
 class Voxelizer
 {
@@ -64,6 +65,7 @@ private:
 
     RenderToFragmentList mModuleToFragList;
     RenderToGrid mModuleRenderToGrid;
+    VoxelVisualizer mModuleVoxelVisualizer;
 
     GLuint atomicFragCounterTest;
 
@@ -77,7 +79,7 @@ private:
     GLBufferObject<FragStruct> ssboFragmentList;
     GLBufferObject<FragStruct> ssboFragmentList2;
     GLBufferObject<LogStruct> ssboLogList;
-    GLBufferObject<glm::ivec4> ssboVoxelList;
+    GLBufferObject<glm::vec4> ssboVoxelList;
     
     GLuint ssboNodeList;
     GLuint ssboLeafNodeList;

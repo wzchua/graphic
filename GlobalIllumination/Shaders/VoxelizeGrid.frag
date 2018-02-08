@@ -32,7 +32,7 @@ layout(binding = 1) coherent buffer CounterBlock {
     uint logCounter;
 };
 layout(binding = 2) coherent buffer VoxelListBlock {
-    ivec4 voxelList[];
+    vec4 voxelList[];
 };
 
 struct LogStruct {
@@ -118,7 +118,7 @@ void addToGrid(vec4 color, vec3 normal) {
     uint count = imageAtomicAdd(fragmentImageCounter, pos, 1);
     if(count == 0) {
         uint index = atomicAdd(fragmentCounter, 1);
-        voxelList[index] = ivec4(pos, 1);
+        voxelList[index] = vec4(pos, 1.0f);
     }
 }
 
