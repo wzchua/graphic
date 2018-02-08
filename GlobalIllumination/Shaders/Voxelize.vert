@@ -56,5 +56,5 @@ void main()
     geomwcPosition = vec3( wcPosition4 ) / wcPosition4.w;
     geomwcNormal = vNormal;
     geomTexCoord = vTexCoord;
-    gl_Position = ViewProjMatrixXY * vec4(vPosition, 1.0f);
+    gl_Position = ViewProjMatrixXY * WorldToVoxelMat * vec4(vPosition, 1.0f);
 }

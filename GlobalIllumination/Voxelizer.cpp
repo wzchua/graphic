@@ -78,7 +78,7 @@ Voxelizer::Voxelizer()
     ssboFragmentList.initialize(GL_SHADER_STORAGE_BUFFER, fragCount * sizeof(FragStruct), NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, 0);
     ssboFragmentList2.initialize(GL_SHADER_STORAGE_BUFFER, fragCount * sizeof(FragStruct), NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, 0);
     ssboLogList.initialize(GL_SHADER_STORAGE_BUFFER, sizeof(LogStruct) * maxLogCount, NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
-    ssboVoxelList.initialize(GL_SHADER_STORAGE_BUFFER, sizeof(glm::vec4) * 1024 * 1024, NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT);
+    ssboVoxelList.initialize(GL_SHADER_STORAGE_BUFFER, sizeof(glm::vec4) * 1024 * 1024 * 4, NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT);
 
     mModuleRenderToGrid.initialize();
     mModuleVoxelVisualizer.initialize();
@@ -285,13 +285,21 @@ void Voxelizer::voxelizeFragmentList(Scene& scene)
     unsigned int logCount = set[0].logCounter;
     set[0] = mZeroedCounterBlock;
     ssboCounterSet.unMapPtr();
-
+    /*
     auto vPtr = ssboVoxelList.getPtr();
     std::vector<glm::vec4> voxels;
     for (int i = 0; i < voxelCount; i++) {
         voxels.push_back(vPtr[i]);
     }
     ssboVoxelList.unMapPtr();
+    glm::vec3 min{ 512.0f, 512.0f, 512.0f }, max;
+    for (int i = 0; i < voxelCount; i++) {
+        glm::vec4 v = voxels[i];
+        glm::vec3 coords = { v.x, v.y, v.z };
+        min = glm::min(min, coords);
+        max = glm::max(max, coords);
+    }
+    */
     //auto ptrfrag = atomicFragCounter.getPtr();
    // auto t = ptrfrag[0];
     //ptrfrag[0] = 0;

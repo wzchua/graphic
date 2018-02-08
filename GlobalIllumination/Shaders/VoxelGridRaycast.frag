@@ -81,6 +81,7 @@ void main() {
     vec3 rayPosition = rOrigin;
     bool hasHit = false;
     bool isRayInCube = true;
+    vec4 color;
     if(gl_FragCoord.x < 1 && gl_FragCoord.y < 1) {        
         logFragment(vec4(rayPosition, 1.0f), vec4(gl_FragCoord.xyz, 1.0f), 0, 0, height, width);
     }
@@ -88,15 +89,15 @@ void main() {
     do {
         rayPosition += dir;
         isRayInCube = isRayInCubeSpace(rayPosition);
-        vec4 c = imageLoad(colorGrid, ivec3(rayPosition));
-        hasHit = c.a != 0.0f;
+        color = imageLoad(colorGrid, ivec3(rayPosition));
+        hasHit = color.a != 0.0f;
         if(gl_FragCoord.x < 1 && gl_FragCoord.y < 1) {        
-            logFragment(vec4(rayPosition, 1.0f), c, uint(hasHit), 0, height, width);
+            logFragment(vec4(rayPosition, 1.0f), color, uint(hasHit), 0, height, width);
         }
-    } while(hasHit == false && isRayInCube);
+    } while(!hasHit && isRayInCube);
 
     if(isRayInCube) {
-        FragColor = imageLoad(colorGrid, ivec3(rayPosition)); 
+        FragColor = color; 
         //FragColor = vec4(1.0f, 0.0f, 0.0f, 1.0f);
         
     } else {
