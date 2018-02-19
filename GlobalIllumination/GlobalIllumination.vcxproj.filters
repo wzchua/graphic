@@ -69,11 +69,11 @@
     <ClCompile Include="RenderToGrid.cpp">
       <Filter>Source Files\Modules</Filter>
     </ClCompile>
+    <ClCompile Include="RenderToOctree.cpp">
+      <Filter>Source Files\Modules</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ObjLoader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Shape.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -123,6 +123,12 @@
       <Filter>Header Files\Modules</Filter>
     </ClInclude>
     <ClInclude Include="VoxelVisualizer.h">
+      <Filter>Header Files\Modules</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderToOctree.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjLoader.h">
       <Filter>Header Files\Modules</Filter>
     </ClInclude>
   </ItemGroup>

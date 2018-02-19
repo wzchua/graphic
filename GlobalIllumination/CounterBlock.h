@@ -3,5 +3,6 @@
 
 struct CounterBlock {
     GLuint fragmentCounter;
+    GLuint nodeCounter;
     GLuint logCounter;
 };

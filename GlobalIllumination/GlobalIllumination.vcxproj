@@ -26,6 +26,7 @@
     <ClCompile Include="ObjLoader.cpp" />
     <ClCompile Include="RenderPhong.cpp" />
     <ClCompile Include="RenderToFragmentList.cpp" />
+    <ClCompile Include="RenderToOctree.cpp" />
     <ClCompile Include="SceneMaterialManager.cpp" />
     <ClCompile Include="ShaderProgram.cpp" />
     <ClCompile Include="Renderer.cpp" />
@@ -46,6 +47,7 @@
     <ClInclude Include="ObjLoader.h" />
     <ClInclude Include="RenderPhong.h" />
     <ClInclude Include="RenderToFragmentList.h" />
+    <ClInclude Include="RenderToOctree.h" />
     <ClInclude Include="SceneMaterialManager.h" />
     <ClInclude Include="ShaderProgram.h" />
     <ClInclude Include="Renderer.h" />
