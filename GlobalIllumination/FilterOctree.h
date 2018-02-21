@@ -2,10 +2,12 @@
 #include "NodeStruct.h"
 #include "GLBufferObject.h"
 #include "LogStruct.h"
+#include "ShaderProgram.h"
 class FilterOctree
 {
 private:
 
+    ShaderProgram filterOctreeShader;
     bool hasInitialized = false;
 public:
     void initialize();

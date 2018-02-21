@@ -2,6 +2,13 @@
 
 
 
+void FilterOctree::initialize()
+{
+
+    filterOctreeShader.generateShader("./Shaders/MIPmapOctree.comp", ShaderProgram::COMPUTE);
+    filterOctreeShader.linkCompileValidate();
+}
+
 void FilterOctree::run(GLBufferObject<NodeStruct>& nodeOctree, GLBufferObject<GLuint> & ssboLeafIndexList, GLuint textureColor, GLuint textureNormal)
 {
     glBindImageTexture(4, textureColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
