@@ -53,7 +53,7 @@ private:
 
     VoxelMatrixBlock voxelMatrixData;
     LimitsBlock voxelLogCountData = { fragCount, nodeCount, nodeCount, maxLogCount };
-    const CounterBlock mZeroedCounterBlock = { 0, 1, 0, 0, 0, 0 };
+    const CounterBlock mZeroedCounterBlock = { 0, 1, 1, 0, 0, 0 };
     CounterBlock mCounterBlock = mZeroedCounterBlock;
 
     GLuint voxelMatrixUniformBuffer;

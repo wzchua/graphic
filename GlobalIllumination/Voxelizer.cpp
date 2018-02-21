@@ -186,7 +186,7 @@ void Voxelizer::voxelizeFragmentList(Scene& scene)
     auto timeAfterRender= std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - timeStart).count();
 
     //ShaderLogger::getLogs(ssboLogList, logCount, logs);
-    mModuleAddToOctree.run(ssboNodeList, ssboFragmentList, ssboCounterSet, voxelLogUniformBuffer, texture3DColorList, texture3DNormalList, ssboLogList);
+    mModuleAddToOctree.run(ssboNodeList, ssboFragmentList, ssboCounterSet, ssboLeafIndexList, voxelLogUniformBuffer, texture3DColorList, texture3DNormalList, ssboLogList);
 
     auto timeAfterAddingToOctree = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - timeStart).count();
     std::cout << " ms. time after render: " << timeAfterRender << " ms. time after add to octree: " << timeAfterAddingToOctree << " ms" << std::endl;
