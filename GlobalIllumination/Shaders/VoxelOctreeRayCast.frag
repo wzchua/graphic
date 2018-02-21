@@ -4,14 +4,17 @@
 
 in vec3 wcPosition;   // Vertex position in scaled world space.
 
-uniform int height;
-uniform int width;
-uniform vec3 camPosition;
-uniform vec3 camForward;
-uniform vec3 camUp;
+layout(binding = 0) uniform RayCastBlock {
+    mat4 ViewToVoxelMat;
+    vec4 camPosition;
+    vec4 camForward;
+    vec4 camUp;
+    int height;
+    int width;
+};
 
 layout(binding = 4, RGBA8) uniform image3D colorBrick;
-layout(binding = 5, RGBA8) uniform image3D normalBrick;
+//layout(binding = 5, RGBA8) uniform image3D normalBrick;
 
 uniform uint INVALID = 0 - 1;
 uniform int lowestLevel = 9;
@@ -21,12 +24,17 @@ uniform float levels[10] = float[10](0.001953125f, 0.00390625f, 0.0078125f,
 
 struct NodeStruct {
     uint parentPtr;
-    uint selfPtr;
     uint childPtr;
     uint childBit;
     uint modelBrickPtr;
     uint lightBit;
     uint lightBrickPtr;
+    uint xPositive;
+    uint xNegative;
+    uint yPositive;
+    uint yNegative;
+    uint zPositive;
+    uint zNegative;
 };
 
 layout(binding = 2) volatile buffer NodeBlock {

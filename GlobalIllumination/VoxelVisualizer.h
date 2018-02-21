@@ -20,6 +20,7 @@ private:
     GLuint uniformLocModelViewProjMat;
 
     ShaderProgram voxelRayCastGridShader;
+    ShaderProgram voxelRayCastOctreeShader;
     GLuint uniformBufferRaycastBlock;
 
     bool hasInitialized = false;
@@ -28,9 +29,12 @@ private:
     GLuint quadVBOId;
     GLuint quadEBOId;
 public:
+    enum Type {
+        GRID, OCTREE
+    };
     void initialize();
     void rasterizeVoxels(Camera& cam, glm::mat4 worldToVoxelMat, GLBufferObject<glm::vec4>& inputssboVoxelList, GLuint noOfVoxels, GLuint colorTextureId);
-    void rayCastVoxels(Camera& cam, glm::mat4 worldToVoxelMat, GLuint colorTextureId);
+    void rayCastVoxels(Camera& cam, glm::mat4 worldToVoxelMat, GLuint colorTextureId, Type type);
     VoxelVisualizer();
     ~VoxelVisualizer();
 };

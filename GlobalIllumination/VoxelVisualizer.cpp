@@ -50,6 +50,10 @@ void VoxelVisualizer::initialize()
     voxelRayCastGridShader.generateShader("./Shaders/VoxelGridRayCast.frag", ShaderProgram::FRAGMENT);
     voxelRayCastGridShader.linkCompileValidate();
 
+    voxelRayCastOctreeShader.generateShader("./Shaders/VoxelOctreeRayCast.vert", ShaderProgram::VERTEX);
+    voxelRayCastOctreeShader.generateShader("./Shaders/VoxelOctreeRayCast.frag", ShaderProgram::FRAGMENT);
+    voxelRayCastOctreeShader.linkCompileValidate();
+
     glGenBuffers(1, &uniformBufferRaycastBlock);
     glBindBuffer(GL_UNIFORM_BUFFER, uniformBufferRaycastBlock);
     glBufferData(GL_UNIFORM_BUFFER, sizeof(RayCastBlock), NULL, GL_STREAM_DRAW);
@@ -85,9 +89,14 @@ void VoxelVisualizer::rasterizeVoxels(Camera& cam, glm::mat4 worldToVoxelMat, GL
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void VoxelVisualizer::rayCastVoxels(Camera & cam, glm::mat4 worldToVoxelMat, GLuint colorTextureId)
+void VoxelVisualizer::rayCastVoxels(Camera & cam, glm::mat4 worldToVoxelMat, GLuint colorTextureId, Type type)
 {
-    voxelRayCastGridShader.use();
+    if (type == GRID) {
+        voxelRayCastGridShader.use();
+    }
+    else {
+        voxelRayCastOctreeShader.use();
+    }
     int width = 800;
     int height = 600;
     glm::mat4 viewToVoxelMat = worldToVoxelMat * glm::inverse(cam.getViewMatrix());

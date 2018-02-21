@@ -66,12 +66,6 @@ private:
 
     GLuint atomicFragCounterTest;
 
-    GLBufferObject<GLuint> atomicFragCounter;
-    GLBufferObject<GLuint> atomicNodeCounter;
-    GLBufferObject<GLuint> atomicModelBrickCounter;
-    GLBufferObject<GLuint> atomicLeafNodeCounter;
-    GLBufferObject<GLuint> atomicLogCounter;
-
     GLBufferObject<CounterBlock> ssboCounterSet;
     GLBufferObject<FragStruct> ssboFragmentList;
     GLBufferObject<NodeStruct> ssboNodeList;
