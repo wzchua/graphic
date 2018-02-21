@@ -27,22 +27,29 @@ layout(binding = 1) coherent buffer CounterBlock {
 layout(binding = 2) coherent buffer NodeBlock {
     NodeStruct node[];
 };
-
-layout(binding = 8, RGBA8) writeonly uniform image3D colorBrick;
-layout(binding = 9, RGBA8) writeonly uniform image3D normalBrick;
-
-layout(binding = 8, RGBA8) uniform sampler3D colorBrickSampler;
-layout(binding = 9, RGBA8) uniform sampler3D normalBrickSampler;
-
-layout(binding = 3) buffer ArrayBlock {
+layout(binding = 3) coherent buffer ArrayBlock {
     uint leafList[];
 };
+
+layout(binding = 4, RGBA8) uniform coherent volatile uimage3D colorBrick;
+layout(binding = 5, r32ui) uniform coherent volatile uimage3D normalBrick;
+
 
 ivec3 computeOffset(uint bx, uint by, int childIndex) {    
     return ivec3(bx + (i & childIndex), by + ((childIndex & 2) >> 1), (childIndex & 4) >> 2);
 }
 
 const uint LEAFHOST = 0 - 2;
+// includes -1.0f to 1.0f
+vec4 convXYZWToVec4( uint val) {
+    vec3 xyz = vec3(float (( val &0x000000FF)) , float (( val &0x0000FF00) >>8U) , float (( val &0x00FF0000) >>16U));
+    xyz = (xyz - 128.0f) / 127.0f;
+    return vec4 (  xyz, float (( val &0xFF000000) >>24U) );
+}
+uint convVec4ToXYZW( vec4 val) {
+    val.xyz = (val.xyz * 127.0f + 128.0f);
+    return ( uint ( val.w) &0x000000FF) <<24U | ( uint( val.z) &0x000000FF) <<16U | ( uint( val.y ) &0x000000FF) <<8U | ( uint( val.x) &0x000000FF);
+}
 void main() {
     
   uint nodeListPtr = gl_GlobalInvocationID.x;
@@ -57,25 +64,33 @@ void main() {
         uint bx = (brickChildId & 0x1FF) * 2;
         uint by = (brickChildId >> 9) * 2;
         vec4 color = vec4(0.0f);
+        vec4 normal = vec4(0.0f);
         for(int i = 0; i < 8; i++) {
             uint hasChild = (childBits >> i) & 0x01;
             //check child bit
             if(hasChild == 1) {    
                 ivec3 pos = computeOffset(bx, by, i);
-                vec4 cColor = texelFetch(colorBrickSampler, pos, 0);
+                vec4 cColor = imageLoad(colorBrick, pos);
+                vec4 cNormal = convXYZWToVec4(imageLoad(normalBrick, pos).a);
                 if(isLeaf) { //normalize leaf alpha (used as counter in previous stage)
                     cColor.a = 1.0f;
                     imageStore(colorBrick, pos, cColor);
+                    cNormal.a = 1.0f;
+                    imageStore(normalBrick, pos, convVec4ToXYZW(cNormal));
                 }
                 color += cColor;
+                normal += cNormal;
             }
         }
         color = color / 8.0f;
+        normal = normalize(normal);
         NodeStruct parent = node[parentPtr];
         uint childIndex = childPtr - parent.childPtr;
         uint brickParentId = parent.modelBrickPtr;
         uint pbx = (brickParentId & 0x1FF) * 2;
         uint pby = (brickParentId >> 9) * 2;        
-        imageStore(colorBrick, computeOffset(pbx, pby, childIndex), color);
+        ivec3 parentPos = computeOffset(pbx, pby, childIndex);
+        imageStore(colorBrick, parentPos, color);
+        imageStore(normalBrick, parentPos, convVec4ToXYZW(normal));
     }
 }
