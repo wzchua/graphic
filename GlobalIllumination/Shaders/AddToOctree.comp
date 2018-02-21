@@ -2,9 +2,7 @@
 #extension GL_ARB_shader_atomic_counter_ops : require
 #extension GL_ARB_bindless_texture : require
 
-in vec3 wcPosition;   // Vertex position in scaled world space.
-in vec3 wcNormal;     // Vertex normal in world space.
-in vec2 fTexCoord;
+layout (local_size_x = 512) in;
 
 layout(binding = 1) uniform MatBlock {
     sampler2D texAmbient;
@@ -60,9 +58,13 @@ layout(binding = 1) coherent buffer CounterBlock {
     uint nodeCounter;
     uint brickCounter;
     uint logCounter;
+    uint noOfFragments;
 };
 layout(binding = 2) coherent buffer NodeBlock {
     NodeStruct node[];
+};
+layout(binding = 3) coherent buffer FragmentListBlock2 {
+    FragmentStruct fragInput[];
 };
 layout(binding = 7) coherent buffer LogBlock {
     LogStruct logList[];
@@ -250,22 +252,8 @@ void addToOctree(vec3 pos, vec4 color, vec3 normal) {
 
 //Generates a voxel list from rasterization
 void main() {    
-    if(texture(texAlpha, fTexCoord).r < 0.5f) {
-        discard;
+    if(gl_GlobalInvocationID.x < noOfFragments) {
+        FragmentStruct f = fragInput[gl_GlobalInvocationID.x];
+        addToOctree(f.position, f.color, f.normal);
     }
-    vec3 nwcNormal = normalize(wcNormal);
-    if(useBumpMap == 1) {            
-        float h11 = texture(texHeight, fTexCoord).r;
-        float h01 = textureOffset(texHeight, fTexCoord, off.xy).r;
-        float h21 = textureOffset(texHeight, fTexCoord, off.zy).r;
-        float h10 = textureOffset(texHeight, fTexCoord, off.yx).r;
-        float h12 = textureOffset(texHeight, fTexCoord, off.yz).r;
-
-        vec3 va = normalize(vec3(size.xy,h21-h01));
-        vec3 vb = normalize(vec3(size.yx,h12-h10));
-
-        nwcNormal = normalize(nwcNormal + cross(va, vb));
-    }
-    vec4 color = vec4(diffuse.rgb * texture(texDiffuse, fTexCoord).rgb, 1.0f);
-    addToOctree(wcPosition, color, nwcNormal);
 }

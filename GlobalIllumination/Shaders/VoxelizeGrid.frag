@@ -18,8 +18,10 @@ layout(binding = 1) uniform MatBlock {
     float shininess;
 };
 layout(binding = 7, std140) uniform LimitsUniformBlock {
-    uint maxNoOfLogs;
     uint maxNoOfFragments;
+    uint maxNoOfNodes;
+    uint maxNoOfBricks;
+    uint maxNoOfLogs;
 };
 
 layout(binding = 4, r32ui) uniform coherent volatile uimage3D colorBrick;
@@ -29,6 +31,8 @@ layout(binding = 7, r32ui) uniform coherent volatile uimage3D fragmentImageCount
 
 layout(binding = 1) coherent buffer CounterBlock {
     uint fragmentCounter;
+    uint nodeCounter;
+    uint brickCounter;
     uint logCounter;
 };
 layout(binding = 2) coherent buffer VoxelListBlock {

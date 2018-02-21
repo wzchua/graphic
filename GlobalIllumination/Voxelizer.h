@@ -10,25 +10,20 @@
 #include "Scene.h"
 #include "GLBufferObject.h"
 #include "CounterBlock.h"
-#include "RenderToFragmentList.h"
 #include "RenderToGrid.h"
 #include "VoxelVisualizer.h"
+#include "RenderToOctree.h"
+#include "AddToOctree.h"
+#include "NodeStruct.h"
 
 class Voxelizer
 {
 public:
-    struct nodeStruct {
-        unsigned int parentPtr;
-        unsigned int selfPtr;
-        unsigned int childPtr;
-        unsigned int childBit;
-        unsigned int modelBrickPtr;
-        unsigned int lightBit;
-        unsigned int lightBrickPtr;
-    };
     struct LimitsBlock {
-        GLuint maxNoOfLogs;
         GLuint maxNoOfFragments;
+        GLuint maxNoOfNodes;
+        GLuint maxNoOfBricks;
+        GLuint maxNoOfLogs;
     };
     struct VoxelMatrixBlock {
         glm::mat4 worldToVoxelMat;
@@ -56,14 +51,16 @@ private:
     unsigned int maxLogCount = 500;
 
     VoxelMatrixBlock voxelMatrixData;
-    LimitsBlock voxelLogCountData = { maxLogCount, fragCount };
-    const CounterBlock mZeroedCounterBlock = { 0, 0 };
+    LimitsBlock voxelLogCountData = { fragCount, nodeCount, nodeCount, maxLogCount };
+    const CounterBlock mZeroedCounterBlock = { 0, 1, 0, 0 };
     CounterBlock mCounterBlock = mZeroedCounterBlock;
 
     GLuint voxelMatrixUniformBuffer;
     GLuint voxelLogUniformBuffer;
 
-    RenderToFragmentList mModuleToFragList;
+    RenderToOctree mModuleRenderToOctree;
+    AddToOctree mModuleAddToOctree;
+
     RenderToGrid mModuleRenderToGrid;
     VoxelVisualizer mModuleVoxelVisualizer;
 
@@ -77,18 +74,11 @@ private:
 
     GLBufferObject<CounterBlock> ssboCounterSet;
     GLBufferObject<FragStruct> ssboFragmentList;
-    GLBufferObject<FragStruct> ssboFragmentList2;
+    GLBufferObject<NodeStruct> ssboNodeList;
     GLBufferObject<LogStruct> ssboLogList;
     GLBufferObject<glm::vec4> ssboVoxelList;
     
-    GLuint ssboNodeList;
     GLuint ssboLeafNodeList;
-
-    GLuint texture3DrgColorBrickList;
-    GLuint texture3DbaColorBrickList;
-    GLuint texture3DxyNormalBrickList;
-    GLuint texture3DzwNormalBrickList;
-    GLuint texture3DCounterList;
 
     GLuint texture3DColorList;
     GLuint texture3DNormalList;

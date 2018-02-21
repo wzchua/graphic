@@ -14,9 +14,11 @@ private:
 public:
     void initialize(GLenum target, GLsizeiptr size, const void* data, GLbitfield flag, GLbitfield access);
     void bind(GLuint binding);
+    void clearData();
     T* getPtr();
     void unMapPtr();
     GLuint getId();
+
     GLBufferObject();
     ~GLBufferObject();
     //prevent copying
@@ -26,7 +28,7 @@ public:
 
 
 template<class T>
-void GLBufferObject<T>::initialize(GLenum target, GLsizeiptr size, const void* data, GLbitfield flags, GLbitfield access)
+inline void GLBufferObject<T>::initialize(GLenum target, GLsizeiptr size, const void* data, GLbitfield flags, GLbitfield access)
 {
     if (hasInitialized) {
         return;
@@ -47,9 +49,15 @@ void GLBufferObject<T>::initialize(GLenum target, GLsizeiptr size, const void* d
 }
 
 template<class T>
-void GLBufferObject<T>::bind(GLuint binding)
+inline void GLBufferObject<T>::bind(GLuint binding)
 {
     glBindBufferBase(mTarget, binding, id);
+}
+
+template<class T>
+inline void GLBufferObject<T>::clearData()
+{
+    glClearNamedBufferData(id, GL_R8UI, GL_RED_INTEGER, GL_UNSIGNED_BYTE, NULL);
 }
 
 template<class T>

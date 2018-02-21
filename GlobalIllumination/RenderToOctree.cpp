@@ -15,7 +15,7 @@ void RenderToOctree::initialize()
 }
 
 void RenderToOctree::run(Scene & inputScene, GLBufferObject<CounterBlock>& counterSet, GLuint voxelizeMatrixBlock, GLuint logUniformBlock, //inpout
-                            GLuint texture3DColor, GLuint texture3DNormal, GLBufferObject<FragStruct> & ssboFragList, GLBufferObject<LogStruct> & ssboLogList) //output
+                            GLBufferObject<NodeStruct>& ssboNodeList, GLuint texture3DColor, GLuint texture3DNormal, GLBufferObject<FragStruct> & ssboFragList, GLBufferObject<LogStruct> & ssboLogList) //output
 {
     GLuint currentShaderProgram = voxelizeOctreeShader.use();
 
@@ -24,6 +24,7 @@ void RenderToOctree::run(Scene & inputScene, GLBufferObject<CounterBlock>& count
 
     ssboFragList.bind(0);
     counterSet.bind(1);
+    ssboNodeList.bind(2);
     ssboLogList.bind(7);
 
     glBindImageTexture(4, texture3DColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);

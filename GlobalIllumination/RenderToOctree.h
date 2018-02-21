@@ -4,6 +4,7 @@
 #include "GLBufferObject.h"
 #include "CounterBlock.h"
 #include "FragStruct.h"
+#include "NodeStruct.h"
 #include "LogStruct.h"
 
 class RenderToOctree
@@ -15,7 +16,7 @@ private:
 public:
     void initialize();
     void run(Scene& inputScene, GLBufferObject<CounterBlock> & counterSet, GLuint voxelizeMatrixBlock, GLuint logUniformBlock, 
-                GLuint texture3DColor, GLuint texture3DNormal, GLBufferObject<FragStruct> & ssboFragList, GLBufferObject<LogStruct> & ssboLogList);
+                GLBufferObject<NodeStruct>& ssboNodeList, GLuint texture3DColor, GLuint texture3DNormal, GLBufferObject<FragStruct> & ssboFragList, GLBufferObject<LogStruct> & ssboLogList);
     RenderToOctree();
     ~RenderToOctree();
 };

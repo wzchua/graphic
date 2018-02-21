@@ -12,13 +12,18 @@ layout(binding = 0, std140) uniform VoxelizeMatrixBlock {
     mat4 ViewProjMatrixZY; 
     mat4 ViewProjMatrixXZ;
 };
+layout(binding = 7, std140) uniform LimitsUniformBlock {
+    uint maxNoOfFragments;
+    uint maxNoOfNodes;
+    uint maxNoOfBricks;
+    uint maxNoOfLogs;
+};
+
 layout(binding = 1) coherent buffer CounterBlock {
     uint fragmentCounter;
+    uint nodeCounter;
+    uint brickCounter;
     uint logCounter;
-};
-layout(binding = 7, std140) uniform LimitsUniformBlock {
-    uint maxNoOfLogs;
-    uint maxNoOfFragments;
 };
 struct LogStruct {
     vec4 position;
