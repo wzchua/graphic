@@ -2,6 +2,13 @@
 
 
 
+void RenderLightIntoOctree::initialize()
+{
+    if (hasInitialized) {
+        return;
+    }
+}
+
 RenderLightIntoOctree::RenderLightIntoOctree()
 {
 }

@@ -30,6 +30,9 @@ layout(binding = 2) coherent buffer NodeBlock {
 layout(binding = 3) coherent buffer ArrayBlock {
     uint leafList[];
 };
+layout(binding = 4) coherent buffer ArrayBlock {
+    uint newLeafList[];
+};
 
 layout(binding = 4, RGBA8) uniform coherent volatile uimage3D colorBrick;
 layout(binding = 5, r32ui) uniform coherent volatile uimage3D normalBrick;
@@ -53,7 +56,7 @@ uint convVec4ToXYZW( vec4 val) {
 void main() {
     
   uint nodeListPtr = gl_GlobalInvocationID.x;
-    if(nodeListPtr < leafCounter) {
+    if(nodeListPtr < noOfFragments) {
         uint childPtr = leafList[nodeListPtr];
         NodeStruct child = node[childPtr];
         bool isLeaf = child.childPtr == LEAFHOST;
@@ -86,6 +89,14 @@ void main() {
         normal = normalize(normal);
         NodeStruct parent = node[parentPtr];
         uint childIndex = childPtr - parent.childPtr;
+        uint parentChildBits = parent.childBit;
+        uint unflaggedParentChildBits = 0x0FF & parentChildBits;
+        uint flaggedParentChildBits = unflaggedParentChildBits | 0x100;
+        uint atomicParentChildBit = atomicCompSwap(node[parentPtr].childBit, unflaggedParentChildBits, flaggedParentChildBits);
+        if(atomicParentChildBit == unflaggedParentChildBits) {
+            uint leafIndex = atomicAdd(leafCounter, 1);
+            newLeafList[leafIndex] = parentPtr;
+        }
         uint brickParentId = parent.modelBrickPtr;
         uint pbx = (brickParentId & 0x1FF) * 2;
         uint pby = (brickParentId >> 9) * 2;        

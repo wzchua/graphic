@@ -1,5 +1,6 @@
 #pragma once
 #include "glm\glm.hpp"
+#include <vector>
 
 struct LogStruct {
     glm::vec4 position;
