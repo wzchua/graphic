@@ -15,7 +15,7 @@ private:
     bool hasInitialized = false;
 public:
     void initialize();
-    void run(Scene& inputScene, GLBufferObject<CounterBlock> & counterSet, GLuint voxelizeMatrixBlock, GLuint logUniformBlock, 
+    void run(Scene& inputScene, GLBufferObject<CounterBlock> & counterSet, GLuint voxelizeMatrixBlock, GLuint logUniformBlock, GLBufferObject<GLuint> & ssboLeafIndexList,
                 GLBufferObject<NodeStruct>& ssboNodeList, GLuint texture3DColor, GLuint texture3DNormal, GLBufferObject<FragStruct> & ssboFragList, GLBufferObject<LogStruct> & ssboLogList);
     RenderToOctree();
     ~RenderToOctree();

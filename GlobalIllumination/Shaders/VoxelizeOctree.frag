@@ -59,11 +59,16 @@ layout(binding = 1) coherent buffer CounterBlock {
     uint fragmentCounter;
     uint nodeCounter;
     uint brickCounter;
+    uint leafCounter;
     uint logCounter;
+    uint noOfFragments;
 };
 layout(binding = 2) coherent buffer NodeBlock {
     NodeStruct node[];
 };
+layout(binding = 3) coherent buffer LeafListBlock {
+    uint leafList[];
+}
 layout(binding = 7) coherent buffer LogBlock {
     LogStruct logList[];
 };
@@ -149,8 +154,8 @@ uint checkAndInitializeLeafHost(uint leafIndex) {
 
     if(leafState == 0) {
         node[leafIndex].modelBrickPtr = atomicAdd(brickCounter, 1);
-        //uint index = atomicCounterIncrement(leafNodePtr);
-        //leafList[index] = leafIndex;
+        uint index = atomicAdd(leafCounter, 1);
+        leafList[index] = leafIndex;
         atomicCompSwap(node[leafIndex].childPtr, ISPROCESS, LEAFHOST);
     }
     

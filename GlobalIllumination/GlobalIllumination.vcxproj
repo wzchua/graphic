@@ -21,6 +21,8 @@
   <ItemGroup>
     <ClCompile Include="AddToOctree.cpp" />
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="FilterOctree.cpp" />
+    <ClCompile Include="RenderLightIntoOctree.cpp" />
     <ClCompile Include="RenderToGrid.cpp" />
     <ClCompile Include="glad.c" />
     <ClCompile Include="main.cpp" />
@@ -42,7 +44,9 @@
     <ClInclude Include="AddToOctree.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="CounterBlock.h" />
+    <ClInclude Include="FilterOctree.h" />
     <ClInclude Include="NodeStruct.h" />
+    <ClInclude Include="RenderLightIntoOctree.h" />
     <ClInclude Include="RenderToGrid.h" />
     <ClInclude Include="FragStruct.h" />
     <ClInclude Include="GLBufferObject.h" />

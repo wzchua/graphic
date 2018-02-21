@@ -25,7 +25,7 @@ private:
     bool hasInitialized = false;
 public:
     void initialize();
-    void run(GLBufferObject<NodeStruct> & ssboNodeList, GLBufferObject<FragStruct> & ssboFragList, GLBufferObject<CounterBlock> & counterSet, 
+    void run(GLBufferObject<NodeStruct> & ssboNodeList, GLBufferObject<FragStruct> & ssboFragList, GLBufferObject<CounterBlock> & counterSet, GLBufferObject<GLuint> & ssboLeafIndexList,
             GLuint logUniformBlock, GLuint texture3DColor, GLuint texture3DNormal, GLBufferObject<LogStruct> & ssboLogList);
     AddToOctree();
     ~AddToOctree();

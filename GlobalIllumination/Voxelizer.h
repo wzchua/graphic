@@ -10,11 +10,13 @@
 #include "Scene.h"
 #include "GLBufferObject.h"
 #include "CounterBlock.h"
+#include "NodeStruct.h"
 #include "RenderToGrid.h"
 #include "VoxelVisualizer.h"
 #include "RenderToOctree.h"
 #include "AddToOctree.h"
-#include "NodeStruct.h"
+#include "FilterOctree.h"
+#include "RenderLightIntoOctree.h"
 
 class Voxelizer
 {
@@ -39,11 +41,10 @@ public:
     Camera camVoxel = Camera(glm::vec3(256.0f, 32.0f, 128.0f));
     int projectionAxis = 0;
 private:
-    void getLogs(std::vector<LogStruct> & logs, bool reset = false);
     int getCount(GLBufferObject<GLuint>& counter);
     int getAndResetCount(GLBufferObject<GLuint>& counter, int resetValue = 0);
 
-    unsigned int fragCount = 1024 * 1024 * 4;
+    unsigned int fragCount = 1024 * 1024 * 2;
     unsigned int nodeCount = 1024 * 1024 * 2;
     int brickDim = 2;
     int texWdith = 512;
@@ -52,7 +53,7 @@ private:
 
     VoxelMatrixBlock voxelMatrixData;
     LimitsBlock voxelLogCountData = { fragCount, nodeCount, nodeCount, maxLogCount };
-    const CounterBlock mZeroedCounterBlock = { 0, 1, 0, 0 };
+    const CounterBlock mZeroedCounterBlock = { 0, 1, 0, 0, 0, 0 };
     CounterBlock mCounterBlock = mZeroedCounterBlock;
 
     GLuint voxelMatrixUniformBuffer;
@@ -60,6 +61,8 @@ private:
 
     RenderToOctree mModuleRenderToOctree;
     AddToOctree mModuleAddToOctree;
+    FilterOctree mModuleFilterOctree;
+    RenderLightIntoOctree mModuleRenderLightIntoOctree;
 
     RenderToGrid mModuleRenderToGrid;
     VoxelVisualizer mModuleVoxelVisualizer;
@@ -70,19 +73,14 @@ private:
     GLBufferObject<FragStruct> ssboFragmentList;
     GLBufferObject<NodeStruct> ssboNodeList;
     GLBufferObject<LogStruct> ssboLogList;
+    GLBufferObject<GLuint> ssboLeafIndexList;
     GLBufferObject<glm::vec4> ssboVoxelList;
-    
-    GLuint ssboLeafNodeList;
 
     GLuint texture3DColorList;
     GLuint texture3DNormalList;
 
     GLuint texture3DColorGrid;
     GLuint texture3DNormalGrid;
-
-    ShaderProgram octreeCompShader;
-    ShaderProgram octreeAverageCompShader;
-    ShaderProgram octreeRenderShader;
 
     GLuint quadVAOId;
     GLuint quadVBOId;

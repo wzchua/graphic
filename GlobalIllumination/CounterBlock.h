@@ -5,6 +5,7 @@ struct CounterBlock {
     GLuint fragmentCounter;
     GLuint nodeCounter;
     GLuint brickCounter;
+    GLuint leafCounter;
     GLuint logCounter;
     GLuint noOfFragments;
 };
