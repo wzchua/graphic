@@ -68,10 +68,12 @@ void main() {
         uint by = (brickChildId >> 9) * 2;
         vec4 color = vec4(0.0f);
         vec4 normal = vec4(0.0f);
+        uint count = 0;
         for(int i = 0; i < 8; i++) {
             uint hasChild = (childBits >> i) & 0x01;
             //check child bit
             if(hasChild == 1) {    
+                count += 1;
                 ivec3 pos = computeOffset(bx, by, i);
                 vec4 cColor = imageLoad(colorBrick, pos);
                 vec4 cNormal = convXYZWToVec4(imageLoad(normalBrick, pos).a);
@@ -85,8 +87,9 @@ void main() {
                 normal += cNormal;
             }
         }
-        color = color / 8.0f;
-        normal = normalize(normal);
+        float countf = float(count);
+        color = color / countf;
+        normal = normal / countf;
         NodeStruct parent = node[parentPtr];
         uint childIndex = childPtr - parent.childPtr;
         uint parentChildBits = parent.childBit;
