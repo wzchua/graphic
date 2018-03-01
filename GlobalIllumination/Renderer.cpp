@@ -19,7 +19,7 @@ void Renderer::phongRender()
 }
 
 void Renderer::voxelRender() {
-    voxelizer.voxelizeFragmentList(scene);
+    voxelizer.render(scene);
 }
 
 void Renderer::setToVoxelizeShader() {
