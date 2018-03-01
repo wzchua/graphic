@@ -36,7 +36,7 @@ public:
     Voxelizer();
     ~Voxelizer();
     void initializeWithScene(glm::vec3 min, glm::vec3 max);
-    void voxelizeFragmentList(Scene& scene);
+    void render(Scene& scene);
     void resetAllData();
     Camera camVoxel = Camera(glm::vec3(256.0f, 32.0f, 128.0f));
     int projectionAxis = 0;

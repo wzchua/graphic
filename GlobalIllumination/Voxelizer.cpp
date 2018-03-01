@@ -175,7 +175,7 @@ void Voxelizer::initializeWithScene(glm::vec3 min, glm::vec3 max)
     glNamedBufferSubData(voxelMatrixUniformBuffer, 0, sizeof(VoxelMatrixBlock), &voxelMatrixData);
 }
 
-void Voxelizer::voxelizeFragmentList(Scene& scene)
+void Voxelizer::render(Scene& scene)
 {
     std::vector<LogStruct> logs;
     using Clock = std::chrono::high_resolution_clock;
@@ -191,16 +191,12 @@ void Voxelizer::voxelizeFragmentList(Scene& scene)
     auto timeAfterAddingToOctree = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - timeStart).count();
     std::cout << " ms. time after render: " << timeAfterRender << " ms. time after add to octree: " << timeAfterAddingToOctree << " ms" << std::endl;
 
-
-    //filter octree
-
+    
     // inject light
 
-    // filter light
+    // filter octree geometry / light
 
-    // render cam RSM
-
-    // cone trace octree and draw screen
+    // render cam RSM and draw shading using VCT
 
     resetAllData();
     auto timeEnd = Clock::now();
