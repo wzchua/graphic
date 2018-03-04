@@ -81,7 +81,7 @@ uint checkRoot() {
 
 void main()
 {
-    ivec3 pos = WorldToVoxelMat * wcPosition;
+    ivec3 pos = (WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz;
 
     uint parentNodeIndex = checkRoot();
     uint childNodeIndex = 0;
