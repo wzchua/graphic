@@ -81,6 +81,9 @@
     <ClCompile Include="RenderLightIntoOctree.cpp">
       <Filter>Source Files\Modules</Filter>
     </ClCompile>
+    <ClCompile Include="RenderVoxelConeTrace.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Shape.h">
@@ -151,6 +154,9 @@
     </ClInclude>
     <ClInclude Include="RenderLightIntoOctree.h">
       <Filter>Header Files\Modules</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderVoxelConeTrace.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

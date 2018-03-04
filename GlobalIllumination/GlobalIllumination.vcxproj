@@ -30,6 +30,7 @@
     <ClCompile Include="RenderPhong.cpp" />
     <ClCompile Include="RenderToFragmentList.cpp" />
     <ClCompile Include="RenderToOctree.cpp" />
+    <ClCompile Include="RenderVoxelConeTrace.cpp" />
     <ClCompile Include="SceneMaterialManager.cpp" />
     <ClCompile Include="ShaderProgram.cpp" />
     <ClCompile Include="Renderer.cpp" />
@@ -55,6 +56,7 @@
     <ClInclude Include="RenderPhong.h" />
     <ClInclude Include="RenderToFragmentList.h" />
     <ClInclude Include="RenderToOctree.h" />
+    <ClInclude Include="RenderVoxelConeTrace.h" />
     <ClInclude Include="SceneMaterialManager.h" />
     <ClInclude Include="ShaderProgram.h" />
     <ClInclude Include="Renderer.h" />
