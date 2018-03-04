@@ -17,15 +17,19 @@ private:
         glm::vec4 ambient;
         glm::vec4 diffuse;
         glm::vec4 specular;
+        GLuint rad;
     };
     struct MatrixBlock {
         glm::mat4 modelViewMatrix;
         glm::mat4 modelViewProjMatrix;
         glm::mat4 normalMatrix;
     };
-    LightBlock light{ { 10.0f, 5.0f, 10.0f, 0.0f }, { 0.1f, 0.1f, 0.1f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } };
+    LightBlock light{ { 10.0f, 5.0f, 10.0f, 0.0f }, { 0.1f, 0.1f, 0.1f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f }, 1000 };
     MatrixBlock matrixBlock;
+    MatrixBlock matrixLightBlock;
+    Camera lightCam = Camera(glm::vec3(light.position.x, light.position.y, light.position.z));
     GLuint matrixBuffer;
+    GLuint matrixLightBuffer;
     GLuint lightBuffer;
     std::map<std::string, GLuint> textureMap;
     std::vector<Shape> list;
@@ -44,6 +48,8 @@ public:
     void render(int programId);
     glm::mat4 getSceneModelMat();
     GLuint getLightBuffer();
+    void updateLightMatrixBuffer(GLuint index, glm::vec3 forward, glm::vec3 up);
+    GLuint getLightMatrixBuffer();
     void updateMatrixBuffer();
     GLuint getMatrixBuffer();
     glm::vec3 getSceneMinCoords() { return sceneMin; }

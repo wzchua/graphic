@@ -27,6 +27,7 @@ public:
     void moveTo(glm::vec3 position);
     void move(glm::vec3 translation);
     void viewMove(int mouseXDelta, int mouseYDelta);
+    void set(glm::vec3 position, glm::vec3 forward, glm::vec3 up, float degree, float aspect);
     glm::vec3 getPosition();
     glm::vec3 getForward();
     glm::vec3 getUp();
