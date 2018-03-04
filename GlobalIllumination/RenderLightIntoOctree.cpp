@@ -14,6 +14,12 @@ void RenderLightIntoOctree::initialize()
 
 void RenderLightIntoOctree::run(Scene & inputScene, GLBufferObject<NodeStruct>& nodeOctree, GLuint textureLight, GLuint textureLightDir, GLuint voxelizeMatrixBlock)
 {
+    glViewport(0, 0, 1024, 1024); // light render is done at 1024x1024
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+
     injectLightOctreeShader.use();
     inputScene.updateLightMatrixBuffer(0, glm::vec3(1, 0, 0), glm::vec3(0, 1, 0));
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, inputScene.getLightMatrixBuffer()); // light as camera
