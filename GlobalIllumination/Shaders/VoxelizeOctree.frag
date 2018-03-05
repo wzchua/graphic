@@ -97,7 +97,8 @@ const uint LEAFHOST = 0 - 2;
 const float levels[10] = float[10](0.001953125f, 0.00390625f, 0.0078125f,
                                 0.015625f, 0.03125f, 0.0625f,
                                 0.125f, 0.25f, 0.5f, 1.0f);
-
+//z=0  2  3   z=1  6  7
+//     0  1        4  5
 uint getPtrOffset(ivec3 frameOffset) {
     return min(frameOffset.x, 1) * 1 
     + min(frameOffset.y, 1) * 2 + min(frameOffset.z, 1) * 4;
