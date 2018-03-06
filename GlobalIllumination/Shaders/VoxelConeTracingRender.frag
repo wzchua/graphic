@@ -76,10 +76,12 @@ uint getPtrOffset(ivec3 frameOffset) {
     return frameOffset.x * 1 + frameOffset.y * 2 + frameOffset.z * 4;
 }
 // 2.1 
-uint findNode(vec3 pos, float size) {
+uint findNode(vec3 pos, float size, out int level) {
     uint nodeId = 0;
+    // error: doesn't resolve size < 1.0
     for(int i = 1; i < 9; i++) {
         if((1 << (10 - i)) < size) { //512, 256, 128, 64, 32, 16, 8, 4, 2, 1
+            
             break;
         }
         //descendNode        
@@ -100,10 +102,22 @@ vec4 ConeTrace(vec3 origin, vec3 dir, float coneSize) {
         
     }
 }
+layout (location = 0) out vec4 FragColor;
 
 void main() 
 {    
-    ivec3 pos = (WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz;
+    vec3 pos = (WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz;
     uint energy = 0;
-    vec4 color;
+    // 4x 60 from normal + 1 at normal;
+    vec3 orthoX = findOrthoVector(wcNormal);
+    vec3 orthoY = cross(wcNormal, orthoX); 
+    vec4 diffuseColor += ConeTrace(pos, wcNormal, 1.0f);
+    diffuseColor += ConeTrace(pos, mix(wcNormal, orthoX, 0.3), 1.0f);
+    diffuseColor += ConeTrace(pos, mix(wcNormal, -orthoX, 0.3), 1.0f);
+    diffuseColor += ConeTrace(pos, mix(wcNormal, orthoY, 0.3), 1.0f);
+    diffuseColor += ConeTrace(pos, mix(wcNormal, -orthoY, 0.3), 1.0f);
+    vec3 view  = normalize(wcPosition - eyePos);
+    vec4 specularColor = ConeTrace(pos, reflect(view, wcNormal), 0.5f);
+
+    FragColor = diffuseColor + specularColor;
 }
