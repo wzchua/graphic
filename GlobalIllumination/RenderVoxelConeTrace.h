@@ -17,7 +17,7 @@ private:
     GLuint quadEBOId;
 public:
     void initialize();
-    void run(Scene & inputScene, GLBufferObject<CounterBlock> & counterBlk, GLBufferObject<NodeStruct> & octree, GLuint textureBrickColor, GLuint textureBrickNormal, GLuint textureBrickLightDir, GLuint textureBrickLightEnergy);
+    void run(Scene & inputScene, GLBufferObject<CounterBlock> & counterBlk, GLBufferObject<NodeStruct> & octree, GLuint textureBrickColor, GLuint textureBrickNormal, GLuint textureBrickLightEnergy, GLuint textureBrickLightDir);
     RenderVoxelConeTrace();
     ~RenderVoxelConeTrace();
 };

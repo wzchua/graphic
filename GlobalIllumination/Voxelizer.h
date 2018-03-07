@@ -17,6 +17,7 @@
 #include "AddToOctree.h"
 #include "FilterOctree.h"
 #include "RenderLightIntoOctree.h"
+#include "RenderVoxelConeTrace.h"
 
 class Voxelizer
 {
@@ -38,11 +39,8 @@ public:
     void initializeWithScene(glm::vec3 min, glm::vec3 max);
     void render(Scene& scene);
     void resetAllData();
-    Camera camVoxel = Camera(glm::vec3(256.0f, 32.0f, 128.0f));
     int projectionAxis = 0;
 private:
-    int getCount(GLBufferObject<GLuint>& counter);
-    int getAndResetCount(GLBufferObject<GLuint>& counter, int resetValue = 0);
 
     unsigned int fragCount = 1024 * 1024 * 2;
     unsigned int nodeCount = 1024 * 1024 * 2;
@@ -63,6 +61,7 @@ private:
     AddToOctree mModuleAddToOctree;
     FilterOctree mModuleFilterOctree;
     RenderLightIntoOctree mModuleRenderLightIntoOctree;
+    RenderVoxelConeTrace mModuleRenderVCT;
 
     RenderToGrid mModuleRenderToGrid;
     VoxelVisualizer mModuleVoxelVisualizer;
@@ -78,6 +77,9 @@ private:
 
     GLuint texture3DColorList;
     GLuint texture3DNormalList;
+
+    GLuint texture3DLightDirList;
+    GLuint texture3DLightEnergyList;
 
     GLuint texture3DColorGrid;
     GLuint texture3DNormalGrid;

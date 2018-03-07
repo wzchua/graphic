@@ -20,7 +20,7 @@ private:
     bool hasInitialized = false;
 public:
     void initialize();
-    void run(GLBufferObject<CounterBlock>& counterSet, GLBufferObject<NodeStruct> & nodeOctree, GLBufferObject<GLuint> & ssboLeafIndexList, GLuint textureColor, GLuint textureNormal, GLuint leafCount);
+    void run(GLBufferObject<CounterBlock>& counterSet, GLBufferObject<NodeStruct> & nodeOctree, GLBufferObject<GLuint> & ssboLeafIndexList, GLuint textureColor, GLuint textureNormal, GLuint textureLightEnergy, GLuint textureLightDir);
     FilterOctree();
     ~FilterOctree();
 };

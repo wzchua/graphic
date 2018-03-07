@@ -43,8 +43,9 @@ Voxelizer::Voxelizer()
 
     mModuleRenderToOctree.initialize();
     mModuleAddToOctree.initialize();
-    mModuleFilterOctree.initialize();
     mModuleRenderLightIntoOctree.initialize();
+    mModuleFilterOctree.initialize();
+    mModuleRenderVCT.initialize();
 
     glGenBuffers(1, &voxelMatrixUniformBuffer);
     glBindBuffer(GL_UNIFORM_BUFFER, voxelMatrixUniformBuffer);
@@ -85,7 +86,30 @@ Voxelizer::Voxelizer()
 
     glTexStorage3D(GL_TEXTURE_3D, 2, GL_RGBA8, texWdith * brickDim, texHeight * brickDim, brickDim);
     glBindTexture(GL_TEXTURE_3D, 0);
-    
+
+    glGenTextures(1, &texture3DLightDirList);
+    glBindTexture(GL_TEXTURE_3D, texture3DLightDirList);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
+
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glTexStorage3D(GL_TEXTURE_3D, 2, GL_RGBA8, texWdith * brickDim, texHeight * brickDim, brickDim);
+    glBindTexture(GL_TEXTURE_3D, 0);
+
+    glGenTextures(1, &texture3DLightEnergyList);
+    glBindTexture(GL_TEXTURE_3D, texture3DLightEnergyList);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
+
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glTexStorage3D(GL_TEXTURE_3D, 2, GL_R32UI, texWdith * brickDim, texHeight * brickDim, brickDim);
+    glBindTexture(GL_TEXTURE_3D, 0);
     /*
     ssboVoxelList.initialize(GL_SHADER_STORAGE_BUFFER, sizeof(glm::vec4) * 1024 * 1024 * 4, NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT);
     mModuleRenderToGrid.initialize();
@@ -115,38 +139,6 @@ Voxelizer::Voxelizer()
     glTexStorage3D(GL_TEXTURE_3D, 2, GL_RGBA8, 512, 512, 512);
     glBindTexture(GL_TEXTURE_3D, 0);
 */
-    //cube vao
-    std::vector<glm::vec3> quadVertices;
-    quadVertices.push_back(glm::vec3(1.0, 1.0, 0.0));
-    quadVertices.push_back(glm::vec3(1.0, -1.0, 0.0));
-    quadVertices.push_back(glm::vec3(-1.0, -1.0, 0.0));
-    quadVertices.push_back(glm::vec3(-1.0, 1.0, 0.0));
-
-    std::vector<GLuint> quadindices;
-    quadindices.push_back(0);
-    quadindices.push_back(3);
-    quadindices.push_back(1);
-    quadindices.push_back(2);
-    quadindices.push_back(1);
-    quadindices.push_back(3);
-
-    int vertexSize = sizeof(glm::vec3);
-    glGenVertexArrays(1, &quadVAOId);
-    glBindVertexArray(quadVAOId);
-
-    glGenBuffers(1, &quadVBOId);
-    glGenBuffers(1, &quadEBOId);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quadEBOId);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, quadindices.size() * sizeof(GLuint), quadindices.data(), GL_STATIC_DRAW); //GL_DYNAMIC_DRAW
-
-    glBindBuffer(GL_ARRAY_BUFFER, quadVBOId);
-    glBufferData(GL_ARRAY_BUFFER, quadVertices.size() * vertexSize, quadVertices.data(), GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
-    glEnableVertexAttribArray(0);
-
-    glBindVertexArray(0);
 
 }
 
@@ -190,13 +182,15 @@ void Voxelizer::render(Scene& scene)
 
     auto timeAfterAddingToOctree = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - timeStart).count();
     std::cout << " ms. time after render: " << timeAfterRender << " ms. time after add to octree: " << timeAfterAddingToOctree << " ms" << std::endl;
-
     
     // inject light
+    mModuleRenderLightIntoOctree.run(scene, ssboNodeList, texture3DLightEnergyList, texture3DLightDirList, voxelMatrixUniformBuffer);
 
     // filter octree geometry / light
+    mModuleFilterOctree.run(ssboCounterSet, ssboNodeList, ssboLeafIndexList, texture3DColorList, texture3DNormalGrid, texture3DLightEnergyList, texture3DLightDirList);
 
     // render cam RSM and draw shading using VCT
+    mModuleRenderVCT.run(scene, ssboCounterSet, ssboNodeList, texture3DColorList, texture3DNormalGrid, texture3DLightEnergyList, texture3DLightDirList);
 
     resetAllData();
     auto timeEnd = Clock::now();
@@ -221,22 +215,9 @@ void Voxelizer::resetAllData()
     glClearTexImage(texture3DColorList, 0, GL_RGBA, GL_FLOAT, NULL);
     glInvalidateTexImage(texture3DNormalList, 0);
     glClearTexImage(texture3DNormalList, 0, GL_RGBA, GL_FLOAT, NULL);
+    glInvalidateTexImage(texture3DLightEnergyList, 0);
+    glClearTexImage(texture3DLightEnergyList, 0, GL_RGBA, GL_FLOAT, NULL);
+    glInvalidateTexImage(texture3DLightDirList, 0);
+    glClearTexImage(texture3DLightDirList, 0, GL_RGBA, GL_FLOAT, NULL);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-}
-
-int Voxelizer::getCount(GLBufferObject<GLuint>& counter)
-{
-    int count;
-    GLuint* ptr = counter.getPtr();
-    count = ptr[0];
-    return count;
-}
-
-int Voxelizer::getAndResetCount(GLBufferObject<GLuint>& counter, int resetValue)
-{
-    int count;
-    GLuint* ptr = counter.getPtr();
-    count = ptr[0];
-    ptr[0] = resetValue;
-    return count;
 }

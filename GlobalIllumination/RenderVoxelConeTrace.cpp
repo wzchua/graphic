@@ -4,6 +4,10 @@
 
 void RenderVoxelConeTrace::initialize()
 {
+    shader.generateShader("./Shaders/VoxelConeTracingRender.vert", ShaderProgram::VERTEX);
+    shader.generateShader("./Shaders/VoxelConeTracingRender.frag", ShaderProgram::FRAGMENT);
+    shader.linkCompileValidate();
+
     //cube vao
     std::vector<glm::vec3> quadVertices;
     quadVertices.push_back(glm::vec3(1.0, 1.0, 0.0));
@@ -36,6 +40,25 @@ void RenderVoxelConeTrace::initialize()
     glEnableVertexAttribArray(0);
 
     glBindVertexArray(0);
+}
+
+void RenderVoxelConeTrace::run(Scene & inputScene, GLBufferObject<CounterBlock>& counterBlk, GLBufferObject<NodeStruct>& octree, GLuint textureBrickColor, GLuint textureBrickNormal, GLuint textureBrickLightEnergy, GLuint textureBrickLightDir)
+{
+    shader.use();
+    glViewport(0, 0, 800, 600); // light render is done at 1024x1024
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0);
+    
+    glBindTextureUnit(4, textureBrickColor);
+    glBindTextureUnit(5, textureBrickNormal);
+    glBindTextureUnit(6, textureBrickLightEnergy);
+    glBindTextureUnit(7, textureBrickLightDir);
+
+
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, inputScene.getMatrixBuffer()); //scene cam matrices
+    counterBlk.bind(1);
+    octree.bind(2);
+
+    inputScene.render(shader.getProgramId());
 }
 
 RenderVoxelConeTrace::RenderVoxelConeTrace()
