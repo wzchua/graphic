@@ -24,12 +24,11 @@ void Renderer::voxelRender() {
 
 void Renderer::setToVoxelizeShader() {
     type = RenderType::VOXELIZE;
-    scene.cam = voxelizer.camVoxel;
 }
 
 Renderer::Renderer(GLFWwindow * window, unsigned int viewHeight, unsigned int viewWidth) : viewHeight(viewHeight), viewWidth(viewWidth)
 {
-    this->window = window;
+    this->window = window;;
     glfwSetWindowUserPointer(window, this);
     glfwSetKeyCallback(window, onKeyStatic);
     glfwSetCursorPosCallback(window, onCursorPositionStatic);

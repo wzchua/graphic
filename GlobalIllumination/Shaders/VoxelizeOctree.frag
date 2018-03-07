@@ -68,7 +68,7 @@ layout(binding = 2) coherent buffer NodeBlock {
 };
 layout(binding = 3) coherent buffer LeafListBlock {
     uint leafList[];
-}
+};
 layout(binding = 7) coherent buffer LogBlock {
     LogStruct logList[];
 };
@@ -118,7 +118,7 @@ uint checkAndInitializeNode(uint parentNodeIndex) {
         childIndex = atomicAdd(nodeCounter, 8);
         node[parentNodeIndex].modelBrickPtr = atomicAdd(brickCounter, 1);
         for(int i = 0; i < 8; i++) {
-            node[childIndex + i].parentPtr = nodeIndex;
+            node[childIndex + i].parentPtr = parentNodeIndex;
         }
         // setup inner pointers
         atomicCompSwap(node[parentNodeIndex].childPtr, ISINPROCESS, childIndex);
@@ -144,16 +144,16 @@ void deferToFragList(vec3 pos, vec4 color, vec3 normal) {
 
 // leaf host node host 2x2 voxels
 uint checkAndInitializeLeafHost(uint leafIndex) {
-    uint leafState = atomicCompSwap(node[leafIndex].childPtr, 0, ISPROCESS);
-    if(leafState == ISPROCESS){
-        return ISPROCESS;
+    uint leafState = atomicCompSwap(node[leafIndex].childPtr, 0, ISINPROCESS);
+    if(leafState == ISINPROCESS){
+        return ISINPROCESS;
     }
 
     if(leafState == 0) {
         node[leafIndex].modelBrickPtr = atomicAdd(brickCounter, 1);
         uint index = atomicAdd(leafCounter, 1);
         leafList[index] = leafIndex;
-        atomicCompSwap(node[leafIndex].childPtr, ISPROCESS, LEAFHOST);
+        atomicCompSwap(node[leafIndex].childPtr, ISINPROCESS, LEAFHOST);
     }
     
     return leafIndex;

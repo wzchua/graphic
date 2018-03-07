@@ -82,7 +82,7 @@
       <Filter>Source Files\Modules</Filter>
     </ClCompile>
     <ClCompile Include="RenderVoxelConeTrace.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Modules</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

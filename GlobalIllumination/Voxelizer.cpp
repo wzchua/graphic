@@ -43,9 +43,10 @@ Voxelizer::Voxelizer()
 
     mModuleRenderToOctree.initialize();
     mModuleAddToOctree.initialize();
-    mModuleRenderLightIntoOctree.initialize();
-    mModuleFilterOctree.initialize();
-    mModuleRenderVCT.initialize();
+    //mModuleRenderLightIntoOctree.initialize();
+    //mModuleFilterOctree.initialize();
+    //mModuleRenderVCT.initialize();
+    mModuleVoxelVisualizer.initialize();
 
     glGenBuffers(1, &voxelMatrixUniformBuffer);
     glBindBuffer(GL_UNIFORM_BUFFER, voxelMatrixUniformBuffer);
@@ -178,19 +179,20 @@ void Voxelizer::render(Scene& scene)
     auto timeAfterRender= std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - timeStart).count();
 
     //ShaderLogger::getLogs(ssboLogList, logCount, logs);
-    mModuleAddToOctree.run(ssboNodeList, ssboFragmentList, ssboCounterSet, ssboLeafIndexList, voxelLogUniformBuffer, texture3DColorList, texture3DNormalList, ssboLogList);
+    //mModuleAddToOctree.run(ssboNodeList, ssboFragmentList, ssboCounterSet, ssboLeafIndexList, voxelLogUniformBuffer, texture3DColorList, texture3DNormalList, ssboLogList);
 
     auto timeAfterAddingToOctree = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - timeStart).count();
     std::cout << " ms. time after render: " << timeAfterRender << " ms. time after add to octree: " << timeAfterAddingToOctree << " ms" << std::endl;
+    mModuleVoxelVisualizer.rayCastVoxels(scene.cam, worldToVoxelMat, texture3DColorList, VoxelVisualizer::OCTREE);
     
     // inject light
-    mModuleRenderLightIntoOctree.run(scene, ssboNodeList, texture3DLightEnergyList, texture3DLightDirList, voxelMatrixUniformBuffer);
+    //mModuleRenderLightIntoOctree.run(scene, ssboNodeList, texture3DLightEnergyList, texture3DLightDirList, voxelMatrixUniformBuffer);
 
     // filter octree geometry / light
-    mModuleFilterOctree.run(ssboCounterSet, ssboNodeList, ssboLeafIndexList, texture3DColorList, texture3DNormalGrid, texture3DLightEnergyList, texture3DLightDirList);
+    //mModuleFilterOctree.run(ssboCounterSet, ssboNodeList, ssboLeafIndexList, texture3DColorList, texture3DNormalGrid, texture3DLightEnergyList, texture3DLightDirList);
 
     // render cam RSM and draw shading using VCT
-    mModuleRenderVCT.run(scene, ssboCounterSet, ssboNodeList, texture3DColorList, texture3DNormalGrid, texture3DLightEnergyList, texture3DLightDirList);
+    //mModuleRenderVCT.run(scene, ssboCounterSet, ssboNodeList, texture3DColorList, texture3DNormalGrid, texture3DLightEnergyList, texture3DLightDirList);
 
     resetAllData();
     auto timeEnd = Clock::now();

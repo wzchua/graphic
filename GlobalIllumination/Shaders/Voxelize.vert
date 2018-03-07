@@ -23,7 +23,9 @@ layout(binding = 1) coherent buffer CounterBlock {
     uint fragmentCounter;
     uint nodeCounter;
     uint brickCounter;
+    uint leafCounter;
     uint logCounter;
+    uint noOfFragments;
 };
 struct LogStruct {
     vec4 position;

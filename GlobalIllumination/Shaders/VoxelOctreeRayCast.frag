@@ -78,7 +78,7 @@ vec3 SearchOctree(vec3 pos, out uint nodeId) {
         samplePos = pos * levels[i];
         refOffset = samplePos - 2 * floor(prevSamplePos);
         uint child = node[nodeId].childPtr;
-        if(child == 0) {
+        if(child == 0 || ((node[nodeId].childBit >> getPtrOffset(ivec3(refOffset))) & 1) == 0) {
             nodeId = INVALID;
             return refOffset;
         }
@@ -132,12 +132,12 @@ void logFragment(vec4 pos, vec4 color, uint nodeIndex, uint brickPtr, uint index
 layout (location = 0) out vec4 FragColor;
 void main() {    
     
-    vec3 rOrigin = camPosition;
+    vec3 rOrigin = camPosition.xyz;
     float x = gl_FragCoord.x;
     float y = gl_FragCoord.y;
-    vec3 viewPlaneCenter = camPosition + camForward * 0.5;
-    vec3 U = normalize(cross(camForward, camUp));
-    vec3 V = normalize(cross(U, camForward));
+    vec3 viewPlaneCenter = camPosition.xyz + camForward.xyz * 0.5;
+    vec3 U = normalize(cross(camForward.xyz, camUp.xyz));
+    vec3 V = normalize(cross(U, camForward.xyz));
     float imageAspectRatio = width / float(height); // assuming width > height 
     float halfViewWidth = tan(60.0f * M_PI / 360) * 0.5;
     float halfViewHeight = halfViewWidth * imageAspectRatio;
