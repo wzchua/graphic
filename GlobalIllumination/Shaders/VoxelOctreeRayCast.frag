@@ -68,31 +68,31 @@ uint enterNode(uint nodeIndex, uint offset) {
     return childIndex + offset;
 }
 
-uint getLeafAtPosition(vec3 position, out ivec3 brickOffset) {
-    // start in root node
-    uint nodeIndex = 0;
-    int currentLevel = 0;
-    ivec3 offsets[10] = computeLevelOffset(position);
-    brickOffset = ivec3(0);
-    while(currentLevel < lowestLevel - 1) {
-        // move to next node  
-        currentLevel++;
-        nodeIndex = enterNode(nodeIndex, getPtrOffset(offsets[currentLevel]));
-        if(nodeIndex == INVALID || nodeIndex == 0){
-            return INVALID;
+vec3 SearchOctree(vec3 pos, out uint nodeId) {
+    nodeId = 0;
+    vec3 prevSamplePos;
+    vec3 samplePos = vec3(0.0f);
+    vec3 refOffset;
+    for(int i = 0; i < 8; i++) {
+        prevSamplePos = samplePos;
+        samplePos = pos * levels[i];
+        refOffset = samplePos - 2 * floor(prevSamplePos);
+        uint child = node[nodeId].childPtr;
+        if(child == 0) {
+            nodeId = INVALID;
+            return refOffset;
         }
+        nodeId = child + getPtrOffset(ivec3(refOffset));
     }
-    uint leafOffset = getPtrOffset(offsets[lowestLevel]);
-    uint childBit = node[nodeIndex].childBit;
+    prevSamplePos = samplePos;
+    samplePos = pos;
+    refOffset = samplePos - 2 * floor(prevSamplePos);
+    uint leafOffset = getPtrOffset(ivec3(refOffset));
+    uint childBit = node[nodeId].childBit;
     if(((childBit >> leafOffset) & 1) == 0) {
-        return INVALID;
+        nodeId = INVALID;
     }
-    uint brickPtr = node[nodeIndex].modelBrickPtr;
-    uint bx = (brickPtr & 0x1FF) * 2;
-    uint by = (brickPtr >> 9) * 2;
-    ivec3 innerFrameOffset = offsets[lowestLevel];
-    brickOffset = ivec3(bx + innerFrameOffset.x, by + innerFrameOffset.y, innerFrameOffset.z);
-    return nodeIndex;
+    return refOffset;
 }
 
 bool isRayInCubeSpace(vec3 rayPosition) {
@@ -150,7 +150,7 @@ void main() {
     }
     uint leafIndex = 0;
     vec3 rayPosition = rOrigin;
-    ivec3 brickOffset;
+    vec3 refOffset;
     bool isRayInCube = true;
     //ray march
     do {
@@ -160,17 +160,19 @@ void main() {
         }
         rayPosition += dir;
         isRayInCube = isRayInCubeSpace(rayPosition);
-        leafIndex = getLeafAtPosition(rayPosition, brickOffset);
-    } while(leafIndex == INVALID && isRayInCube);
+        if(isRayInCube) {
+            refOffset = SearchOctree(rayPosition, leafIndex);
+        }
+    } while(leafIndex == INVALID);
 
-    if( x < 1 && y < 1) {
-        logFragment(vec4(rayPosition, x), vec4(dir, y), leafIndex, uint(brickOffset.x), uint(brickOffset.y), isRayInCube ? 1 : 0);
-    }
     if(isRayInCube) {
-        FragColor = imageLoad(colorBrick, brickOffset); 
+        uint brickPtr = node[leafIndex].modelBrickPtr;
+        ivec3 innerFramePos = ivec3(refOffset);
+        ivec3 brickPos = innerFramePos + ivec3((brickPtr & 0x1FF) * 2, (brickPtr >> 9) * 2, 0);
+        FragColor = imageLoad(colorBrick, brickPos); 
         
         if( x < 1 && y < 1) {
-            logFragment(vec4(rayPosition, x), FragColor, leafIndex, uint(brickOffset.x), uint(brickOffset.y), isRayInCube ? 1 : 0);
+            logFragment(vec4(rayPosition, x), FragColor, leafIndex, uint(brickPos.x), uint(brickPos.y), isRayInCube ? 1 : 0);
         }
 
     } else {
