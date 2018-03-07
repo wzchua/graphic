@@ -12,16 +12,29 @@ layout(binding = 0) uniform RayCastBlock {
     int height;
     int width;
 };
+layout(binding = 7, std140) uniform LimitsUniformBlock {
+    uint maxNoOfFragments;
+    uint maxNoOfNodes;
+    uint maxNoOfBricks;
+    uint maxNoOfLogs;
+};
 
 layout(binding = 4, RGBA8) uniform image3D colorBrick;
 //layout(binding = 5, RGBA8) uniform image3D normalBrick;
 
 uniform uint INVALID = 0 - 1;
-uniform int lowestLevel = 9;
-uniform float levels[10] = float[10](0.001953125f, 0.00390625f, 0.0078125f,
+const float levels[8] = float[8](0.00390625f, 0.0078125f,
                                 0.015625f, 0.03125f, 0.0625f,
-                                0.125f, 0.25f, 0.5f, 1.0f);
+                                0.125f, 0.25f, 0.5f);
 
+layout(binding = 1) coherent buffer CounterBlock {
+    uint fragmentCounter;
+    uint nodeCounter;
+    uint brickCounter;
+    uint leafCounter;
+    uint logCounter;
+    uint noOfFragments;
+};
 struct NodeStruct {
     uint parentPtr;
     uint childPtr;
@@ -37,35 +50,13 @@ struct NodeStruct {
     uint zNegative;
 };
 
-layout(binding = 2) volatile buffer NodeBlock {
+layout(binding = 2) coherent buffer NodeBlock {
     NodeStruct node[];
 };
-
-
-
-ivec3[10] computeLevelOffset(vec3 pointPosition) {
-    ivec3 frameOffset = ivec3(0);
-    ivec3 prevFrameOffset = ivec3(0);
-    ivec3 levelOffsets[10];
-    vec3 position = vec3(pointPosition);
-    for(int i = 0; i < 10; i++) {
-        prevFrameOffset = frameOffset * 2;
-        frameOffset = ivec3(position * levels[i]);
-        levelOffsets[i] = frameOffset - prevFrameOffset;
-    }
-    return levelOffsets;
-}
 
 uint getPtrOffset(ivec3 frameOffset) {
     return min(frameOffset.x, 1) * 1 
     + min(frameOffset.y, 1) * 2 + min(frameOffset.z, 1) * 4;
-}
-uint enterNode(uint nodeIndex, uint offset) {
-    uint childIndex = node[nodeIndex].childPtr;
-    if(childIndex == 0) {
-        return INVALID;
-    }
-    return childIndex + offset;
 }
 
 vec3 SearchOctree(vec3 pos, out uint nodeId) {
@@ -100,7 +91,6 @@ bool isRayInCubeSpace(vec3 rayPosition) {
         && rayPosition.y >= 0.0f && rayPosition.y <=512.0f
         && rayPosition.z >= 0.0f && rayPosition.z <=512.0f;
 }
-layout(binding = 7) uniform atomic_uint logPtr;
 
 struct LogStruct {
     vec4 position;
@@ -116,8 +106,8 @@ layout(binding = 7) volatile buffer LogBlock {
 };
 
 void logFragment(vec4 pos, vec4 color, uint nodeIndex, uint brickPtr, uint index1, uint index2) {
-    uint index = atomicCounterIncrement(logPtr);
-    if(index < 500) {        
+    uint index = atomicAdd(logCounter, 1);
+    if(index < maxNoOfLogs) {        
         logList[index].position = pos;
         logList[index].color = color;
         logList[index].nodeIndex = nodeIndex;
@@ -125,7 +115,7 @@ void logFragment(vec4 pos, vec4 color, uint nodeIndex, uint brickPtr, uint index
         logList[index].index1 = index1;
         logList[index].index2 = index2;
     } else {
-        atomicCounterDecrement(logPtr);
+        atomicAdd(logCounter, uint(-1));
     }
 }
 
@@ -163,7 +153,7 @@ void main() {
         if(isRayInCube) {
             refOffset = SearchOctree(rayPosition, leafIndex);
         }
-    } while(leafIndex == INVALID);
+    } while(leafIndex == INVALID && isRayInCube);
 
     if(isRayInCube) {
         uint brickPtr = node[leafIndex].modelBrickPtr;

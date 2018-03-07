@@ -14,8 +14,10 @@ layout(binding = 0) uniform RayCastBlock {
 };
 
 layout(binding = 7, std140) uniform LimitsUniformBlock {
-    uint maxNoOfLogs;
     uint maxNoOfFragments;
+    uint maxNoOfNodes;
+    uint maxNoOfBricks;
+    uint maxNoOfLogs;
 };
 
 layout(binding = 4, RGBA8) uniform image3D colorGrid;
@@ -28,7 +30,11 @@ bool isRayInCubeSpace(vec3 rayPosition) {
 }
 layout(binding = 1) coherent buffer CounterBlock {
     uint fragmentCounter;
+    uint nodeCounter;
+    uint brickCounter;
+    uint leafCounter;
     uint logCounter;
+    uint noOfFragments;
 };
 struct LogStruct {
     vec4 position;
