@@ -66,9 +66,9 @@ void imageAtomicXYZWAvg( layout ( r32ui ) coherent volatile uimage3D imgUI , ive
 
 const uint ISINPROCESS = 0 - 1;
 const uint LEAFHOST = 0 - 2;
-const float levels[10] = float[10](0.001953125f, 0.00390625f, 0.0078125f,
+const float levels[8] = float[8](0.00390625f, 0.0078125f,
                                 0.015625f, 0.03125f, 0.0625f,
-                                0.125f, 0.25f, 0.5f, 1.0f);
+                                0.125f, 0.25f, 0.5f);
 
 uint getPtrOffset(ivec3 frameOffset) {
     return min(frameOffset.x, 1) * 1 
@@ -81,44 +81,31 @@ uint checkRoot() {
 
 void main()
 {
-    ivec3 pos = (WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz;
-
-    uint parentNodeIndex = checkRoot();
-    uint childNodeIndex = 0;
-    ivec3 frameOffset;
-    ivec3 prevFrameOffset;
-    uint offset;
-    for(int i = 1; i < 9; i++) {        
-        //check node i: 0 to 2^i  
-        frameOffset = ivec3(absPos * levels[i]);
-        prevFrameOffset = 2 * ivec3(absPos * levels[i - 1]);
-        offset = getPtrOffset(frameOffset - prevFrameOffset);    
-        childNodeIndex = node[parentNodeIndex].childPtr;
-        if(childNodeIndex == 0) {
-            //error
-            return;
-        } else {
-            //descend the octree
-            parentNodeIndex = childNodeIndex + offset;
-        }
+    vec3 pos = (WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz;
+    uint nodeId = 0;
+    vec3 prevSamplePos;
+    vec3 samplePos = vec3(0.0f);
+    vec3 refOffset;
+    for(int i = 0; i < 8; i++) {
+        prevSamplePos = samplePos;
+        samplePos = pos * levels[i];
+        refOffset = samplePos - 2 * floor(prevSamplePos);
+        nodeId = node[nodeId].childPtr + getPtrOffset(ivec3(refOffset));
     }
-    //leaf    
-    uint brickPtr = node[parentNodeIndex].modelBrickPtr;
-    uint bx = (brickPtr & 0x1FF) * 2;
-    uint by = (brickPtr >> 9) * 2;  
-    
-    frameOffset = ivec3(pos * levels[9]);
-    prevFrameOffset = 2 * ivec3(pos * levels[8]);
-    innerFrameOffset = frameOffset - prevFrameOffset;
-    ivec3 texturePos = ivec3(bx + innerFrameOffset.x, by + innerFrameOffset.y, innerFrameOffset.z);
-    uint leafOffset = getPtrOffset(innerFrameOffset);    
-    atomicOr(node[childNodeIndex].lightBit, 1 << leafOffset);
+    prevSamplePos = samplePos;
+    samplePos = pos;
+    refOffset = samplePos - 2 * floor(prevSamplePos);
+    uint brickPtr = node[nodeId].modelBrickPtr;
+    ivec3 innerFramePos = ivec3(refOffset);
+    ivec3 brickPos = innerFramePos + ivec3((brickPtr & 0x1FF) * 2, (brickPtr >> 9) * 2, 0);
+    atomicOr(node[childNodeIndex].lightBit, 1 << getPtrOffset(innerFramePos));
+
     vec3 lightDisplacement = wcPosition - LightPosition.xyz;
     vec3 lightDir = normalize(lightDisplacement);
     float dist = length(lightDisplacement);
     float distSq = dist * dist;
     //light energy & direction
     uint recievedEnergy = min( uint(float(rad) / (distSq * dot(lightDir, normalize(wcNormal)))), 1);
-    imageAtomicAdd(lightEnergyBrick, texturePos, recievedEnergy);
-    imageAtomicXYZWAvg(lightDirBrick, texturePos, vec4(lightDir, 1.0f));
+    imageAtomicAdd(lightEnergyBrick, brickPos, recievedEnergy);
+    imageAtomicXYZWAvg(lightDirBrick, brickPos, vec4(lightDir, 1.0f));
 }

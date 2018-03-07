@@ -94,9 +94,9 @@ const vec2 size = vec2(2.0,0.0);
 const ivec3 off = ivec3(-1,0,1);
 const uint ISINPROCESS = 0 - 1;
 const uint LEAFHOST = 0 - 2;
-const float levels[10] = float[10](0.001953125f, 0.00390625f, 0.0078125f,
+const float levels[8] = float[8](0.00390625f, 0.0078125f,
                                 0.015625f, 0.03125f, 0.0625f,
-                                0.125f, 0.25f, 0.5f, 1.0f);
+                                0.125f, 0.25f, 0.5f);
 //z=0  2  3   z=1  6  7
 //     0  1        4  5
 uint getPtrOffset(ivec3 frameOffset) {
@@ -108,13 +108,7 @@ uint checkRoot() {
     return 0;
 }
 
-uint checkAndInitializeNode(int currentLevel, vec3 absPos, uint parentNodeIndex) {    
-    ivec3 frameOffset = ivec3(absPos * levels[currentLevel]);
-    ivec3 prevFrameOffset = 2 * ivec3(absPos * levels[currentLevel - 1]);
-    uint offset = getPtrOffset(frameOffset - prevFrameOffset);
-    
-    atomicOr(node[parentNodeIndex].childBit, 1 << offset);//flag child bit
-
+uint checkAndInitializeNode(uint parentNodeIndex) { 
     uint childIndex = atomicCompSwap(node[parentNodeIndex].childPtr, 0, ISINPROCESS);
     if(childIndex == ISINPROCESS) { //node is being created
         return ISINPROCESS;
@@ -126,9 +120,10 @@ uint checkAndInitializeNode(int currentLevel, vec3 absPos, uint parentNodeIndex)
         for(int i = 0; i < 8; i++) {
             node[childIndex + i].parentPtr = nodeIndex;
         }
+        // setup inner pointers
         atomicCompSwap(node[parentNodeIndex].childPtr, ISINPROCESS, childIndex);
     }
-    return childIndex + offset;
+    return childIndex;
 }
 
 void deferToFragList(vec3 pos, vec4 color, vec3 normal) {
@@ -210,29 +205,53 @@ void imageAtomicXYZWAvg( layout ( r32ui ) coherent volatile uimage3D imgUI , ive
     }
 }
 
+vec3 SearchOctree(vec3 pos, out uint nodeId) {
+    nodeId = 0;
+    vec3 prevSamplePos;
+    vec3 samplePos = vec3(0.0f);
+    vec3 refOffset;
+    for(int i = 0; i < 8; i++) {
+        prevSamplePos = samplePos;
+        samplePos = pos * levels[i];
+        refOffset = samplePos - 2 * floor(prevSamplePos);
+        nodeId = node[nodeId].childPtr + getPtrOffset(ivec3(refOffset));
+    }
+    prevSamplePos = samplePos;
+    samplePos = pos;
+    refOffset = samplePos - 2 * floor(prevSamplePos);
+    return refOffset;
+}
+
 void addToOctree(vec3 pos, vec4 color, vec3 normal) {
     //pos from 0 to 512
-    //check node 0: 0 to 1 do nothing
-    //check node 1: 0 to 2
-    //check node 2: 0 to 4
-    //check node 3: 0 to 8
-    //check node 4: 0 to 16
-    //check node 5: 0 to 32
-    //check node 6: 0 to 64
-    //check node 7: 0 to 128
-    //check node 8: 0 to 256
-    //check node 9: 0 to 512
+    // Level 0 : 0.0 to 2.0
+    // Level 1 : 0.0 to 4.0
+    // Level 2 : 0.0 to 8.0
+    // Level 3 : 0.0 to 16.0
+    // Level 4 : 0.0 to 32.0
+    // Level 5 : 0.0 to 64.0
+    // Level 6 : 0.0 to 128.0
+    // Level 7 : 0.0 to 256.0
+    // Level 8 : 0.0 to 512.0
     uint parentNodeIndex = checkRoot();
     uint childNodeIndex = 0;
-    for(int i = 1; i < 9; i++) {        
+    vec3 prevSamplePos;
+    vec3 samplePos;
+    vec3 refOffset;
+    for(int i = 0; i < 8; i++) {        
+        prevSamplePos = samplePos;
+        samplePos = pos * levels[i];
+        refOffset = samplePos - 2 * floor(prevSamplePos);
         //check node i: 0 to 2^i
-        childNodeIndex = checkAndInitializeNode(i, pos, parentNodeIndex);
+        childNodeIndex = checkAndInitializeNode(parentNodeIndex);
         if(childNodeIndex == ISINPROCESS) {
             deferToFragList(pos, color, normal);
             return;
         } else {
             //descend the octree
-            parentNodeIndex = childNodeIndex;
+            uint offset =  getPtrOffset(ivec3(refOffset));
+            atomicOr(node[parentNodeIndex].childBit, 1 << offset);//flag child bit
+            parentNodeIndex = childNodeIndex + offset;
         }
     }
     //add to leaf 
@@ -241,18 +260,15 @@ void addToOctree(vec3 pos, vec4 color, vec3 normal) {
         deferToFragList(pos, color, normal);
         return;
     }
+    prevSamplePos = samplePos;
+    samplePos = pos;
+    refOffset = samplePos - 2 * floor(prevSamplePos);
     uint brickPtr = node[childNodeIndex].modelBrickPtr;
-    uint bx = (brickPtr & 0x1FF) * 2;
-    uint by = (brickPtr >> 9) * 2;  
-
-    ivec3 frameOffset = ivec3(pos * levels[9]);
-    ivec3 prevFrameOffset = 2 * ivec3(pos * levels[8]);
-    ivec3 innerFrameOffset = frameOffset - prevFrameOffset;
-    ivec3 texturePos = ivec3(bx + innerFrameOffset.x, by + innerFrameOffset.y, innerFrameOffset.z);
-    uint leafOffset = getPtrOffset(innerFrameOffset);
-    atomicOr(node[childNodeIndex].childBit, 1 << leafOffset);
-    imageAtomicRGBA8Avg(colorBrick, texturePos, color);
-    imageAtomicXYZWAvg(normalBrick, texturePos, vec4(normal, 1.0f));
+    ivec3 innerFramePos = ivec3(refOffset);
+    ivec3 brickPos = innerFramePos + ivec3((brickPtr & 0x1FF) * 2, (brickPtr >> 9) * 2, 0);
+    atomicOr(node[childNodeIndex].childBit, 1 << getPtrOffset(innerFramePos));
+    imageAtomicRGBA8Avg(colorBrick, brickPos, color);
+    imageAtomicXYZWAvg(normalBrick, brickPos, vec4(normal, 1.0f));
 }
 
 //Generates a voxel list from rasterization
