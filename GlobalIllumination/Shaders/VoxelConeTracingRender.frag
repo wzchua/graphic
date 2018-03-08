@@ -132,7 +132,7 @@ vec4 diffuseConeTrace(vec3 origin, vec3 dir, float coneSize) {
         GaussianLobe viewLobe;
         viewLobe.amplitude = vec3(1.0f);
         viewLobe.axis = dir;
-        viewLobe.sharpness = 1/cosPhi^2;
+        viewLobe.sharpness = 1/(cosPhi * cosPhi);
         vec3 brdf = c.rgb / PI;
         vec3 convLightNormalView = InnerProject(viewLobe, Product(normalLobe, lightLobe));
         color += brdf * convLightNormalView;
@@ -144,7 +144,7 @@ vec4 specularConeTrace(vec3 origin, vec3 dir, float coneSize) {
     vec3 samplePos = origin + dir;
     uint nodeId = 0;
     vec3 color = vec3(0.0f);
-    float cosPhi = 1.2;
+    float cosPhi = 0.6;
     while(alpha < 1.0f) {
         vec3 refOffset = SearchOctree(samplePos, length(samplePos - origin) * coneSize, nodeId);    
         uint brickPtr = node[nodeId].modelBrickPtr;
@@ -159,7 +159,7 @@ vec4 specularConeTrace(vec3 origin, vec3 dir, float coneSize) {
         GaussianLobe viewLobe;
         viewLobe.amplitude = vec3(1.0f);
         viewLobe.axis = dir;
-        viewLobe.sharpness = 1/cosPhi^2;
+        viewLobe.sharpness = 1/(cosPhi * cosPhi);
         vec3 brdf = c.rgb / PI;
         vec3 convLightNormalView = InnerProject(viewLobe, Product(normalLobe, lightLobe));
         color += brdf * convLightNormalView;
@@ -175,11 +175,11 @@ void main()
     // 4x 60 from normal + 1 at normal;
     vec3 orthoX = findOrthoVector(wcNormal);
     vec3 orthoY = cross(wcNormal, orthoX); 
-    vec3 diffuseColor += diffuseConeTrace(pos, wcNormal, 1.0f);
-    diffuseColor += diffuseConeTrace(pos, mix(wcNormal, orthoX, 0.3), 1.0f);
-    diffuseColor += diffuseConeTrace(pos, mix(wcNormal, -orthoX, 0.3), 1.0f);
-    diffuseColor += diffuseConeTrace(pos, mix(wcNormal, orthoY, 0.3), 1.0f);
-    diffuseColor += diffuseConeTrace(pos, mix(wcNormal, -orthoY, 0.3), 1.0f);
+    vec3 diffuseColor += diffuseConeTrace(pos, wcNormal, 2.0f);
+    diffuseColor += diffuseConeTrace(pos, mix(wcNormal, orthoX, 0.3), 2.0f);
+    diffuseColor += diffuseConeTrace(pos, mix(wcNormal, -orthoX, 0.3), 2.0f);
+    diffuseColor += diffuseConeTrace(pos, mix(wcNormal, orthoY, 0.3), 2.0f);
+    diffuseColor += diffuseConeTrace(pos, mix(wcNormal, -orthoY, 0.3), 2.0f);
     vec3 view  = normalize(wcPosition - eyePos);
     vec3 specularColor = specularConeTrace(pos, reflect(view, wcNormal), 0.5f);
 
