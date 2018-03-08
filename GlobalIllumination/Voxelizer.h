@@ -42,7 +42,7 @@ public:
     int projectionAxis = 0;
 private:
 
-    bool isOctree = false;
+    bool isOctree = true;
     unsigned int fragCount = 1024 * 1024 * 2;
     unsigned int nodeCount = 1024 * 1024 * 2;
     int brickDim = 2;
@@ -52,7 +52,7 @@ private:
 
     VoxelMatrixBlock voxelMatrixData;
     LimitsBlock voxelLogCountData = { fragCount, nodeCount, nodeCount, maxLogCount };
-    const CounterBlock mZeroedCounterBlock = { 0, 1, 1, 0, 0, 0 };
+    const CounterBlock mZeroedCounterBlock = { 0, 1, 0, 0, 0, 0 };
     CounterBlock mCounterBlock = mZeroedCounterBlock;
 
     GLuint voxelMatrixUniformBuffer;

@@ -175,10 +175,18 @@ void Voxelizer::render(Scene& scene)
 
     if (isOctree) {
         mModuleRenderToOctree.run(scene, ssboCounterSet, voxelMatrixUniformBuffer, voxelLogUniformBuffer, ssboLeafIndexList, ssboNodeList, texture3DColorList, texture3DNormalList, ssboFragmentList, ssboLogList);
+        auto cPtr = ssboCounterSet.getPtr();
+        auto c = *cPtr;
+        ssboCounterSet.unMapPtr();
+        auto node = ssboNodeList.getPtr();
+        std::vector<NodeStruct> nodeList;
+        for (int i = 0; i < c.nodeCounter; i++) {
+            nodeList.push_back(node[i]);
+        }
         auto timeAfterRender = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - timeStart).count();
         //mModuleAddToOctree.run(ssboNodeList, ssboFragmentList, ssboCounterSet, ssboLeafIndexList, voxelLogUniformBuffer, texture3DColorList, texture3DNormalList, ssboLogList);
-        ssboNodeList.bind(2);
-        mModuleVoxelVisualizer.rayCastVoxels(scene.cam, voxelMatrixData.worldToVoxelMat, ssboCounterSet, voxelLogUniformBuffer, texture3DColorList, VoxelVisualizer::OCTREE, ssboLogList);
+        //ssboNodeList.bind(2);
+        //mModuleVoxelVisualizer.rayCastVoxels(scene.cam, voxelMatrixData.worldToVoxelMat, ssboCounterSet, voxelLogUniformBuffer, texture3DColorList, VoxelVisualizer::OCTREE, ssboLogList);
         auto timeAfterAddingToOctree = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - timeStart).count();
         std::cout << " ms. time after render: " << timeAfterRender << " ms. time after add to octree: " << timeAfterAddingToOctree << " ms" << std::endl;
 

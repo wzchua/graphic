@@ -94,9 +94,9 @@ const vec2 size = vec2(2.0,0.0);
 const ivec3 off = ivec3(-1,0,1);
 const uint ISINPROCESS = 0 - 1;
 const uint LEAFHOST = 0 - 2;
-const float levels[8] = float[8](0.00390625f, 0.0078125f,
+const float levels[9] = float[9](0.00390625f, 0.0078125f,
                                 0.015625f, 0.03125f, 0.0625f,
-                                0.125f, 0.25f, 0.5f);
+                                0.125f, 0.25f, 0.5f, 1.0f);
 //z=0  2  3   z=1  6  7
 //     0  1        4  5
 uint getPtrOffset(ivec3 frameOffset) {
@@ -204,20 +204,20 @@ void imageAtomicXYZWAvg( layout ( r32ui ) coherent volatile uimage3D imgUI , ive
         newVal = convVec4ToXYZW( curValF );
     }
 }
-
+const int leafLevel = 2;
 vec3 SearchOctree(vec3 pos, out uint nodeId) {
     nodeId = 0;
     vec3 prevSamplePos;
     vec3 samplePos = vec3(0.0f);
     vec3 refOffset;
-    for(int i = 0; i < 8; i++) {
+    for(int i = 0; i < leafLevel; i++) {
         prevSamplePos = samplePos;
         samplePos = pos * levels[i];
         refOffset = samplePos - 2 * floor(prevSamplePos);
         nodeId = node[nodeId].childPtr + getPtrOffset(ivec3(refOffset));
     }
     prevSamplePos = samplePos;
-    samplePos = pos;
+    samplePos = pos * levels[leafLevel];
     refOffset = samplePos - 2 * floor(prevSamplePos);
     return refOffset;
 }
@@ -238,7 +238,7 @@ void addToOctree(vec3 pos, vec4 color, vec3 normal) {
     vec3 prevSamplePos;
     vec3 samplePos;
     vec3 refOffset;
-    for(int i = 0; i < 8; i++) {        
+    for(int i = 0; i < leafLevel; i++) {        
         prevSamplePos = samplePos;
         samplePos = pos * levels[i];
         refOffset = samplePos - 2 * floor(prevSamplePos);
@@ -255,18 +255,18 @@ void addToOctree(vec3 pos, vec4 color, vec3 normal) {
         }
     }
     //add to leaf 
-    uint leafState = checkAndInitializeLeafHost(childNodeIndex);
+    uint leafState = checkAndInitializeLeafHost(parentNodeIndex);
     if(leafState == ISINPROCESS) {
         deferToFragList(pos, color, normal);
         return;
     }
     prevSamplePos = samplePos;
-    samplePos = pos;
+    samplePos = pos * levels[leafLevel];
     refOffset = samplePos - 2 * floor(prevSamplePos);
-    uint brickPtr = node[childNodeIndex].modelBrickPtr;
+    uint brickPtr = node[parentNodeIndex].modelBrickPtr;
     ivec3 innerFramePos = ivec3(refOffset);
     ivec3 brickPos = innerFramePos + ivec3((brickPtr & 0x1FF) * 2, (brickPtr >> 9) * 2, 0);
-    atomicOr(node[childNodeIndex].childBit, 1 << getPtrOffset(innerFramePos));
+    atomicOr(node[parentNodeIndex].childBit, 1 << getPtrOffset(innerFramePos));
     imageAtomicRGBA8Avg(colorBrick, brickPos, color);
     imageAtomicXYZWAvg(normalBrick, brickPos, vec4(normal, 1.0f));
 }
