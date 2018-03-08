@@ -178,7 +178,7 @@ void Voxelizer::render(Scene& scene)
         auto timeAfterRender = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - timeStart).count();
         //mModuleAddToOctree.run(ssboNodeList, ssboFragmentList, ssboCounterSet, ssboLeafIndexList, voxelLogUniformBuffer, texture3DColorList, texture3DNormalList, ssboLogList);
         ssboNodeList.bind(2);
-        mModuleVoxelVisualizer.rayCastVoxels(scene.cam, worldToVoxelMat, ssboCounterSet, voxelLogUniformBuffer, texture3DColorList, VoxelVisualizer::OCTREE, ssboLogList);
+        mModuleVoxelVisualizer.rayCastVoxels(scene.cam, voxelMatrixData.worldToVoxelMat, ssboCounterSet, voxelLogUniformBuffer, texture3DColorList, VoxelVisualizer::OCTREE, ssboLogList);
         auto timeAfterAddingToOctree = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - timeStart).count();
         std::cout << " ms. time after render: " << timeAfterRender << " ms. time after add to octree: " << timeAfterAddingToOctree << " ms" << std::endl;
 
@@ -193,7 +193,7 @@ void Voxelizer::render(Scene& scene)
     }
     else {
         mModuleRenderToGrid.run(scene, ssboCounterSet, voxelMatrixUniformBuffer, voxelLogUniformBuffer, ssboLogList, texture3DColorGrid, texture3DNormalGrid, ssboVoxelList);
-        mModuleVoxelVisualizer.rayCastVoxels(scene.cam, worldToVoxelMat, ssboCounterSet, voxelLogUniformBuffer, texture3DColorList, VoxelVisualizer::GRID, ssboLogList);
+        mModuleVoxelVisualizer.rayCastVoxels(scene.cam, voxelMatrixData.worldToVoxelMat, ssboCounterSet, voxelLogUniformBuffer, texture3DColorGrid, VoxelVisualizer::GRID, ssboLogList);
     }
 
 
