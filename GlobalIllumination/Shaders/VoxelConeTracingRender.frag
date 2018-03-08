@@ -29,10 +29,10 @@ layout(binding = 2) coherent buffer NodeBlock {
     NodeStruct node[];
 };
 
-layout(binding = 4, rgba8) uniform coherent volatile image3D colorBrick;
-layout(binding = 5, r32ui) uniform coherent volatile uimage3D normalBrick;
-layout(binding = 6, r32ui) uniform coherent volatile uimage3D lightDirBrick;
-layout(binding = 7, r32ui) uniform coherent volatile uimage3D lightEnergyBrick;
+layout(binding = 4) uniform sampler3D colorBrick;
+layout(binding = 5) uniform sampler3D normalBrick;
+layout(binding = 6) uniform sampler3D lightDirBrick;
+layout(binding = 7) uniform usampler3D lightEnergyBrick;
 
 struct GaussianLobe {
     vec3 amplitude;
@@ -69,37 +69,101 @@ vec3 InnerProject(GaussianLobe g1, GaussianLobe g2) {
     return (2.0f * Pi * g1.amplitude * g2.amplitude * eFactorized * factorized2) / uLength;
 }
 
-const float levels[10] = float[10](0.001953125f, 0.00390625f, 0.0078125f,
+const float levels[9] = float[9](0.00390625f, 0.0078125f,
                                 0.015625f, 0.03125f, 0.0625f,
                                 0.125f, 0.25f, 0.5f, 1.0f);
 uint getPtrOffset(ivec3 frameOffset) {
     return frameOffset.x * 1 + frameOffset.y * 2 + frameOffset.z * 4;
 }
-// 2.1 
-uint findNode(vec3 pos, float size, out int level) {
-    uint nodeId = 0;
-    // error: doesn't resolve size < 1.0
-    for(int i = 1; i < 9; i++) {
-        if((1 << (10 - i)) < size) { //512, 256, 128, 64, 32, 16, 8, 4, 2, 1
-            
+
+const int leafLevel = 3;
+vec3 SearchOctree(vec3 pos, float size, out uint nodeId) {
+    nodeId = 0;
+    vec3 prevSamplePos;
+    vec3 samplePos = vec3(0.0f);
+    vec3 refOffset;
+    int reqLevel = 0;
+    for(int i = 0; i <= leafLevel; i++) { // 512 * level[8] = 1, 256 * level[7] = 1
+        if(size * levels[leafLevel - i] <= 1.0f) {
+            reqLevel = i;
             break;
         }
-        //descendNode        
-        ivec3 frameOffset = ivec3(pos * levels[i]);
-        ivec3 prevFrameOffset = 2 * ivec3(pos * levels[i - 1]);
-        uint offset = getPtrOffset(frameOffset - prevFrameOffset);
-        nodeId = node[nodeId].childPtr + offset;
     }
-    return nodeId;
+    for(int i = 0; i < reqLevel; i++) {
+        prevSamplePos = samplePos;
+        samplePos = pos * levels[i];
+        refOffset = samplePos - 2 * floor(prevSamplePos);
+        uint child = node[nodeId].childPtr;
+        uint childOffset = getPtrOffset(ivec3(refOffset));
+        if(child == 0 || ((node[nodeId].childBit >> childOffset) & 1) == 0) {
+            nodeId = INVALID;
+            return refOffset;
+        }
+        nodeId = child + childOffset;
+    }
+    prevSamplePos = samplePos;
+    samplePos = pos * levels[reqLevel];
+    refOffset = samplePos - 2 * floor(prevSamplePos);
+    uint leafOffset = getPtrOffset(ivec3(refOffset));
+    uint childBit = node[nodeId].childBit;
+    if(((childBit >> leafOffset) & 1) == 0) {
+        nodeId = INVALID;
+    }
+    return refOffset;
 }
 
-
-vec4 ConeTrace(vec3 origin, vec3 dir, float coneSize) {
+vec4 diffuseConeTrace(vec3 origin, vec3 dir, float coneSize) {
     float alpha = 0.0f;
     vec3 samplePos = origin + dir;
+    uint nodeId = 0;
+    vec3 color = vec3(0.0f);
+    float cosPhi = 1.2;
     while(alpha < 1.0f) {
-        uint nodeId = findNode(samplePos, length(samplePos - origin) * coneSize);
-        
+        vec3 refOffset = SearchOctree(samplePos, length(samplePos - origin) * coneSize, nodeId);    
+        uint brickPtr = node[nodeId].modelBrickPtr;
+        vec3 brickPos = refOffset + vec3((brickPtr & 0x1FF) * 2, (brickPtr >> 9) * 2, 0);
+        vec4 c = texture(colorBrick, brickPos);
+        vec4 n = 2 * texture(normalBrick, brickPos) - 1.0f;
+        uint lEnergy = texture(lightEnergyBrick, brickPos).a;
+        vec4 l = 2 * texture(lightDirBrick, brickPos) - 1.0f;
+
+        GaussianLobe normalLobe = generateSG(vec3(1.0f), n.xyz);
+        GaussianLobe lightLobe = generateSG(vec3(lEnergy), -l.xyz);
+        GaussianLobe viewLobe;
+        viewLobe.amplitude = vec3(1.0f);
+        viewLobe.axis = dir;
+        viewLobe.sharpness = 1/cosPhi^2;
+        vec3 brdf = c.rgb / PI;
+        vec3 convLightNormalView = InnerProject(viewLobe, Product(normalLobe, lightLobe));
+        color += brdf * convLightNormalView;
+        alpha = alpha + (1.0f - alpha) * c.a;
+    }
+}
+vec4 specularConeTrace(vec3 origin, vec3 dir, float coneSize) {
+    float alpha = 0.0f;
+    vec3 samplePos = origin + dir;
+    uint nodeId = 0;
+    vec3 color = vec3(0.0f);
+    float cosPhi = 1.2;
+    while(alpha < 1.0f) {
+        vec3 refOffset = SearchOctree(samplePos, length(samplePos - origin) * coneSize, nodeId);    
+        uint brickPtr = node[nodeId].modelBrickPtr;
+        vec3 brickPos = refOffset + vec3((brickPtr & 0x1FF) * 2, (brickPtr >> 9) * 2, 0);
+        vec4 c = texture(colorBrick, brickPos);
+        vec4 n = 2 * texture(normalBrick, brickPos) - 1.0f;
+        uint lEnergy = texture(lightEnergyBrick, brickPos).a;
+        vec4 l = 2 * texture(lightDirBrick, brickPos) - 1.0f;
+
+        GaussianLobe normalLobe = generateSG(vec3(1.0f), n.xyz);
+        GaussianLobe lightLobe = generateSG(vec3(lEnergy), -l.xyz);
+        GaussianLobe viewLobe;
+        viewLobe.amplitude = vec3(1.0f);
+        viewLobe.axis = dir;
+        viewLobe.sharpness = 1/cosPhi^2;
+        vec3 brdf = c.rgb / PI;
+        vec3 convLightNormalView = InnerProject(viewLobe, Product(normalLobe, lightLobe));
+        color += brdf * convLightNormalView;
+        alpha = alpha + (1.0f - alpha) * c.a;
     }
 }
 layout (location = 0) out vec4 FragColor;
@@ -111,13 +175,13 @@ void main()
     // 4x 60 from normal + 1 at normal;
     vec3 orthoX = findOrthoVector(wcNormal);
     vec3 orthoY = cross(wcNormal, orthoX); 
-    vec4 diffuseColor += ConeTrace(pos, wcNormal, 1.0f);
-    diffuseColor += ConeTrace(pos, mix(wcNormal, orthoX, 0.3), 1.0f);
-    diffuseColor += ConeTrace(pos, mix(wcNormal, -orthoX, 0.3), 1.0f);
-    diffuseColor += ConeTrace(pos, mix(wcNormal, orthoY, 0.3), 1.0f);
-    diffuseColor += ConeTrace(pos, mix(wcNormal, -orthoY, 0.3), 1.0f);
+    vec3 diffuseColor += diffuseConeTrace(pos, wcNormal, 1.0f);
+    diffuseColor += diffuseConeTrace(pos, mix(wcNormal, orthoX, 0.3), 1.0f);
+    diffuseColor += diffuseConeTrace(pos, mix(wcNormal, -orthoX, 0.3), 1.0f);
+    diffuseColor += diffuseConeTrace(pos, mix(wcNormal, orthoY, 0.3), 1.0f);
+    diffuseColor += diffuseConeTrace(pos, mix(wcNormal, -orthoY, 0.3), 1.0f);
     vec3 view  = normalize(wcPosition - eyePos);
-    vec4 specularColor = ConeTrace(pos, reflect(view, wcNormal), 0.5f);
+    vec3 specularColor = specularConeTrace(pos, reflect(view, wcNormal), 0.5f);
 
-    FragColor = diffuseColor + specularColor;
+    FragColor = vec4(diffuseColor + specularColor, 1.0f);
 }

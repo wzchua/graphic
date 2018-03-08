@@ -59,7 +59,7 @@ uint getPtrOffset(ivec3 frameOffset) {
     + min(frameOffset.y, 1) * 2 + min(frameOffset.z, 1) * 4;
 }
 
-const int leafLevel = 8;
+const int leafLevel = 3;
 vec3 SearchOctree(vec3 pos, out uint nodeId) {
     nodeId = 0;
     vec3 prevSamplePos;

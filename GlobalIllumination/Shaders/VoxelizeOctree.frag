@@ -116,12 +116,17 @@ uint checkAndInitializeNode(uint parentNodeIndex) {
 
     if(childIndex == 0) { //node is unintialized
         childIndex = atomicAdd(nodeCounter, 8);
-        node[parentNodeIndex].modelBrickPtr = atomicAdd(brickCounter, 1);
-        for(int i = 0; i < 8; i++) {
-            node[childIndex + i].parentPtr = parentNodeIndex;
+        if(childIndex + 8 >= maxNoOfNodes) {
+            logFragment(vec4(55.0f), vec4(55.0f), 55, 55, 55, 55);
+            discard;
+        } else {                
+            node[parentNodeIndex].modelBrickPtr = atomicAdd(brickCounter, 1);
+            for(int i = 0; i < 8; i++) {
+                node[childIndex + i].parentPtr = parentNodeIndex;
+            }
+            // setup inner pointers
+            atomicCompSwap(node[parentNodeIndex].childPtr, ISINPROCESS, childIndex);
         }
-        // setup inner pointers
-        atomicCompSwap(node[parentNodeIndex].childPtr, ISINPROCESS, childIndex);
     }
     return childIndex;
 }
@@ -152,7 +157,11 @@ uint checkAndInitializeLeafHost(uint leafIndex) {
     if(leafState == 0) {
         node[leafIndex].modelBrickPtr = atomicAdd(brickCounter, 1);
         uint index = atomicAdd(leafCounter, 1);
-        leafList[index] = leafIndex;
+        if(index < maxNoOfFragments) {
+            leafList[index] = leafIndex;
+        } else {
+            atomicAdd(leafCounter, uint(-1));
+        }
         atomicCompSwap(node[leafIndex].childPtr, ISINPROCESS, LEAFHOST);
     }
     
@@ -204,7 +213,7 @@ void imageAtomicXYZWAvg( layout ( r32ui ) coherent volatile uimage3D imgUI , ive
         newVal = convVec4ToXYZW( curValF );
     }
 }
-const int leafLevel = 8;
+const int leafLevel = 3;
 void addToOctree(vec3 pos, vec4 color, vec3 normal) {
     //pos from 0 to 512
     // Level 0 : 0.0 to 2.0

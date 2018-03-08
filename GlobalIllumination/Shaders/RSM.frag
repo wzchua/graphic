@@ -66,9 +66,9 @@ void imageAtomicXYZWAvg( layout ( r32ui ) coherent volatile uimage3D imgUI , ive
 
 const uint ISINPROCESS = 0 - 1;
 const uint LEAFHOST = 0 - 2;
-const float levels[8] = float[8](0.00390625f, 0.0078125f,
+const float levels[9] = float[9](0.00390625f, 0.0078125f,
                                 0.015625f, 0.03125f, 0.0625f,
-                                0.125f, 0.25f, 0.5f);
+                                0.125f, 0.25f, 0.5f, 1.0f);
 
 uint getPtrOffset(ivec3 frameOffset) {
     return min(frameOffset.x, 1) * 1 
@@ -78,7 +78,7 @@ uint getPtrOffset(ivec3 frameOffset) {
 uint checkRoot() {    
     return 0;
 }
-
+const int leafLevel = 8;
 void main()
 {
     vec3 pos = (WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz;
@@ -93,7 +93,7 @@ void main()
         nodeId = node[nodeId].childPtr + getPtrOffset(ivec3(refOffset));
     }
     prevSamplePos = samplePos;
-    samplePos = pos;
+    samplePos = pos * levels[leafLevel];
     refOffset = samplePos - 2 * floor(prevSamplePos);
     uint brickPtr = node[nodeId].modelBrickPtr;
     ivec3 innerFramePos = ivec3(refOffset);
