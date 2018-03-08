@@ -204,7 +204,7 @@ void imageAtomicXYZWAvg( layout ( r32ui ) coherent volatile uimage3D imgUI , ive
         newVal = convVec4ToXYZW( curValF );
     }
 }
-const int leafLevel = 2;
+const int leafLevel = 8;
 vec3 SearchOctree(vec3 pos, out uint nodeId) {
     nodeId = 0;
     vec3 prevSamplePos;
