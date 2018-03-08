@@ -33,7 +33,9 @@ layout(binding = 1) coherent buffer CounterBlock {
     uint fragmentCounter;
     uint nodeCounter;
     uint brickCounter;
+    uint leafCounter;
     uint logCounter;
+    uint noOfFragments;
 };
 layout(binding = 2) coherent buffer VoxelListBlock {
     vec4 voxelList[];
