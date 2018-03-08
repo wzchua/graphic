@@ -23,9 +23,9 @@ layout(binding = 4, RGBA8) uniform image3D colorBrick;
 //layout(binding = 5, RGBA8) uniform image3D normalBrick;
 
 uniform uint INVALID = 0 - 1;
-const float levels[8] = float[8](0.00390625f, 0.0078125f,
+const float levels[9] = float[9](0.00390625f, 0.0078125f,
                                 0.015625f, 0.03125f, 0.0625f,
-                                0.125f, 0.25f, 0.5f);
+                                0.125f, 0.25f, 0.5f, 1.0f);
 
 layout(binding = 1) coherent buffer CounterBlock {
     uint fragmentCounter;
@@ -59,24 +59,26 @@ uint getPtrOffset(ivec3 frameOffset) {
     + min(frameOffset.y, 1) * 2 + min(frameOffset.z, 1) * 4;
 }
 
+const int leafLevel = 8;
 vec3 SearchOctree(vec3 pos, out uint nodeId) {
     nodeId = 0;
     vec3 prevSamplePos;
     vec3 samplePos = vec3(0.0f);
     vec3 refOffset;
-    for(int i = 0; i < 8; i++) {
+    for(int i = 0; i < leafLevel; i++) {
         prevSamplePos = samplePos;
         samplePos = pos * levels[i];
         refOffset = samplePos - 2 * floor(prevSamplePos);
         uint child = node[nodeId].childPtr;
-        if(child == 0 || ((node[nodeId].childBit >> getPtrOffset(ivec3(refOffset))) & 1) == 0) {
+        uint childOffset = getPtrOffset(ivec3(refOffset));
+        if(child == 0 || ((node[nodeId].childBit >> childOffset) & 1) == 0) {
             nodeId = INVALID;
             return refOffset;
         }
-        nodeId = child + getPtrOffset(ivec3(refOffset));
+        nodeId = child + childOffset;
     }
     prevSamplePos = samplePos;
-    samplePos = pos;
+    samplePos = pos * levels[leafLevel];
     refOffset = samplePos - 2 * floor(prevSamplePos);
     uint leafOffset = getPtrOffset(ivec3(refOffset));
     uint childBit = node[nodeId].childBit;

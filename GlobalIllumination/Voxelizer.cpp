@@ -174,18 +174,22 @@ void Voxelizer::render(Scene& scene)
     auto timeStart = Clock::now();
 
     if (isOctree) {
-        mModuleRenderToOctree.run(scene, ssboCounterSet, voxelMatrixUniformBuffer, voxelLogUniformBuffer, ssboLeafIndexList, ssboNodeList, texture3DColorList, texture3DNormalList, ssboFragmentList, ssboLogList);
         auto cPtr = ssboCounterSet.getPtr();
-        auto c = *cPtr;
+        auto c1 = *cPtr;
+        ssboCounterSet.unMapPtr();
+        mModuleRenderToOctree.run(scene, ssboCounterSet, voxelMatrixUniformBuffer, voxelLogUniformBuffer, ssboLeafIndexList, ssboNodeList, texture3DColorList, texture3DNormalList, ssboFragmentList, ssboLogList);
+        cPtr = ssboCounterSet.getPtr();
+        auto c2 = *cPtr;
         ssboCounterSet.unMapPtr();
         auto node = ssboNodeList.getPtr();
         std::vector<NodeStruct> nodeList;
-        for (int i = 0; i < c.nodeCounter; i++) {
+        for (int i = 0; i < c2.nodeCounter; i++) {
             nodeList.push_back(node[i]);
         }
+        ssboNodeList.unMapPtr();
         auto timeAfterRender = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - timeStart).count();
         //mModuleAddToOctree.run(ssboNodeList, ssboFragmentList, ssboCounterSet, ssboLeafIndexList, voxelLogUniformBuffer, texture3DColorList, texture3DNormalList, ssboLogList);
-        //ssboNodeList.bind(2);
+        ssboNodeList.bind(2);
         mModuleVoxelVisualizer.rayCastVoxels(scene.cam, voxelMatrixData.worldToVoxelMat, ssboCounterSet, voxelLogUniformBuffer, texture3DColorList, VoxelVisualizer::OCTREE, ssboLogList);
         auto timeAfterAddingToOctree = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - timeStart).count();
         std::cout << " ms. time after render: " << timeAfterRender << " ms. time after add to octree: " << timeAfterAddingToOctree << " ms" << std::endl;
@@ -215,8 +219,15 @@ void Voxelizer::render(Scene& scene)
 
 void Voxelizer::resetAllData()
 {
+    CheckGLError();
     if (isOctree) {
         ssboNodeList.clearData();
+        auto node = ssboNodeList.getPtr();
+        std::vector<NodeStruct> nodeList;
+        for (int i = 0; i < 50; i++) {
+            nodeList.push_back(node[i]);
+        }
+        ssboNodeList.unMapPtr();
 
         glInvalidateTexImage(texture3DColorList, 0);
         glClearTexImage(texture3DColorList, 0, GL_RGBA, GL_FLOAT, NULL);
@@ -226,7 +237,6 @@ void Voxelizer::resetAllData()
         glClearTexImage(texture3DLightEnergyList, 0, GL_RGBA, GL_FLOAT, NULL);
         glInvalidateTexImage(texture3DLightDirList, 0);
         glClearTexImage(texture3DLightDirList, 0, GL_RGBA, GL_FLOAT, NULL);
-        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     }
     else {
         mModuleRenderToGrid.resetData();
@@ -236,5 +246,8 @@ void Voxelizer::resetAllData()
         glClearTexImage(texture3DNormalGrid, 0, GL_RGBA, GL_FLOAT, NULL);
     }
 
-    glNamedBufferSubData(ssboCounterSet.getId(), 0, sizeof(CounterBlock), &mZeroedCounterBlock);
+    auto cPtr = ssboCounterSet.getPtr();
+    cPtr[0] = mZeroedCounterBlock;
+    ssboCounterSet.unMapPtr();
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 }

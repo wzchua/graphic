@@ -205,23 +205,6 @@ void imageAtomicXYZWAvg( layout ( r32ui ) coherent volatile uimage3D imgUI , ive
     }
 }
 const int leafLevel = 8;
-vec3 SearchOctree(vec3 pos, out uint nodeId) {
-    nodeId = 0;
-    vec3 prevSamplePos;
-    vec3 samplePos = vec3(0.0f);
-    vec3 refOffset;
-    for(int i = 0; i < leafLevel; i++) {
-        prevSamplePos = samplePos;
-        samplePos = pos * levels[i];
-        refOffset = samplePos - 2 * floor(prevSamplePos);
-        nodeId = node[nodeId].childPtr + getPtrOffset(ivec3(refOffset));
-    }
-    prevSamplePos = samplePos;
-    samplePos = pos * levels[leafLevel];
-    refOffset = samplePos - 2 * floor(prevSamplePos);
-    return refOffset;
-}
-
 void addToOctree(vec3 pos, vec4 color, vec3 normal) {
     //pos from 0 to 512
     // Level 0 : 0.0 to 2.0
