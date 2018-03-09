@@ -168,6 +168,14 @@ vec4 specularConeTrace(vec3 origin, vec3 dir, float coneSize) {
 }
 layout (location = 0) out vec4 FragColor;
 
+vec3 findOrthoVector(vec3 v) {
+    vec3 u = cross(v, vec3(1, 0, 0));
+    if(dot(u, v) == 1.0f) {
+        u = cross(v, vec3(0, 1, 0));
+    }
+    return u;
+}
+
 void main() 
 {    
     vec3 pos = (WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz;
