@@ -14,11 +14,11 @@ layout(binding = 2) uniform LightBlock {
 layout(binding = 3, std140) uniform VoxelizeMatrixBlock {
     mat4 WorldToVoxelMat;
     mat4 ViewProjMatrixXY; 
-    mat4 worldToVoxelClipmapL0Mat;
-    mat4 worldToVoxelClipmapL1Mat;
-    mat4 worldToVoxelClipmapL2Mat;
 };
-layout(binding = 4, std140) uniform BoundariesBlock {
+layout(binding = 4, std140) uniform VoxelizeCascadedBlock {
+    mat4 voxelToClipmapL0Mat;
+    mat4 voxelToClipmapL1Mat;
+    mat4 voxelToClipmapL2Mat;
     vec4 level0min;
     vec4 level0max;
     vec4 level1min;
@@ -87,19 +87,19 @@ void main()
         || wcPosition.y < level1min.y || wcPosition.y > level1max.y
         || wcPosition.z < level1min.z || wcPosition.z > level1max.z) {
 
-        pos = ivec3((worldToVoxelClipmapL2Mat * vec4(wcPosition, 1.0f)).xyz);
+        pos = ivec3((voxelToClipmapL2Mat * WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz);
         lightEnergyGrid = lightEnergyGridL2;
         lightDirectionGrid = lightDirGridL2;
     } else if(wcPosition.x < level0min.x || wcPosition.x > level0max.x
         || wcPosition.y < level0min.y || wcPosition.y > level0max.y
         || wcPosition.z < level0min.z || wcPosition.z > level0max.z) {
 
-        pos = ivec3((worldToVoxelClipmapL1Mat * vec4(wcPosition, 1.0f)).xyz);
+        pos = ivec3((voxelToClipmapL1Mat * WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz);
         lightEnergyGrid = lightEnergyGridL1;
         lightDirectionGrid = lightDirGridL1;
 
     } else {        
-        pos = ivec3((worldToVoxelClipmapL0Mat * vec4(wcPosition, 1.0f)).xyz);
+        pos = ivec3((voxelToClipmapL0Mat * WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz);
         lightEnergyGrid = lightEnergyGridL0;
         lightDirectionGrid = lightDirGridL0;
     }

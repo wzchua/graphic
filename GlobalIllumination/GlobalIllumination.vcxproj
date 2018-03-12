@@ -72,6 +72,7 @@
     <ClInclude Include="ShapeGroup.h" />
     <ClInclude Include="Vertex.h" />
     <ClInclude Include="VoxelizeBlock.h" />
+    <ClInclude Include="VoxelizeCascadedBlock.h" />
     <ClInclude Include="Voxelizer.h" />
     <ClInclude Include="VoxelVisualizer.h" />
   </ItemGroup>

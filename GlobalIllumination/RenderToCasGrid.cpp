@@ -32,9 +32,10 @@ void RenderToCasGrid::updateVoxelMatrixBlock(glm::mat4 & worldToVoxelMat, glm::v
         newMin.z = newMax.z - 128.0f;
     }
     glm::vec3 translate = -newMin;
-    glm::mat4 level0WorldToVoxelMat = glm::translate(glm::mat4(1.0f), translate);
-    minBoundaries[0] = newMin;
-    maxBoundaries[0] = newMax;
+    voxelCascadedData.level0min = glm::vec4(newMin, 1.0f);
+    voxelCascadedData.level0max = glm::vec4(newMax, 1.0f);
+    voxelCascadedData.voxelToClipmapL0Mat = glm::translate(glm::mat4(1.0f), translate);
+    glm::mat4 level0WorldToVoxelMat = voxelCascadedData.voxelToClipmapL0Mat * worldToVoxelMat;
     glm::vec3 voxelMin = level0WorldToVoxelMat * glm::vec4(newMin, 1.0); //should be 0
     glm::vec3 voxelMax = level0WorldToVoxelMat * glm::vec4(newMax, 1.0); //should be 127
 
@@ -67,9 +68,11 @@ void RenderToCasGrid::updateVoxelMatrixBlock(glm::mat4 & worldToVoxelMat, glm::v
         newMin.z = newMax.z - 256.0f;
     }
     translate = -newMin;
-    glm::mat4 level1WorldToVoxelMat = glm::translate(glm::scale(glm::mat4(1.0f), glm::vec3(0.5f)), translate) * worldToVoxelMat;
-    minBoundaries[1] = newMin;
-    maxBoundaries[1] = newMax;
+    voxelCascadedData.level1min = glm::vec4(newMin, 1.0f);
+    voxelCascadedData.level1max = glm::vec4(newMax, 1.0f);
+    voxelCascadedData.voxelToClipmapL1Mat = glm::translate(glm::scale(glm::mat4(1.0f), glm::vec3(0.5f)), translate);
+
+    glm::mat4 level1WorldToVoxelMat = voxelCascadedData.voxelToClipmapL1Mat * worldToVoxelMat;
     voxelMin = level1WorldToVoxelMat * glm::vec4(newMin, 1.0); //should be 0
     voxelMax = level1WorldToVoxelMat * glm::vec4(newMax, 1.0); //should be 127
 
@@ -77,12 +80,18 @@ void RenderToCasGrid::updateVoxelMatrixBlock(glm::mat4 & worldToVoxelMat, glm::v
     glNamedBufferSubData(voxelMatrixBlockId[1], 0, sizeof(VoxelizeBlock), &voxelMatrixData[1]);
 
     //level 2
-    glm::mat4 level2WorldToVoxelMat = glm::scale(glm::mat4(1.0f), glm::vec3(0.25f)) * worldToVoxelMat;
+    voxelCascadedData.level2min = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    voxelCascadedData.level2max = glm::vec4(512.0f, 512.0f, 512.0f, 1.0f);
+    voxelCascadedData.voxelToClipmapL2Mat = glm::scale(glm::mat4(1.0f), glm::vec3(0.25f));
+
+    glm::mat4 level2WorldToVoxelMat = voxelCascadedData.voxelToClipmapL2Mat * worldToVoxelMat;
     voxelMin = level2WorldToVoxelMat * glm::vec4(0.0f, 0.0f, 0.0f, 1.0); //should be 0
     voxelMax = level2WorldToVoxelMat * glm::vec4(512.0f, 512.0f, 512.0f, 1.0); //should be 127
 
     voxelMatrixData[2].worldToVoxelMat = level2WorldToVoxelMat;
     glNamedBufferSubData(voxelMatrixBlockId[2], 0, sizeof(VoxelizeBlock), &voxelMatrixData[2]);
+
+    glNamedBufferSubData(voxelCascadedBlockId, 0, sizeof(VoxelizeCascadedBlock), &voxelCascadedData);
 }
 
 bool RenderToCasGrid::isWithinBoundaries(glm::vec3 pos, glm::vec3 min, glm::vec3 max)
@@ -133,6 +142,11 @@ void RenderToCasGrid::initialize(GLuint numOfGrid, GLuint * textureColors, GLuin
     shader.generateShader("./Shaders/VoxelizeCasGrid.frag", ShaderProgram::FRAGMENT);
     shader.linkCompileValidate();
 
+    glGenBuffers(1, &voxelCascadedBlockId);
+    glBindBuffer(GL_UNIFORM_BUFFER, voxelCascadedBlockId);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(VoxelizeCascadedBlock), NULL, GL_STREAM_DRAW);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
     for (int i = 0; i < 3; i++) {
         voxelMatrixData[i].viewProjMatrixXY = ortho * voxelViewMatriXY;
         glGenBuffers(1, &voxelMatrixBlockId[i]);
@@ -182,15 +196,25 @@ glm::mat4 RenderToCasGrid::getWorldToVoxelClipmapMatrix(GLuint level)
 
 glm::mat4 RenderToCasGrid::getWorldToVoxelClipmapMatrixFromPos(glm::vec3 pos, GLuint & outLevel)
 {
-    if (isOutsideBoundaries(pos, minBoundaries[1], maxBoundaries[1])) {
+    if (isOutsideBoundaries(pos, voxelCascadedData.level1min, voxelCascadedData.level1max)) {
         outLevel = 2;
         return voxelMatrixData[2].worldToVoxelMat;
     }
-    else if(isOutsideBoundaries(pos, minBoundaries[0], maxBoundaries[0])) {
+    else if(isOutsideBoundaries(pos, voxelCascadedData.level0min, voxelCascadedData.level0max)) {
         outLevel = 1;
         return voxelMatrixData[1].worldToVoxelMat;
     }
     return voxelMatrixData[0].worldToVoxelMat;
+}
+
+VoxelizeCascadedBlock & RenderToCasGrid::getVoxelizedCascadedBlock()
+{
+    return voxelCascadedData;
+}
+
+GLuint RenderToCasGrid::getVoxelizedCascadedBlockBufferId()
+{
+    return voxelCascadedBlockId;
 }
 
 RenderToCasGrid::RenderToCasGrid()
