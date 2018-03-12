@@ -50,7 +50,7 @@ Voxelizer::Voxelizer()
 
     glGenBuffers(1, &voxelMatrixUniformBuffer);
     glBindBuffer(GL_UNIFORM_BUFFER, voxelMatrixUniformBuffer);
-    glBufferData(GL_UNIFORM_BUFFER, sizeof(VoxelMatrixBlock), &voxelMatrixData, GL_STATIC_DRAW);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(VoxelizeBlock), &voxelMatrixData, GL_STATIC_DRAW);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
     glGenBuffers(1, &voxelLogUniformBuffer);
@@ -164,7 +164,7 @@ void Voxelizer::initializeWithScene(glm::vec3 min, glm::vec3 max)
     voxelMatrixData.viewProjMatrixZY = ortho * voxelViewMatriZY;
     voxelMatrixData.viewProjMatrixXZ = ortho * voxelViewMatriXZ;
 
-    glNamedBufferSubData(voxelMatrixUniformBuffer, 0, sizeof(VoxelMatrixBlock), &voxelMatrixData);
+    glNamedBufferSubData(voxelMatrixUniformBuffer, 0, sizeof(VoxelizeBlock), &voxelMatrixData);
 }
 
 void Voxelizer::render(Scene& scene)

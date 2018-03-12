@@ -23,6 +23,7 @@
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="FilterOctree.cpp" />
     <ClCompile Include="RenderLightIntoOctree.cpp" />
+    <ClCompile Include="RenderToCasGrid.cpp" />
     <ClCompile Include="RenderToGrid.cpp" />
     <ClCompile Include="glad.c" />
     <ClCompile Include="main.cpp" />
@@ -48,6 +49,7 @@
     <ClInclude Include="FilterOctree.h" />
     <ClInclude Include="NodeStruct.h" />
     <ClInclude Include="RenderLightIntoOctree.h" />
+    <ClInclude Include="RenderToCasGrid.h" />
     <ClInclude Include="RenderToGrid.h" />
     <ClInclude Include="FragStruct.h" />
     <ClInclude Include="GLBufferObject.h" />

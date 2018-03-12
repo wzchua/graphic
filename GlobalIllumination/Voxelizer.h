@@ -6,6 +6,7 @@
 #include <iostream>
 #include <chrono>
 
+#include "VoxelizeBlock.h"
 #include "ShaderProgram.h"
 #include "Scene.h"
 #include "GLBufferObject.h"
@@ -28,12 +29,6 @@ public:
         GLuint maxNoOfBricks;
         GLuint maxNoOfLogs;
     };
-    struct VoxelMatrixBlock {
-        glm::mat4 worldToVoxelMat;
-        glm::mat4 viewProjMatrixXY;
-        glm::mat4 viewProjMatrixZY;
-        glm::mat4 viewProjMatrixXZ;
-    };
     Voxelizer();
     ~Voxelizer();
     void initializeWithScene(glm::vec3 min, glm::vec3 max);
@@ -50,7 +45,7 @@ private:
     int texHeight = 512;
     unsigned int maxLogCount = 500;
 
-    VoxelMatrixBlock voxelMatrixData;
+    VoxelizeBlock voxelMatrixData;
     LimitsBlock voxelLogCountData = { fragCount, nodeCount, nodeCount, maxLogCount };
     const CounterBlock mZeroedCounterBlock = { 0, 1, 0, 0, 0, 0 };
     CounterBlock mCounterBlock = mZeroedCounterBlock;
