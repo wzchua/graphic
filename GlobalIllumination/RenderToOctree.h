@@ -1,5 +1,6 @@
 #pragma once
 #include "GenericShaderCodeString.h"
+#include "VoxelizeBlock.h"
 #include "ShaderProgram.h"
 #include "Scene.h"
 #include "GLBufferObject.h"

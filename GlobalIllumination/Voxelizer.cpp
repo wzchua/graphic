@@ -31,6 +31,8 @@ Voxelizer::Voxelizer()
     std::cout << "node " << size / sizeof(NodeStruct) << " ." << std::endl;
     glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &size);
     std::cout << "GL_MAX_UNIFORM_BLOCK_SIZE is " << size << " bytes." << std::endl;
+    glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &size);
+    std::cout << "GL_MAX_TEXTURE_IMAGE_UNITS is " << size << " ." << std::endl; 
     int work_grp_size[3];
     glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 0, &work_grp_size[0]);
     glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 1, &work_grp_size[1]);

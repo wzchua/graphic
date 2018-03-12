@@ -11,7 +11,7 @@ void RenderToOctree::initialize()
     std::stringstream vertShaderString;
     vertShaderString << GenericShaderCodeString::vertHeader << GenericShaderCodeString::vertGeomOutput;
     vertShaderString << GenericShaderCodeString::genericLimitsUniformBlock(7);
-    vertShaderString << counterBlockBufferShaderCodeString(1) << logFunctionAndBufferShaderCodeString(7);
+    vertShaderString << voxelizeBlockString(0) << counterBlockBufferShaderCodeString(1) << logFunctionAndBufferShaderCodeString(7);
 
     voxelizeOctreeShader.generateShader(vertShaderString, "./Shaders/Voxelize.vert", ShaderProgram::VERTEX);
     voxelizeOctreeShader.generateShader("./Shaders/Voxelize.geom", ShaderProgram::GEOMETRY);

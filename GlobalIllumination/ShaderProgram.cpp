@@ -135,7 +135,7 @@ void ShaderProgram::Shader::initializeWithFileName(std::string filename, ShaderT
     buffer.clear();
 }
 
-void ShaderProgram::Shader::initializeWithFileName(std::string & headerString, std::string filename, ShaderType shaderType)
+void ShaderProgram::Shader::initializeWithFileName(std::string & headerString, std::string filename, ShaderType type)
 {
     shaderId = glCreateShader(type);
     this->type = type;
@@ -159,7 +159,7 @@ void ShaderProgram::Shader::initializeWithFileName(std::string & headerString, s
     buffer.clear();
 }
 
-void ShaderProgram::Shader::initializeWithFileName(std::stringstream & buffer, std::string filename, ShaderType shaderType)
+void ShaderProgram::Shader::initializeWithFileName(std::stringstream & buffer, std::string filename, ShaderType type)
 {
     shaderId = glCreateShader(type);
     this->type = type;

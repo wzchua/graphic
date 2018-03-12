@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 
 #include "GenericShaderCodeString.h"
+#include "VoxelizeBlock.h"
 #include "GLBufferObject.h"
 #include "ShaderProgram.h"
 #include "LogStruct.h"

@@ -13,8 +13,9 @@ in vec2 geomTexCoord[];
 layout(binding = 0) uniform VoxelizeMatrixBlock {
     mat4 WorldToVoxelMat;
     mat4 ViewProjMatrixXY; 
-    mat4 ViewProjMatrixZY; 
-    mat4 ViewProjMatrixXZ;
+    mat4 worldToVoxelClipmapL0Mat;
+    mat4 worldToVoxelClipmapL1Mat;
+    mat4 worldToVoxelClipmapL2Mat;
 };
 
 out vec3 wcPosition;
