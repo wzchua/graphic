@@ -80,26 +80,26 @@ void imageAtomicXYZWAvg( layout ( r32ui ) coherent volatile uimage3D imgUI , ive
 
 void main()
 {
-    vec3 pos;
+    ivec3 pos;
     uimage3D lightEnergyGrid;
     uimage3D lightDirectionGrid;
     if(wcPosition.x < level1min.x || wcPosition.x > level1max.x
         || wcPosition.y < level1min.y || wcPosition.y > level1max.y
         || wcPosition.z < level1min.z || wcPosition.z > level1max.z) {
 
-        pos = (worldToVoxelClipmapL2Mat * vec4(wcPosition, 1.0f)).xyz;
+        pos = ivec3((worldToVoxelClipmapL2Mat * vec4(wcPosition, 1.0f)).xyz);
         lightEnergyGrid = lightEnergyGridL2;
         lightDirectionGrid = lightDirGridL2;
     } else if(wcPosition.x < level0min.x || wcPosition.x > level0max.x
         || wcPosition.y < level0min.y || wcPosition.y > level0max.y
         || wcPosition.z < level0min.z || wcPosition.z > level0max.z) {
 
-        pos = (worldToVoxelClipmapL1Mat * vec4(wcPosition, 1.0f)).xyz;
+        pos = ivec3((worldToVoxelClipmapL1Mat * vec4(wcPosition, 1.0f)).xyz);
         lightEnergyGrid = lightEnergyGridL1;
         lightDirectionGrid = lightDirGridL1;
 
     } else {        
-        pos = (worldToVoxelClipmapL0Mat * vec4(wcPosition, 1.0f)).xyz;
+        pos = ivec3((worldToVoxelClipmapL0Mat * vec4(wcPosition, 1.0f)).xyz);
         lightEnergyGrid = lightEnergyGridL0;
         lightDirectionGrid = lightDirGridL0;
     }
