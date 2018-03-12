@@ -1,4 +1,5 @@
 #pragma once
+#include "GenericShaderCodeString.h"
 #include "ShaderProgram.h"
 #include "Scene.h"
 #include "GLBufferObject.h"

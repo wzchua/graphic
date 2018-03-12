@@ -95,24 +95,30 @@ ShaderProgram::~ShaderProgram()
     delete[] shaderNames;
 }
 
-void ShaderProgram::generateShader(std::string filename, ShaderType type, const std::vector<std::string>* newDefines)
+void ShaderProgram::generateShader(std::string filename, ShaderType type)
 {
     shaders.push_back(Shader());
-    shaders.back().initialize(filename, type, newDefines);
+    shaders.back().initializeWithFileName(filename, type);
+}
+void ShaderProgram::generateShader(std::string & headerString, std::string filename, ShaderType type)
+{
+    shaders.push_back(Shader());
+    shaders.back().initializeWithFileName(headerString, filename, type);
 }
 
-void ShaderProgram::Shader::initialize(std::string filename, ShaderType type, const std::vector<std::string>* newDefines)
+void ShaderProgram::generateShader(std::stringstream & headerString, std::string filename, ShaderProgram::ShaderType type)
+{
+    shaders.push_back(Shader());
+    shaders.back().initializeWithFileName(headerString, filename, type);
+}
+
+void ShaderProgram::Shader::initializeWithFileName(std::string filename, ShaderType type)
 {
     shaderId = glCreateShader(type);
     this->type = type;
     std::ifstream in(filename, std::ifstream::in);
     std::cout << filename << "\n";
     std::stringstream buffer;
-    if (newDefines != nullptr) {
-        for (const std::string& preDef : *newDefines) {
-            buffer << "#define " << preDef << std::endl;
-        }
-    }
     buffer << in.rdbuf();
     in.close();
     const auto vString = buffer.str();
@@ -127,6 +133,51 @@ void ShaderProgram::Shader::initialize(std::string filename, ShaderType type, co
         throw new std::exception();
     }
     buffer.clear();
+}
+
+void ShaderProgram::Shader::initializeWithFileName(std::string & headerString, std::string filename, ShaderType shaderType)
+{
+    shaderId = glCreateShader(type);
+    this->type = type;
+    std::ifstream in(filename, std::ifstream::in);
+    std::cout << filename << "\n";
+    std::stringstream buffer;
+    buffer << headerString;
+    buffer << in.rdbuf();
+    in.close();
+    const auto vString = buffer.str();
+    const char * source = vString.c_str();
+    glShaderSource(shaderId, 1, &source, NULL);
+    glCompileShader(shaderId);
+
+    int success;
+    glGetShaderiv(shaderId, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        std::cout << filename << " Compile Failed.\n Log: " << getShaderLog(shaderId) << "\n";
+        throw new std::exception();
+    }
+    buffer.clear();
+}
+
+void ShaderProgram::Shader::initializeWithFileName(std::stringstream & buffer, std::string filename, ShaderType shaderType)
+{
+    shaderId = glCreateShader(type);
+    this->type = type;
+    std::ifstream in(filename, std::ifstream::in);
+    std::cout << filename << "\n";
+    buffer << in.rdbuf();
+    in.close();
+    const auto vString = buffer.str();
+    const char * source = vString.c_str();
+    glShaderSource(shaderId, 1, &source, NULL);
+    glCompileShader(shaderId);
+
+    int success;
+    glGetShaderiv(shaderId, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        std::cout << filename << " Compile Failed.\n Log: " << getShaderLog(shaderId) << "\n";
+        throw new std::exception();
+    }
 }
 
 ShaderProgram::Shader::~Shader()

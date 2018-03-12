@@ -9,3 +9,16 @@ struct CounterBlock {
     GLuint logCounter;
     GLuint noOfFragments;
 };
+static std::string CounterBlockShaderCodeString(GLuint level) {
+    std::string s = R"(layout(binding = )" + std::to_string(level);
+    s = s + R"() coherent buffer CounterBlock{
+    uint fragmentCounter;
+    uint nodeCounter;
+    uint brickCounter;
+    uint leafCounter;
+    uint logCounter;
+    uint noOfFragments;
+};
+)";
+    return s;
+}

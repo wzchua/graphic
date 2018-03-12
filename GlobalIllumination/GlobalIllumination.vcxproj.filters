@@ -19,6 +19,9 @@
     <Filter Include="Header Files\Modules">
       <UniqueIdentifier>{ead99924-6dcb-43a0-9324-9b294fb69054}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\DataStructure">
+      <UniqueIdentifier>{c2f41975-7b4e-4053-bcb3-96ac0da667df}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -87,6 +90,12 @@
     <ClCompile Include="RenderToCasGrid.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="FilterCasGrid.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderLightIntoCasGrid.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Shape.h">
@@ -113,21 +122,6 @@
     <ClInclude Include="SceneMaterialManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ShapeGroup.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Vertex.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="FragStruct.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="LogStruct.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="CounterBlock.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="RenderPhong.h">
       <Filter>Header Files\Modules</Filter>
     </ClInclude>
@@ -146,9 +140,6 @@
     <ClInclude Include="RenderToOctree.h">
       <Filter>Header Files\Modules</Filter>
     </ClInclude>
-    <ClInclude Include="NodeStruct.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="AddToOctree.h">
       <Filter>Header Files\Modules</Filter>
     </ClInclude>
@@ -158,11 +149,41 @@
     <ClInclude Include="RenderLightIntoOctree.h">
       <Filter>Header Files\Modules</Filter>
     </ClInclude>
-    <ClInclude Include="RenderVoxelConeTrace.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="CounterBlock.h">
+      <Filter>Header Files\DataStructure</Filter>
+    </ClInclude>
+    <ClInclude Include="FragStruct.h">
+      <Filter>Header Files\DataStructure</Filter>
+    </ClInclude>
+    <ClInclude Include="LogStruct.h">
+      <Filter>Header Files\DataStructure</Filter>
+    </ClInclude>
+    <ClInclude Include="NodeStruct.h">
+      <Filter>Header Files\DataStructure</Filter>
+    </ClInclude>
+    <ClInclude Include="VoxelizeBlock.h">
+      <Filter>Header Files\DataStructure</Filter>
+    </ClInclude>
+    <ClInclude Include="Vertex.h">
+      <Filter>Header Files\DataStructure</Filter>
+    </ClInclude>
+    <ClInclude Include="ShapeGroup.h">
+      <Filter>Header Files\DataStructure</Filter>
+    </ClInclude>
+    <ClInclude Include="FilterCasGrid.h">
+      <Filter>Header Files\Modules</Filter>
     </ClInclude>
     <ClInclude Include="RenderToCasGrid.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Modules</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderLightIntoCasGrid.h">
+      <Filter>Header Files\Modules</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderVoxelConeTrace.h">
+      <Filter>Header Files\Modules</Filter>
+    </ClInclude>
+    <ClInclude Include="GenericShaderCodeString.h">
+      <Filter>Header Files\DataStructure</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

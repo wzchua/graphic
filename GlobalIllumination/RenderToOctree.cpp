@@ -8,7 +8,11 @@ void RenderToOctree::initialize()
         return;
     }
 
-    voxelizeOctreeShader.generateShader("./Shaders/Voxelize.vert", ShaderProgram::VERTEX);
+    std::stringstream vertShaderString;
+    vertShaderString << GenericShaderCodeString::vertHeader << GenericShaderCodeString::vertGeomOutput << GenericShaderCodeString::genericLimitsUniformBlock(7);
+    vertShaderString << CounterBlockShaderCodeString(1) << logShaderCodeString(7);
+
+    voxelizeOctreeShader.generateShader(vertShaderString, "./Shaders/Voxelize.vert", ShaderProgram::VERTEX);
     voxelizeOctreeShader.generateShader("./Shaders/Voxelize.geom", ShaderProgram::GEOMETRY);
     voxelizeOctreeShader.generateShader("./Shaders/VoxelizeOctree.frag", ShaderProgram::FRAGMENT);
     voxelizeOctreeShader.linkCompileValidate();

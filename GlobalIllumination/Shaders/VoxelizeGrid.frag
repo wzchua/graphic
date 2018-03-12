@@ -1,5 +1,4 @@
 #version 450
-#extension GL_ARB_shader_atomic_counter_ops : require
 #extension GL_ARB_bindless_texture : require
 
 in vec3 wcPosition;   // Vertex position in scaled world space.

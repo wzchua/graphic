@@ -21,7 +21,9 @@
   <ItemGroup>
     <ClCompile Include="AddToOctree.cpp" />
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="FilterCasGrid.cpp" />
     <ClCompile Include="FilterOctree.cpp" />
+    <ClCompile Include="RenderLightIntoCasGrid.cpp" />
     <ClCompile Include="RenderLightIntoOctree.cpp" />
     <ClCompile Include="RenderToCasGrid.cpp" />
     <ClCompile Include="RenderToGrid.cpp" />
@@ -46,8 +48,11 @@
     <ClInclude Include="AddToOctree.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="CounterBlock.h" />
+    <ClInclude Include="FilterCasGrid.h" />
     <ClInclude Include="FilterOctree.h" />
+    <ClInclude Include="GenericShaderCodeString.h" />
     <ClInclude Include="NodeStruct.h" />
+    <ClInclude Include="RenderLightIntoCasGrid.h" />
     <ClInclude Include="RenderLightIntoOctree.h" />
     <ClInclude Include="RenderToCasGrid.h" />
     <ClInclude Include="RenderToGrid.h" />
@@ -66,6 +71,7 @@
     <ClInclude Include="Shape.h" />
     <ClInclude Include="ShapeGroup.h" />
     <ClInclude Include="Vertex.h" />
+    <ClInclude Include="VoxelizeBlock.h" />
     <ClInclude Include="Voxelizer.h" />
     <ClInclude Include="VoxelVisualizer.h" />
   </ItemGroup>

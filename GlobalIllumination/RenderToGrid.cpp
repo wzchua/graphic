@@ -7,7 +7,11 @@ void RenderToGrid::initialize()
     if (hasInitialized) {
         return;
     }
-    voxelizeGridShader.generateShader("./Shaders/Voxelize.vert", ShaderProgram::VERTEX);
+    std::stringstream vertShaderString;
+    vertShaderString << GenericShaderCodeString::vertHeader << GenericShaderCodeString::vertGeomOutput << GenericShaderCodeString::genericLimitsUniformBlock(7);
+    vertShaderString << CounterBlockShaderCodeString(1) << logShaderCodeString(7);
+
+    voxelizeGridShader.generateShader(vertShaderString, "./Shaders/Voxelize.vert", ShaderProgram::VERTEX);
     voxelizeGridShader.generateShader("./Shaders/Voxelize.geom", ShaderProgram::GEOMETRY);
     voxelizeGridShader.generateShader("./Shaders/VoxelizeGrid.frag", ShaderProgram::FRAGMENT);
     voxelizeGridShader.linkCompileValidate();

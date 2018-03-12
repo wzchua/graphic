@@ -70,16 +70,16 @@ void RenderToCasGrid::updateVoxelMatrixBlock(glm::mat4 & worldToVoxelMat, glm::v
     glm::mat4 level1WorldToVoxelMat = glm::translate(glm::scale(glm::mat4(1.0f), glm::vec3(0.5f)), translate) * worldToVoxelMat;
     minBoundaries[1] = newMin;
     maxBoundaries[1] = newMax;
-    glm::vec3 voxelMin = level1WorldToVoxelMat * glm::vec4(newMin, 1.0); //should be 0
-    glm::vec3 voxelMax = level1WorldToVoxelMat * glm::vec4(newMax, 1.0); //should be 127
+    voxelMin = level1WorldToVoxelMat * glm::vec4(newMin, 1.0); //should be 0
+    voxelMax = level1WorldToVoxelMat * glm::vec4(newMax, 1.0); //should be 127
 
     voxelMatrixData[1].worldToVoxelMat = level1WorldToVoxelMat;
     glNamedBufferSubData(voxelMatrixBlockId[1], 0, sizeof(VoxelizeBlock), &voxelMatrixData[1]);
 
     //level 2
     glm::mat4 level2WorldToVoxelMat = glm::scale(glm::mat4(1.0f), glm::vec3(0.25f)) * worldToVoxelMat;
-    glm::vec3 voxelMin = level2WorldToVoxelMat * glm::vec4(0.0f, 0.0f, 0.0f, 1.0); //should be 0
-    glm::vec3 voxelMax = level2WorldToVoxelMat * glm::vec4(512.0f, 512.0f, 512.0f, 1.0); //should be 127
+    voxelMin = level2WorldToVoxelMat * glm::vec4(0.0f, 0.0f, 0.0f, 1.0); //should be 0
+    voxelMax = level2WorldToVoxelMat * glm::vec4(512.0f, 512.0f, 512.0f, 1.0); //should be 127
 
     voxelMatrixData[2].worldToVoxelMat = level2WorldToVoxelMat;
     glNamedBufferSubData(voxelMatrixBlockId[2], 0, sizeof(VoxelizeBlock), &voxelMatrixData[2]);
@@ -186,7 +186,7 @@ glm::mat4 RenderToCasGrid::getWorldToVoxelClipmapMatrixFromPos(glm::vec3 pos, GL
         outLevel = 2;
         return voxelMatrixData[2].worldToVoxelMat;
     }
-    else if(isOutsideBoundaries(pos, minBoundaries[0], maxBoundaries[0]) {
+    else if(isOutsideBoundaries(pos, minBoundaries[0], maxBoundaries[0])) {
         outLevel = 1;
         return voxelMatrixData[1].worldToVoxelMat;
     }
