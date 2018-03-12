@@ -2,6 +2,99 @@
 
 
 
+void RenderToCasGrid::updateVoxelMatrixBlock(glm::mat4 & worldToVoxelMat, glm::vec4 refPos, glm::vec3 change)
+{
+    glm::vec3 newMin, newMax;
+
+    //level 0
+    if (change.y < 0) {
+        newMin.y = glm::min(glm::max(refPos.y, 0.0f), 512.0f - 128.0f);
+        newMax.y = newMin.y + 128.0f;
+    }
+    else {
+        newMax.y = glm::max(glm::min(refPos.y, 512.0f), 128.0f);
+        newMin.y = newMax.y - 128.0f;
+    }
+    if (change.x < 0) {
+        newMin.x = glm::min(glm::max(refPos.x, 0.0f), 512.0f - 128.0f);
+        newMax.x = newMin.x + 128.0f;
+    }
+    else {
+        newMax.x = glm::max(glm::min(refPos.x, 512.0f), 128.0f);
+        newMin.x = newMax.x - 128.0f;
+    }
+    if (change.z < 0) {
+        newMin.z = glm::min(glm::max(refPos.z, 0.0f), 512.0f - 128.0f);
+        newMax.z = newMin.z + 128.0f;
+    }
+    else {
+        newMax.z = glm::max(glm::min(refPos.z, 512.0f), 128.0f);
+        newMin.z = newMax.z - 128.0f;
+    }
+    glm::vec3 translate = -newMin;
+    glm::mat4 level0WorldToVoxelMat = glm::translate(glm::mat4(1.0f), translate);
+    minBoundaries[0] = newMin;
+    maxBoundaries[0] = newMax;
+    glm::vec3 voxelMin = level0WorldToVoxelMat * glm::vec4(newMin, 1.0); //should be 0
+    glm::vec3 voxelMax = level0WorldToVoxelMat * glm::vec4(newMax, 1.0); //should be 127
+
+    voxelMatrixData[0].worldToVoxelMat = level0WorldToVoxelMat;
+    glNamedBufferSubData(voxelMatrixBlockId[0], 0, sizeof(VoxelizeBlock), &voxelMatrixData[0]);
+
+    //level 1
+    if (change.y < 0) {
+        newMin.y = glm::min(glm::max(refPos.y, 0.0f), 512.0f - 256.0f);
+        newMax.y = newMin.y + 256.0f;
+    }
+    else {
+        newMax.y = glm::max(glm::min(refPos.y, 512.0f), 256.0f);
+        newMin.y = newMax.y - 256.0f;
+    }
+    if (change.x < 0) {
+        newMin.x = glm::min(glm::max(refPos.x, 0.0f), 512.0f - 256.0f);
+        newMax.x = newMin.x + 256.0f;
+    }
+    else {
+        newMax.x = glm::max(glm::min(refPos.x, 512.0f), 256.0f);
+        newMin.x = newMax.x - 256.0f;
+    }
+    if (change.z < 0) {
+        newMin.z = glm::min(glm::max(refPos.z, 0.0f), 512.0f - 256.0f);
+        newMax.z = newMin.z + 256.0f;
+    }
+    else {
+        newMax.z = glm::max(glm::min(refPos.z, 512.0f), 256.0f);
+        newMin.z = newMax.z - 256.0f;
+    }
+    translate = -newMin;
+    glm::mat4 level1WorldToVoxelMat = glm::translate(glm::scale(glm::mat4(1.0f), glm::vec3(0.5f)), translate) * worldToVoxelMat;
+    minBoundaries[1] = newMin;
+    maxBoundaries[1] = newMax;
+    glm::vec3 voxelMin = level1WorldToVoxelMat * glm::vec4(newMin, 1.0); //should be 0
+    glm::vec3 voxelMax = level1WorldToVoxelMat * glm::vec4(newMax, 1.0); //should be 127
+
+    voxelMatrixData[1].worldToVoxelMat = level1WorldToVoxelMat;
+    glNamedBufferSubData(voxelMatrixBlockId[1], 0, sizeof(VoxelizeBlock), &voxelMatrixData[1]);
+
+    //level 2
+    glm::mat4 level2WorldToVoxelMat = glm::scale(glm::mat4(1.0f), glm::vec3(0.25f)) * worldToVoxelMat;
+    glm::vec3 voxelMin = level2WorldToVoxelMat * glm::vec4(0.0f, 0.0f, 0.0f, 1.0); //should be 0
+    glm::vec3 voxelMax = level2WorldToVoxelMat * glm::vec4(512.0f, 512.0f, 512.0f, 1.0); //should be 127
+
+    voxelMatrixData[2].worldToVoxelMat = level2WorldToVoxelMat;
+    glNamedBufferSubData(voxelMatrixBlockId[2], 0, sizeof(VoxelizeBlock), &voxelMatrixData[2]);
+}
+
+bool RenderToCasGrid::isWithinBoundaries(glm::vec3 pos, glm::vec3 min, glm::vec3 max)
+{
+    return (min.x <= pos.x && pos.x <= max.x) && (min.y <= pos.y && pos.y <= max.y) && (min.z <= pos.z && pos.z <= max.z);
+}
+
+bool RenderToCasGrid::isOutsideBoundaries(glm::vec3 pos, glm::vec3 min, glm::vec3 max)
+{
+    return pos.x < min.x || max.x < pos.x || pos.y < min.y || max.y < pos.y || pos.z < min.z || max.z < pos.z;
+}
+
 void RenderToCasGrid::initialize(GLuint numOfGrid, GLuint * textureColors, GLuint * textureNormals)
 {
 
@@ -49,86 +142,14 @@ void RenderToCasGrid::initialize(GLuint numOfGrid, GLuint * textureColors, GLuin
     }    
 }
 
-void RenderToCasGrid::run(Scene & inputScene, GLBufferObject<CounterBlock>& ssboCounterSet, glm::mat4 worldToVoxelMat, GLuint voxelizeMatrixBlock, GLuint logUniformBlock, GLBufferObject<LogStruct>& ssboLogList, GLuint numOfGrid, GLuint * textureColors, GLuint * textureNormals)
+void RenderToCasGrid::run(Scene & inputScene, GLBufferObject<CounterBlock>& ssboCounterSet, glm::mat4 & worldToVoxelMat, GLuint voxelizeMatrixBlock, GLuint logUniformBlock, GLBufferObject<LogStruct>& ssboLogList, GLuint numOfGrid, GLuint * textureColors, GLuint * textureNormals)
 {
     auto & cam = inputScene.cam;
     auto refPos = worldToVoxelMat * glm::vec4(cam.getPosition() - 2.0f * cam.getForward(), 1.0f);
-    glm::vec3 newMin, newMax;
-    glm::vec3 change = -cam.getForward();
-
-    //level 0
-    if (change.y < 0) {
-        newMin.y = glm::min(glm::max(refPos.y, 0.0f), 512.0f - 128.0f);
-        newMax.y = newMin.y + 128.0f;
+    if (refPos != refPosCache) {
+        refPos = refPosCache;
+        updateVoxelMatrixBlock(worldToVoxelMat, refPos, -cam.getForward());
     }
-    else {
-        newMax.y = glm::max(glm::min(refPos.y, 512.0f), 128.0f);
-        newMin.y = newMax.y - 128.0f;
-    }
-    if (change.x < 0) {
-        newMin.x = glm::min(glm::max(refPos.x, 0.0f), 512.0f - 128.0f);
-        newMax.x = newMin.x + 128.0f;
-    }
-    else {
-        newMax.x = glm::max(glm::min(refPos.x, 512.0f), 128.0f);
-        newMin.x = newMax.x - 128.0f;
-    }
-    if (change.z < 0) {
-        newMin.z = glm::min(glm::max(refPos.z, 0.0f), 512.0f - 128.0f);
-        newMax.z = newMin.z + 128.0f;
-    }
-    else {
-        newMax.z = glm::max(glm::min(refPos.z, 512.0f), 128.0f);
-        newMin.z = newMax.z - 128.0f;
-    }
-    glm::vec3 translate = -newMin;
-    glm::mat4 level0WorldToVoxelMat = glm::translate(glm::mat4(1.0f), translate);
-    glm::vec3 voxelMin = level0WorldToVoxelMat * glm::vec4(newMin, 1.0); //should be 0
-    glm::vec3 voxelMax = level0WorldToVoxelMat * glm::vec4(newMax, 1.0); //should be 127
-
-    voxelMatrixData[0].worldToVoxelMat = level0WorldToVoxelMat;
-    glNamedBufferSubData(voxelMatrixBlockId[0], 0, sizeof(VoxelizeBlock), &voxelMatrixData[0]);
-
-    //level 1
-    if (change.y < 0) {
-        newMin.y = glm::min(glm::max(refPos.y, 0.0f), 512.0f - 256.0f);
-        newMax.y = newMin.y + 256.0f;
-    }
-    else {
-        newMax.y = glm::max(glm::min(refPos.y, 512.0f), 256.0f);
-        newMin.y = newMax.y - 256.0f;
-    }
-    if (change.x < 0) {
-        newMin.x = glm::min(glm::max(refPos.x, 0.0f), 512.0f - 256.0f);
-        newMax.x = newMin.x + 256.0f;
-    }
-    else {
-        newMax.x = glm::max(glm::min(refPos.x, 512.0f), 256.0f);
-        newMin.x = newMax.x - 256.0f;
-    }
-    if (change.z < 0) {
-        newMin.z = glm::min(glm::max(refPos.z, 0.0f), 512.0f - 256.0f);
-        newMax.z = newMin.z + 256.0f;
-    }
-    else {
-        newMax.z = glm::max(glm::min(refPos.z, 512.0f), 256.0f);
-        newMin.z = newMax.z - 256.0f;
-    }
-    translate = -newMin;
-    glm::mat4 level1WorldToVoxelMat = glm::translate(glm::scale(glm::mat4(1.0f), glm::vec3(0.5f)), translate) * worldToVoxelMat;
-    glm::vec3 voxelMin = level1WorldToVoxelMat * glm::vec4(newMin, 1.0); //should be 0
-    glm::vec3 voxelMax = level1WorldToVoxelMat * glm::vec4(newMax, 1.0); //should be 127
-
-    voxelMatrixData[1].worldToVoxelMat = level1WorldToVoxelMat;
-    glNamedBufferSubData(voxelMatrixBlockId[1], 0, sizeof(VoxelizeBlock), &voxelMatrixData[1]);
-
-    //level 2
-    glm::mat4 level2WorldToVoxelMat = glm::scale(glm::mat4(1.0f), glm::vec3(0.25f)) * worldToVoxelMat;
-    glm::vec3 voxelMin = level2WorldToVoxelMat * glm::vec4(0.0f, 0.0f, 0.0f, 1.0); //should be 0
-    glm::vec3 voxelMax = level2WorldToVoxelMat * glm::vec4(512.0f, 512.0f, 512.0f, 1.0); //should be 127
-
-    voxelMatrixData[2].worldToVoxelMat = level2WorldToVoxelMat;
-    glNamedBufferSubData(voxelMatrixBlockId[2], 0, sizeof(VoxelizeBlock), &voxelMatrixData[2]);
 
     GLuint currentShaderProgram = shader.use();
     glBindBufferBase(GL_UNIFORM_BUFFER, 7, logUniformBlock);
@@ -144,15 +165,32 @@ void RenderToCasGrid::run(Scene & inputScene, GLBufferObject<CounterBlock>& ssbo
     glDisable(GL_CULL_FACE);
     glDisable(GL_BLEND);
 
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     for (int i = 0; i < numOfGrid; i++) {
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, voxelMatrixBlockId[i]); //generate new voxelizeblocks
         glBindImageTexture(4, textureColors[i], 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
         glBindImageTexture(5, textureNormals[i], 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);;
-
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         inputScene.render(currentShaderProgram);
     }
-    glMemoryBarrier(GL_ATOMIC_COUNTER_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
+}
+
+glm::mat4 RenderToCasGrid::getWorldToVoxelClipmapMatrix(GLuint level)
+{
+    return voxelMatrixData[level].worldToVoxelMat;
+}
+
+glm::mat4 RenderToCasGrid::getWorldToVoxelClipmapMatrixFromPos(glm::vec3 pos, GLuint & outLevel)
+{
+    if (isOutsideBoundaries(pos, minBoundaries[1], maxBoundaries[1])) {
+        outLevel = 2;
+        return voxelMatrixData[2].worldToVoxelMat;
+    }
+    else if(isOutsideBoundaries(pos, minBoundaries[0], maxBoundaries[0]) {
+        outLevel = 1;
+        return voxelMatrixData[1].worldToVoxelMat;
+    }
+    return voxelMatrixData[0].worldToVoxelMat;
 }
 
 RenderToCasGrid::RenderToCasGrid()
