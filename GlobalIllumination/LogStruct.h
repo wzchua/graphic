@@ -11,7 +11,7 @@ struct LogStruct {
     unsigned int index1;
     unsigned int index2;
 };
-static std::string logShaderCodeString(GLuint level) {
+static std::string logFunctionAndBufferShaderCodeString(GLuint level) {
     std::string s = R"(struct LogStruct {
     vec4 position;
     vec4 color;

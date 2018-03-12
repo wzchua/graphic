@@ -8,8 +8,9 @@ void RenderToGrid::initialize()
         return;
     }
     std::stringstream vertShaderString;
-    vertShaderString << GenericShaderCodeString::vertHeader << GenericShaderCodeString::vertGeomOutput << GenericShaderCodeString::genericLimitsUniformBlock(7);
-    vertShaderString << CounterBlockShaderCodeString(1) << logShaderCodeString(7);
+    vertShaderString << GenericShaderCodeString::vertHeader << GenericShaderCodeString::vertGeomOutput;
+    vertShaderString << GenericShaderCodeString::genericLimitsUniformBlock(7);
+    vertShaderString << counterBlockBufferShaderCodeString(1) << logFunctionAndBufferShaderCodeString(7);
 
     voxelizeGridShader.generateShader(vertShaderString, "./Shaders/Voxelize.vert", ShaderProgram::VERTEX);
     voxelizeGridShader.generateShader("./Shaders/Voxelize.geom", ShaderProgram::GEOMETRY);
