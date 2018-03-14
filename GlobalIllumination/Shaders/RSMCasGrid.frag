@@ -63,36 +63,36 @@ void imageAtomicXYZWAvg( layout ( r32ui ) coherent volatile uimage3D imgUI , ive
 void main()
 {
     ivec3 pos;
-    uimage3D lightEnergyGrid;
-    uimage3D lightDirectionGrid;
-    if(wcPosition.x < level1min.x || wcPosition.x > level1max.x
-        || wcPosition.y < level1min.y || wcPosition.y > level1max.y
-        || wcPosition.z < level1min.z || wcPosition.z > level1max.z) {
-
-        pos = ivec3((voxelToClipmapL2Mat * WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz);
-        lightEnergyGrid = lightEnergyGridL2;
-        lightDirectionGrid = lightDirGridL2;
-    } else if(wcPosition.x < level0min.x || wcPosition.x > level0max.x
-        || wcPosition.y < level0min.y || wcPosition.y > level0max.y
-        || wcPosition.z < level0min.z || wcPosition.z > level0max.z) {
-
-        pos = ivec3((voxelToClipmapL1Mat * WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz);
-        lightEnergyGrid = lightEnergyGridL1;
-        lightDirectionGrid = lightDirGridL1;
-
-    } else {        
-        pos = ivec3((voxelToClipmapL0Mat * WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz);
-        lightEnergyGrid = lightEnergyGridL0;
-        lightDirectionGrid = lightDirGridL0;
-    }
-
     vec3 lightDisplacement = wcPosition - LightPosition.xyz;
     vec3 lightDir = normalize(lightDisplacement);
     float dist = length(lightDisplacement);
     float distSq = dist * dist;
     //light energy & direction
     uint recievedEnergy = min( uint(float(rad) / (distSq * dot(lightDir, normalize(wcNormal)))), 1);
-    imageAtomicAdd(lightEnergyGrid, pos, recievedEnergy);
-    imageAtomicXYZWAvg(lightDirectionGrid, pos, vec4(lightDir, 1.0f));
+
+    pos = ivec3((voxelToClipmapL2Mat * WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz);      
+    imageAtomicAdd(lightEnergyGridL2, pos, recievedEnergy);
+    imageAtomicXYZWAvg(lightDirGridL2, pos, vec4(lightDir, 1.0f));
+    
+    if(wcPosition.x < level1min.x || wcPosition.x > level1max.x //if outside L1
+        || wcPosition.y < level1min.y || wcPosition.y > level1max.y
+        || wcPosition.z < level1min.z || wcPosition.z > level1max.z) {
+
+    } else if(wcPosition.x < level0min.x || wcPosition.x > level0max.x //if outside L0 but inside L1
+        || wcPosition.y < level0min.y || wcPosition.y > level0max.y
+        || wcPosition.z < level0min.z || wcPosition.z > level0max.z) {
+
+        pos = ivec3((voxelToClipmapL1Mat * WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz); 
+        imageAtomicAdd(lightEnergyGridL1, pos, recievedEnergy);
+        imageAtomicXYZWAvg(lightDirGridL1, pos, vec4(lightDir, 1.0f));
+    } else {        
+        pos = ivec3((voxelToClipmapL1Mat * WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz); 
+        imageAtomicAdd(lightEnergyGridL1, pos, recievedEnergy);
+        imageAtomicXYZWAvg(lightDirGridL1, pos, vec4(lightDir, 1.0f));
+        pos = ivec3((voxelToClipmapL0Mat * WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz);
+        imageAtomicAdd(lightEnergyGridL0, pos, recievedEnergy);
+        imageAtomicXYZWAvg(lightDirGridL0, pos, vec4(lightDir, 1.0f));
+    }
+
 
 }
