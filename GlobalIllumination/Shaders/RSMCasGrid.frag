@@ -27,24 +27,6 @@ layout(binding = 4, std140) uniform VoxelizeCascadedBlock {
     vec4 level2max;
 };
 
-struct NodeStruct {
-    uint parentPtr;
-    uint childPtr;
-    uint childBit;
-    uint modelBrickPtr;
-    uint lightBit;
-    uint lightBrickPtr;
-    uint xPositive;
-    uint xNegative;
-    uint yPositive;
-    uint yNegative;
-    uint zPositive;
-    uint zNegative;
-};
-layout(binding = 2) coherent buffer NodeBlock {
-    NodeStruct node[];
-};
-
 layout(binding = 0, r32ui) uniform coherent volatile uimage3D lightDirGridL0;
 layout(binding = 1, r32ui) uniform coherent volatile uimage3D lightEnergyGridL0;
 layout(binding = 2, r32ui) uniform coherent volatile uimage3D lightDirGridL1;
