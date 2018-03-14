@@ -109,7 +109,7 @@ void RenderToCasGrid::initialize(GLuint numOfGrid, GLuint * textureColors, GLuin
 
     GLuint dim = 512U >> (numOfGrid - 1); // 1: 512, 2: 256, 3: 128, 4:64, 5:32, 6:16, 7:8, 8:4, 9:2, 10:1
     for (int i = 0; i < numOfGrid; i++) {
-        GLuint mipLevel = (numOfGrid - 1 == i) ? 10 - numOfGrid + 1 : 2;
+        GLuint mipLevel = (numOfGrid - 1 == i) ? 10 - numOfGrid + 1 : 1;
         glGenTextures(1, &textureColors[i]);
         glBindTexture(GL_TEXTURE_3D, textureColors[i]);
         glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
