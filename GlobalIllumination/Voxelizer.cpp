@@ -65,14 +65,9 @@ Voxelizer::Voxelizer()
         //mModuleRenderLightIntoOctree.initialize();
         //mModuleFilterOctree.initialize();
         //mModuleRenderVCT.initialize();
-        ssboFragmentList.initialize(GL_SHADER_STORAGE_BUFFER, fragCount * sizeof(FragStruct), NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, 0); ssboNodeList.initialize(GL_SHADER_STORAGE_BUFFER, sizeof(NodeStruct) * nodeCount, NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, 0);
-        ssboLeafIndexList.initialize(GL_SHADER_STORAGE_BUFFER, sizeof(GLuint) * nodeCount, NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, 0);
+        ssboFragmentList.initialize(GL_SHADER_STORAGE_BUFFER, fragCount * sizeof(FragStruct), NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, 0); 
 
-        initialize3DTextures(texture3DColorList, 2, GL_RGBA8, texWdith * brickDim, texHeight * brickDim, brickDim);
-        initialize3DTextures(texture3DNormalList, 2, GL_RGBA8, texWdith * brickDim, texHeight * brickDim, brickDim);
-        initialize3DTextures(texture3DLightDirList, 2, GL_RGBA8, texWdith * brickDim, texHeight * brickDim, brickDim);
-        initialize3DTextures(texture3DLightEnergyList, 2, GL_R32UI, texWdith * brickDim, texHeight * brickDim, brickDim);
-
+        mOctree.initialize();
 
         break;
     case CAS_GRID:
@@ -129,7 +124,7 @@ void Voxelizer::render(Scene& scene)
     switch (mType) {
     case OCTREE:
     {
-        mModuleRenderToOctree.run(scene, ssboCounterSet, voxelMatrixUniformBuffer, voxelLogUniformBuffer, ssboLeafIndexList, ssboNodeList, texture3DColorList, texture3DNormalList, ssboFragmentList, ssboLogList);
+        mModuleRenderToOctree.run(scene, ssboCounterSet, voxelMatrixUniformBuffer, voxelLogUniformBuffer, mOctree, ssboFragmentList, ssboLogList);
         auto syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
         GLenum waitReturn = GL_UNSIGNALED;
         while (waitReturn != GL_ALREADY_SIGNALED && waitReturn != GL_CONDITION_SATISFIED)
@@ -141,15 +136,14 @@ void Voxelizer::render(Scene& scene)
         auto cPtr = ssboCounterSet.getPtr();
         auto c2 = *cPtr;
         ssboCounterSet.unMapPtr();
-        auto node = ssboNodeList.getPtr();
+        auto node = mOctree.getNodeList().getPtr();
         std::vector<NodeStruct> nodeList;
         for (int i = 0; i < c2.nodeCounter; i++) {
             nodeList.push_back(node[i]);
         }
-        ssboNodeList.unMapPtr();
+        mOctree.getNodeList().unMapPtr();
         //mModuleAddToOctree.run(ssboNodeList, ssboFragmentList, ssboCounterSet, ssboLeafIndexList, voxelLogUniformBuffer, texture3DColorList, texture3DNormalList, ssboLogList);
-        ssboNodeList.bind(2);
-        mModuleVoxelVisualizer.rayCastVoxels(scene.cam, voxelMatrixData.worldToVoxelMat, ssboCounterSet, voxelLogUniformBuffer, texture3DColorList, VoxelVisualizer::OCTREE, ssboLogList);
+        mModuleVoxelVisualizer.rayCastVoxels(scene.cam, voxelMatrixData.worldToVoxelMat, ssboCounterSet, voxelLogUniformBuffer, mOctree, ssboLogList);
         auto timeAfterAddingToOctree = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - timeStart).count();
         std::cout << " ms. time after render: " << timeAfterRender << " ms. time after add to octree: " << timeAfterAddingToOctree << " ms" << std::endl;
 
@@ -174,7 +168,7 @@ void Voxelizer::render(Scene& scene)
     case GRID:
     {
         mModuleRenderToGrid.run(scene, ssboCounterSet, voxelMatrixUniformBuffer, voxelLogUniformBuffer, ssboLogList, texture3DColorGrid, texture3DNormalGrid, ssboVoxelList);
-        mModuleVoxelVisualizer.rayCastVoxels(scene.cam, voxelMatrixData.worldToVoxelMat, ssboCounterSet, voxelLogUniformBuffer, texture3DColorGrid, VoxelVisualizer::GRID, ssboLogList);
+        mModuleVoxelVisualizer.rayCastVoxelsGrid(scene.cam, voxelMatrixData.worldToVoxelMat, ssboCounterSet, voxelLogUniformBuffer, texture3DColorGrid, ssboLogList);
     }
     break;
     default:
@@ -196,22 +190,12 @@ void Voxelizer::resetAllData()
     switch (mType) {
     case OCTREE:
     {
-        ssboNodeList.clearData();
-        auto node = ssboNodeList.getPtr();
-        std::vector<NodeStruct> nodeList;
-        for (int i = 0; i < 50; i++) {
-            nodeList.push_back(node[i]);
-        }
-        ssboNodeList.unMapPtr();
-
-        glInvalidateTexImage(texture3DColorList, 0);
-        glClearTexImage(texture3DColorList, 0, GL_RGBA, GL_FLOAT, NULL);
-        glInvalidateTexImage(texture3DNormalList, 0);
-        glClearTexImage(texture3DNormalList, 0, GL_RGBA, GL_FLOAT, NULL);
-        glInvalidateTexImage(texture3DLightEnergyList, 0);
-        glClearTexImage(texture3DLightEnergyList, 0, GL_RGBA, GL_FLOAT, NULL);
-        glInvalidateTexImage(texture3DLightDirList, 0);
-        glClearTexImage(texture3DLightDirList, 0, GL_RGBA, GL_FLOAT, NULL);
+        mOctree.resetData();
+    }
+    break;
+    case CAS_GRID:
+    {
+        mCascadedGrid.resetData();
     }
     break;
     case GRID:

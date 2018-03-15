@@ -8,6 +8,7 @@
 #include "FragStruct.h"
 #include "NodeStruct.h"
 #include "LogStruct.h"
+#include "Octree.h"
 
 class RenderToOctree
 {
@@ -17,8 +18,8 @@ private:
     bool hasInitialized = false;
 public:
     void initialize();
-    void run(Scene& inputScene, GLBufferObject<CounterBlock> & counterSet, GLuint voxelizeMatrixBlock, GLuint logUniformBlock, GLBufferObject<GLuint> & ssboLeafIndexList,
-                GLBufferObject<NodeStruct>& ssboNodeList, GLuint texture3DColor, GLuint texture3DNormal, GLBufferObject<FragStruct> & ssboFragList, GLBufferObject<LogStruct> & ssboLogList);
+    void run(Scene& inputScene, GLBufferObject<CounterBlock> & counterSet, GLuint voxelizeMatrixBlock, GLuint logUniformBlock, Octree & octree,
+                GLBufferObject<FragStruct> & ssboFragList, GLBufferObject<LogStruct> & ssboLogList);
     RenderToOctree();
     ~RenderToOctree();
 };

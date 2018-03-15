@@ -1,8 +1,8 @@
 #pragma once
 #include "Scene.h"
-#include "NodeStruct.h"
-#include "GLBufferObject.h"
 #include "ShaderProgram.h"
+#include "Octree.h"
+
 class RenderLightIntoOctree
 {
 private:
@@ -10,7 +10,7 @@ private:
     bool hasInitialized = false;
 public:
     void initialize();
-    void run(Scene& inputScene, GLBufferObject<NodeStruct> & nodeOctree, GLuint textureLight, GLuint textureLightDir, GLuint voxelizeMatrixBlock);
+    void run(Scene& inputScene, Octree & octree, GLuint voxelizeMatrixBlock);
     RenderLightIntoOctree();
     ~RenderLightIntoOctree();
 };

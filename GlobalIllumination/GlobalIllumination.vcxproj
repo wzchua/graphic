@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -24,6 +24,7 @@
     <ClCompile Include="CascadedGrid.cpp" />
     <ClCompile Include="FilterCasGrid.cpp" />
     <ClCompile Include="FilterOctree.cpp" />
+    <ClCompile Include="Octree.cpp" />
     <ClCompile Include="RenderLightIntoCasGrid.cpp" />
     <ClCompile Include="RenderLightIntoOctree.cpp" />
     <ClCompile Include="RenderToCasGrid.cpp" />
@@ -35,6 +36,7 @@
     <ClCompile Include="RenderToFragmentList.cpp" />
     <ClCompile Include="RenderToOctree.cpp" />
     <ClCompile Include="RenderVoxelConeTrace.cpp" />
+    <ClCompile Include="RenderVoxelConeTraceCasGrid.cpp" />
     <ClCompile Include="SceneMaterialManager.cpp" />
     <ClCompile Include="ShaderProgram.cpp" />
     <ClCompile Include="Renderer.cpp" />
@@ -54,6 +56,7 @@
     <ClInclude Include="FilterOctree.h" />
     <ClInclude Include="GenericShaderCodeString.h" />
     <ClInclude Include="NodeStruct.h" />
+    <ClInclude Include="Octree.h" />
     <ClInclude Include="RenderLightIntoCasGrid.h" />
     <ClInclude Include="RenderLightIntoOctree.h" />
     <ClInclude Include="RenderToCasGrid.h" />
@@ -66,6 +69,7 @@
     <ClInclude Include="RenderToFragmentList.h" />
     <ClInclude Include="RenderToOctree.h" />
     <ClInclude Include="RenderVoxelConeTrace.h" />
+    <ClInclude Include="RenderVoxelConeTraceCasGrid.h" />
     <ClInclude Include="SceneMaterialManager.h" />
     <ClInclude Include="ShaderProgram.h" />
     <ClInclude Include="Renderer.h" />

@@ -60,7 +60,7 @@ void VoxelVisualizer::initialize()
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
-void VoxelVisualizer::rasterizeVoxels(Camera& cam, glm::mat4 worldToVoxelMat, GLBufferObject<glm::vec4>& inputssboVoxelList, GLuint noOfVoxels, GLuint colorTextureId)
+void VoxelVisualizer::rasterizeVoxels(Camera& cam, glm::mat4 & worldToVoxelMat, GLBufferObject<glm::vec4>& inputssboVoxelList, GLuint noOfVoxels, GLuint colorTextureId)
 {
     GLuint currentShaderProgram = voxelVisualizerShader.use();
 
@@ -89,14 +89,26 @@ void VoxelVisualizer::rasterizeVoxels(Camera& cam, glm::mat4 worldToVoxelMat, GL
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void VoxelVisualizer::rayCastVoxels(Camera & cam, glm::mat4 worldToVoxelMat, GLBufferObject<CounterBlock> & counterSet, GLuint logUniformBlock, GLuint colorTextureId, Type type, GLBufferObject<LogStruct> & logList)
+void VoxelVisualizer::rayCastVoxels(Camera & cam, glm::mat4 & worldToVoxelMat, GLBufferObject<CounterBlock>& counterSet, GLuint logUniformBlock, Octree & octree, GLBufferObject<LogStruct>& logList)
 {
-    if (type == GRID) {
-        voxelRayCastGridShader.use();
-    }
-    else {
-        voxelRayCastOctreeShader.use();
-    }
+    voxelRayCastOctreeShader.use();
+    octree.getNodeList().bind(2);
+    glBindImageTexture(4, octree.getTextureIds(Octree::TexType::COLOR), 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
+    rayCastVoxels(cam, worldToVoxelMat, counterSet, logUniformBlock, logList);
+}
+
+void VoxelVisualizer::rayCastVoxels(Camera & cam, glm::mat4 & worldToVoxelMat, GLBufferObject<CounterBlock>& counterSet, GLuint logUniformBlock, CascadedGrid & cascadedGrid, GLBufferObject<LogStruct>& logList)
+{
+    //use shader here
+    auto& color = cascadedGrid.getCasGridTextureIds(CascadedGrid::COLOR);
+    glBindImageTexture(0, color[0], 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
+    glBindImageTexture(1, color[1], 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
+    glBindImageTexture(2, color[2], 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
+    rayCastVoxels(cam, worldToVoxelMat, counterSet, logUniformBlock, logList);
+}
+
+void VoxelVisualizer::rayCastVoxels(Camera & cam, glm::mat4 & worldToVoxelMat, GLBufferObject<CounterBlock> & counterSet, GLuint logUniformBlock, GLBufferObject<LogStruct> & logList)
+{
     int width = 800;
     int height = 600;
     glm::mat4 viewToVoxelMat = worldToVoxelMat * glm::inverse(cam.getViewMatrix());
@@ -106,7 +118,6 @@ void VoxelVisualizer::rayCastVoxels(Camera & cam, glm::mat4 worldToVoxelMat, GLB
     counterSet.bind(1);
     glBindBufferBase(GL_UNIFORM_BUFFER, 7, logUniformBlock);
 
-    glBindImageTexture(4, colorTextureId, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
 
     logList.bind(7);
 
@@ -130,6 +141,13 @@ void VoxelVisualizer::rayCastVoxels(Camera & cam, glm::mat4 worldToVoxelMat, GLB
         logs.push_back(logPtr[i]);
     }
     logList.unMapPtr();
+}
+
+void VoxelVisualizer::rayCastVoxelsGrid(Camera & cam, glm::mat4 & worldToVoxelMat, GLBufferObject<CounterBlock>& counterSet, GLuint logUniformBlock, GLuint colorTextureId, GLBufferObject<LogStruct>& logList)
+{
+    voxelRayCastGridShader.use();
+    glBindImageTexture(4, colorTextureId, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
+    rayCastVoxels(cam, worldToVoxelMat, counterSet, logUniformBlock, logList);
 }
 
 VoxelVisualizer::VoxelVisualizer()

@@ -19,8 +19,8 @@ void RenderToOctree::initialize()
     voxelizeOctreeShader.linkCompileValidate();
 }
 
-void RenderToOctree::run(Scene & inputScene, GLBufferObject<CounterBlock>& counterSet, GLuint voxelizeMatrixBlock, GLuint logUniformBlock, GLBufferObject<GLuint> & ssboLeafIndexList,
-                            GLBufferObject<NodeStruct>& ssboNodeList, GLuint texture3DColor, GLuint texture3DNormal, GLBufferObject<FragStruct> & ssboFragList, GLBufferObject<LogStruct> & ssboLogList)
+void RenderToOctree::run(Scene & inputScene, GLBufferObject<CounterBlock>& counterSet, GLuint voxelizeMatrixBlock, GLuint logUniformBlock, Octree & octree,
+                            GLBufferObject<FragStruct> & ssboFragList, GLBufferObject<LogStruct> & ssboLogList)
 {
     GLuint currentShaderProgram = voxelizeOctreeShader.use();
 
@@ -29,12 +29,12 @@ void RenderToOctree::run(Scene & inputScene, GLBufferObject<CounterBlock>& count
 
     ssboFragList.bind(0);
     counterSet.bind(1);
-    ssboNodeList.bind(2);
-    ssboLeafIndexList.bind(3);
+    octree.getNodeList().bind(2);
+    octree.getLeafIndexList().bind(3);
     ssboLogList.bind(7);
 
-    glBindImageTexture(4, texture3DColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
-    glBindImageTexture(5, texture3DNormal, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
+    glBindImageTexture(4, octree.getTextureIds(Octree::TexType::COLOR), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
+    glBindImageTexture(5, octree.getTextureIds(Octree::TexType::NORMAL), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
 
     glViewport(0, 0, 512, 512);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

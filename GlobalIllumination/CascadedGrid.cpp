@@ -123,7 +123,7 @@ void CascadedGrid::initializeGrids(GLuint cascadeNumber)
     voxelMatrixData.resize(cascadeNumber);
 
     for (int i = 0; i < cascadeNumber; i++) {
-        GLuint mipLevel = (cascadeNumber - 1 == i) ? 10 - cascadeNumber + 1 : 1;
+        GLuint mipLevel = (cascadeNumber - 1 == i) ? 10 - cascadeNumber : 1;
         
         GLuint & textureId = texture3DColorCasGrid[i];
 
@@ -181,6 +181,32 @@ void CascadedGrid::initializeGrids(GLuint cascadeNumber)
         glBindBuffer(GL_UNIFORM_BUFFER, voxelMatrixBlockIds[i]);
         glBufferData(GL_UNIFORM_BUFFER, sizeof(VoxelizeBlock), &voxelMatrixData[i], GL_STREAM_DRAW);
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    }
+}
+
+void CascadedGrid::resetData()
+{
+    for (int i = 0; i < mCascadeNumber; i++) {
+        glInvalidateTexImage(texture3DColorCasGrid[i], 0);
+        glClearTexImage(texture3DColorCasGrid[i], 0, GL_RGBA, GL_FLOAT, NULL);
+        glInvalidateTexImage(texture3DNormalCasGrid[i], 0);
+        glClearTexImage(texture3DNormalCasGrid[i], 0, GL_RGBA, GL_FLOAT, NULL);
+        glInvalidateTexImage(texture3DLightDirCasGrid[i], 0);
+        glClearTexImage(texture3DLightDirCasGrid[i], 0, GL_RGBA, GL_FLOAT, NULL);
+        glInvalidateTexImage(texture3DLightEnergyCasGrid[i], 0);
+        glClearTexImage(texture3DLightEnergyCasGrid[i], 0, GL_RGBA, GL_FLOAT, NULL);
+    }
+    GLuint highestLevel = mCascadeNumber - 1;
+    for (int i = 1; i < 10 - mCascadeNumber; i++) {
+        glInvalidateTexImage(texture3DColorCasGrid[highestLevel], i);
+        glClearTexImage(texture3DColorCasGrid[highestLevel], i, GL_RGBA, GL_FLOAT, NULL);
+        glInvalidateTexImage(texture3DNormalCasGrid[highestLevel], i);
+        glClearTexImage(texture3DNormalCasGrid[highestLevel], i, GL_RGBA, GL_FLOAT, NULL);
+        glInvalidateTexImage(texture3DLightDirCasGrid[highestLevel], i);
+        glClearTexImage(texture3DLightDirCasGrid[highestLevel], i, GL_RGBA, GL_FLOAT, NULL);
+        glInvalidateTexImage(texture3DLightEnergyCasGrid[highestLevel], i);
+        glClearTexImage(texture3DLightEnergyCasGrid[highestLevel], i, GL_RGBA, GL_FLOAT, NULL);
+
     }
 }
 

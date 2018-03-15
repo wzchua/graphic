@@ -16,18 +16,20 @@ void FilterOctree::initialize()
     secondaryLeafList.initialize(GL_SHADER_STORAGE_BUFFER, sizeof(GLuint) * 1024 * 512, NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, 0);
 }
 
-void FilterOctree::run(GLBufferObject<CounterBlock>& counterSet, GLBufferObject<NodeStruct>& nodeOctree, GLBufferObject<GLuint> & ssboLeafIndexList, GLuint textureColor, GLuint textureNormal, GLuint textureLightEnergy, GLuint textureLightDir)
+void FilterOctree::run(GLBufferObject<CounterBlock>& counterSet, Octree & octree)
 {
     counterSet.bind(1);
-    nodeOctree.bind(2);
+    octree.getNodeList().bind(2);
     ssboIndirect.bind(6);
 
-    glBindImageTexture(4, textureColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
-    glBindImageTexture(5, textureNormal, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
+    glBindImageTexture(4, octree.getTextureIds(Octree::COLOR), 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
+    glBindImageTexture(5, octree.getTextureIds(Octree::NORMAL), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
 
-    glBindImageTexture(6, textureLightEnergy, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
-    glBindImageTexture(7, textureLightDir, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
+    glBindImageTexture(6, octree.getTextureIds(Octree::LIGHT_DIRECTION), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
+    glBindImageTexture(7, octree.getTextureIds(Octree::LIGHT_ENERGY), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
     glBindBuffer(GL_DISPATCH_INDIRECT_BUFFER, ssboIndirect.getId());
+
+    auto& ssboLeafIndexList = octree.getLeafIndexList();
 
     bool isOdd = true;
     for (int i = 0; i < 8; i++) {

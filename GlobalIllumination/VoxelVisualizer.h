@@ -6,6 +6,8 @@
 #include "Camera.h"
 #include "LogStruct.h"
 #include "CounterBlock.h"
+#include "Octree.h"
+#include "CascadedGrid.h"
 class VoxelVisualizer
 {
 private:
@@ -30,13 +32,16 @@ private:
     GLuint quadVAOId;
     GLuint quadVBOId;
     GLuint quadEBOId;
+    void rayCastVoxels(Camera& cam, glm::mat4 & worldToVoxelMat, GLBufferObject<CounterBlock> & counterSet, GLuint logUniformBlock, GLBufferObject<LogStruct> & logList);
 public:
     enum Type {
         GRID, OCTREE
     };
     void initialize();
-    void rasterizeVoxels(Camera& cam, glm::mat4 worldToVoxelMat, GLBufferObject<glm::vec4>& inputssboVoxelList, GLuint noOfVoxels, GLuint colorTextureId);
-    void rayCastVoxels(Camera& cam, glm::mat4 worldToVoxelMat, GLBufferObject<CounterBlock> & counterSet, GLuint logUniformBlock, GLuint colorTextureId, Type type, GLBufferObject<LogStruct> & logList);
+    void rasterizeVoxels(Camera& cam, glm::mat4 & worldToVoxelMat, GLBufferObject<glm::vec4>& inputssboVoxelList, GLuint noOfVoxels, GLuint colorTextureId);
+    void rayCastVoxels(Camera& cam, glm::mat4 & worldToVoxelMat, GLBufferObject<CounterBlock> & counterSet, GLuint logUniformBlock, Octree & octree, GLBufferObject<LogStruct> & logList);
+    void rayCastVoxels(Camera& cam, glm::mat4 & worldToVoxelMat, GLBufferObject<CounterBlock> & counterSet, GLuint logUniformBlock, CascadedGrid & cascadedGrid, GLBufferObject<LogStruct> & logList);
+    void rayCastVoxelsGrid(Camera& cam, glm::mat4 & worldToVoxelMat, GLBufferObject<CounterBlock> & counterSet, GLuint logUniformBlock, GLuint colorTextureId, GLBufferObject<LogStruct> & logList);
     VoxelVisualizer();
     ~VoxelVisualizer();
 };

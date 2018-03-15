@@ -31,7 +31,8 @@ private:
     bool isOutsideBoundaries(glm::vec3 pos, glm::vec3 min, glm::vec3 max);
 public:
     enum GridType { COLOR, NORMAL, LIGHT_DIRECTION, LIGHT_ENERGY };
-    void initializeGrids(GLuint cascadeNumber); 
+    void initializeGrids(GLuint cascadeNumber);
+    void resetData();
     GLuint getClipDimensions();
     GLuint getCascadedLevels();
     std::vector<GLuint> & getVoxelMatrixBlockIds();

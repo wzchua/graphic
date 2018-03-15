@@ -12,7 +12,7 @@ void RenderLightIntoOctree::initialize()
     injectLightOctreeShader.linkCompileValidate();
 }
 
-void RenderLightIntoOctree::run(Scene & inputScene, GLBufferObject<NodeStruct>& nodeOctree, GLuint textureLight, GLuint textureLightDir, GLuint voxelizeMatrixBlock)
+void RenderLightIntoOctree::run(Scene & inputScene, Octree & octree, GLuint voxelizeMatrixBlock)
 {
     glViewport(0, 0, 1024, 1024); // light render is done at 1024x1024
     glClearColor(0.0f, 0.0f, 0.0f, 1.0);
@@ -26,9 +26,9 @@ void RenderLightIntoOctree::run(Scene & inputScene, GLBufferObject<NodeStruct>& 
     glBindBufferBase(GL_UNIFORM_BUFFER, 2, inputScene.getLightBuffer());
     glBindBufferBase(GL_UNIFORM_BUFFER, 3, voxelizeMatrixBlock);
 
-    nodeOctree.bind(2);
-    glBindImageTexture(4, textureLight, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
-    glBindImageTexture(5, textureLightDir, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
+    octree.getNodeList().bind(2);
+    glBindImageTexture(4, octree.getTextureIds(Octree::LIGHT_DIRECTION), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
+    glBindImageTexture(5, octree.getTextureIds(Octree::LIGHT_ENERGY), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
 
     inputScene.render(injectLightOctreeShader.getProgramId());
 

@@ -15,6 +15,7 @@
 
 #include "RenderToGrid.h"
 
+#include "Octree.h"
 #include "RenderToOctree.h"
 #include "AddToOctree.h"
 #include "RenderLightIntoOctree.h"
@@ -78,19 +79,12 @@ private:
 
     RenderToGrid mModuleRenderToGrid;
 
-    GLuint atomicFragCounterTest;
-
     GLBufferObject<CounterBlock> ssboCounterSet;
     GLBufferObject<FragStruct> ssboFragmentList;
-    GLBufferObject<NodeStruct> ssboNodeList;
     GLBufferObject<LogStruct> ssboLogList;
-    GLBufferObject<GLuint> ssboLeafIndexList;
     GLBufferObject<glm::vec4> ssboVoxelList;
 
-    GLuint texture3DColorList;
-    GLuint texture3DNormalList;
-    GLuint texture3DLightDirList;
-    GLuint texture3DLightEnergyList;
+    Octree mOctree;
 
     CascadedGrid mCascadedGrid;
 

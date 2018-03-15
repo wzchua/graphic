@@ -1,9 +1,9 @@
 #pragma once
-#include "NodeStruct.h"
 #include "GLBufferObject.h"
 #include "LogStruct.h"
 #include "ShaderProgram.h"
 #include "CounterBlock.h"
+#include "Octree.h"
 class FilterOctree
 {
 private:
@@ -20,7 +20,7 @@ private:
     bool hasInitialized = false;
 public:
     void initialize();
-    void run(GLBufferObject<CounterBlock>& counterSet, GLBufferObject<NodeStruct> & nodeOctree, GLBufferObject<GLuint> & ssboLeafIndexList, GLuint textureColor, GLuint textureNormal, GLuint textureLightEnergy, GLuint textureLightDir);
+    void run(GLBufferObject<CounterBlock>& counterSet, Octree & octree);
     FilterOctree();
     ~FilterOctree();
 };

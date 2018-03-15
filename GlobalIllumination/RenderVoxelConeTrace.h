@@ -3,8 +3,8 @@
 #include "ShaderProgram.h"
 #include "Scene.h"
 #include "GLBufferObject.h"
-#include "NodeStruct.h"
 #include "CounterBlock.h"
+#include "Octree.h"
 
 class RenderVoxelConeTrace
 {
@@ -17,7 +17,7 @@ private:
     GLuint quadEBOId;
 public:
     void initialize();
-    void run(Scene & inputScene, GLBufferObject<CounterBlock> & counterBlk, GLBufferObject<NodeStruct> & octree, GLuint textureBrickColor, GLuint textureBrickNormal, GLuint textureBrickLightEnergy, GLuint textureBrickLightDir);
+    void run(Scene & inputScene, GLBufferObject<CounterBlock> & counterBlk, Octree & octree);
     RenderVoxelConeTrace();
     ~RenderVoxelConeTrace();
 };

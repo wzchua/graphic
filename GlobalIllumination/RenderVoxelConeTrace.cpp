@@ -42,7 +42,7 @@ void RenderVoxelConeTrace::initialize()
     glBindVertexArray(0);
 }
 
-void RenderVoxelConeTrace::run(Scene & inputScene, GLBufferObject<CounterBlock>& counterBlk, GLBufferObject<NodeStruct>& octree, GLuint textureBrickColor, GLuint textureBrickNormal, GLuint textureBrickLightEnergy, GLuint textureBrickLightDir)
+void RenderVoxelConeTrace::run(Scene & inputScene, GLBufferObject<CounterBlock>& counterBlk, Octree & octree)
 {
     shader.use();
     glViewport(0, 0, 800, 600); // light render is done at 1024x1024
@@ -51,15 +51,15 @@ void RenderVoxelConeTrace::run(Scene & inputScene, GLBufferObject<CounterBlock>&
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
     
-    glBindTextureUnit(4, textureBrickColor);
-    glBindTextureUnit(5, textureBrickNormal);
-    glBindTextureUnit(6, textureBrickLightEnergy);
-    glBindTextureUnit(7, textureBrickLightDir);
+    glBindTextureUnit(4, octree.getTextureIds(Octree::COLOR));
+    glBindTextureUnit(5, octree.getTextureIds(Octree::NORMAL));
+    glBindTextureUnit(6, octree.getTextureIds(Octree::LIGHT_DIRECTION));
+    glBindTextureUnit(7, octree.getTextureIds(Octree::LIGHT_ENERGY));
 
 
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, inputScene.getMatrixBuffer()); //scene cam matrices
     counterBlk.bind(1);
-    octree.bind(2);
+    octree.getNodeList().bind(2);
 
     inputScene.render(shader.getProgramId());
 }

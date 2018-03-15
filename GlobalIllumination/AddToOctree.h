@@ -5,6 +5,7 @@
 #include "GLBufferObject.h"
 #include "FragStruct.h"
 #include "LogStruct.h"
+#include "Octree.h"
 
 class AddToOctree
 {
@@ -25,8 +26,8 @@ private:
     bool hasInitialized = false;
 public:
     void initialize();
-    void run(GLBufferObject<NodeStruct> & ssboNodeList, GLBufferObject<FragStruct> & ssboFragList, GLBufferObject<CounterBlock> & counterSet, GLBufferObject<GLuint> & ssboLeafIndexList,
-            GLuint logUniformBlock, GLuint texture3DColor, GLuint texture3DNormal, GLBufferObject<LogStruct> & ssboLogList);
+    void run(Octree & octree, GLBufferObject<FragStruct> & ssboFragList, GLBufferObject<CounterBlock> & counterSet,
+            GLuint logUniformBlock, GLBufferObject<LogStruct> & ssboLogList);
     AddToOctree();
     ~AddToOctree();
 };
