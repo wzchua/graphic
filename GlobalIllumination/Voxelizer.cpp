@@ -78,6 +78,7 @@ Voxelizer::Voxelizer()
     case CAS_GRID:
         mModuleRenderToCasGrid.initialize();
         mModuleRenderLightIntoCasGrid.initialize();
+        mModuleRenderVoxelConeTraceCasGrid.initialize();
 
         mCascadedGrid.initializeGrids(3);
         break;
@@ -167,6 +168,7 @@ void Voxelizer::render(Scene& scene)
         mModuleRenderToCasGrid.run(scene, ssboCounterSet, voxelMatrixData.worldToVoxelMat, voxelLogUniformBuffer, ssboLogList, mCascadedGrid);
         mModuleRenderLightIntoCasGrid.run(scene, voxelMatrixUniformBuffer, mCascadedGrid);
         mModuleFilterCasGrid.run(mCascadedGrid);
+        mModuleRenderVoxelConeTraceCasGrid.run(scene, ssboCounterSet, mCascadedGrid);
     }
     break;
     case GRID:

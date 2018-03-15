@@ -25,6 +25,7 @@
 #include "RenderToCasGrid.h"
 #include "RenderLightIntoCasGrid.h"
 #include "FilterCasGrid.h"
+#include "RenderVoxelConeTraceCasGrid.h"
 
 class Voxelizer
 {
@@ -73,7 +74,7 @@ private:
     RenderToCasGrid mModuleRenderToCasGrid;
     RenderLightIntoCasGrid mModuleRenderLightIntoCasGrid;
     FilterCasGrid mModuleFilterCasGrid;
-
+    RenderVoxelConeTraceCasGrid mModuleRenderVoxelConeTraceCasGrid;
 
     RenderToGrid mModuleRenderToGrid;
 
