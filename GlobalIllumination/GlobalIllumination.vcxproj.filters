@@ -36,9 +36,6 @@
     <ClCompile Include="Shape.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Camera.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="tiny_obj_loader.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -87,13 +84,19 @@
     <ClCompile Include="RenderVoxelConeTrace.cpp">
       <Filter>Source Files\Modules</Filter>
     </ClCompile>
-    <ClCompile Include="RenderToCasGrid.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="FilterCasGrid.cpp">
+    <ClCompile Include="Camera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="RenderLightIntoCasGrid.cpp">
+      <Filter>Source Files\Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderToCasGrid.cpp">
+      <Filter>Source Files\Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="FilterCasGrid.cpp">
+      <Filter>Source Files\Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="CascadedGrid.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -187,6 +190,9 @@
     </ClInclude>
     <ClInclude Include="VoxelizeCascadedBlock.h">
       <Filter>Header Files\DataStructure</Filter>
+    </ClInclude>
+    <ClInclude Include="CascadedGrid.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

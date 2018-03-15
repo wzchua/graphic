@@ -6,19 +6,25 @@
 #include <iostream>
 #include <chrono>
 
-#include "VoxelizeBlock.h"
-#include "ShaderProgram.h"
 #include "Scene.h"
+#include "VoxelizeBlock.h"
 #include "GLBufferObject.h"
 #include "CounterBlock.h"
 #include "NodeStruct.h"
-#include "RenderToGrid.h"
 #include "VoxelVisualizer.h"
+
+#include "RenderToGrid.h"
+
 #include "RenderToOctree.h"
 #include "AddToOctree.h"
-#include "FilterOctree.h"
 #include "RenderLightIntoOctree.h"
+#include "FilterOctree.h"
 #include "RenderVoxelConeTrace.h"
+
+#include "CascadedGrid.h"
+#include "RenderToCasGrid.h"
+#include "RenderLightIntoCasGrid.h"
+#include "FilterCasGrid.h"
 
 class Voxelizer
 {
@@ -29,6 +35,9 @@ public:
         GLuint maxNoOfBricks;
         GLuint maxNoOfLogs;
     };
+    enum Type {
+        GRID, OCTREE, CAS_GRID
+    };
     Voxelizer();
     ~Voxelizer();
     void initializeWithScene(glm::vec3 min, glm::vec3 max);
@@ -37,7 +46,7 @@ public:
     int projectionAxis = 0;
 private:
 
-    bool isOctree = false;
+    Type mType = CAS_GRID;
     unsigned int fragCount = 1024 * 1024 * 2;
     unsigned int nodeCount = 1024 * 1024 * 2;
     int brickDim = 2;
@@ -53,14 +62,20 @@ private:
     GLuint voxelMatrixUniformBuffer;
     GLuint voxelLogUniformBuffer;
 
+    VoxelVisualizer mModuleVoxelVisualizer;
+
     RenderToOctree mModuleRenderToOctree;
     AddToOctree mModuleAddToOctree;
     FilterOctree mModuleFilterOctree;
     RenderLightIntoOctree mModuleRenderLightIntoOctree;
     RenderVoxelConeTrace mModuleRenderVCT;
 
+    RenderToCasGrid mModuleRenderToCasGrid;
+    RenderLightIntoCasGrid mModuleRenderLightIntoCasGrid;
+    FilterCasGrid mModuleFilterCasGrid;
+
+
     RenderToGrid mModuleRenderToGrid;
-    VoxelVisualizer mModuleVoxelVisualizer;
 
     GLuint atomicFragCounterTest;
 
@@ -73,9 +88,10 @@ private:
 
     GLuint texture3DColorList;
     GLuint texture3DNormalList;
-
     GLuint texture3DLightDirList;
     GLuint texture3DLightEnergyList;
+
+    CascadedGrid mCascadedGrid;
 
     GLuint texture3DColorGrid;
     GLuint texture3DNormalGrid;
@@ -93,6 +109,8 @@ private:
     glm::mat4 viewProjMatrixXZ;
     glm::vec4 newMin;
     glm::vec4 newMax;
+
+    void initialize3DTextures(GLuint &textureId, GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height, GLsizei depth);
 
 };
 

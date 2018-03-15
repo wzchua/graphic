@@ -57,8 +57,9 @@ Voxelizer::Voxelizer()
     mModuleVoxelVisualizer.initialize();
     ssboCounterSet.initialize(GL_SHADER_STORAGE_BUFFER, sizeof(CounterBlock), &mCounterBlock, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, 0);
     ssboLogList.initialize(GL_SHADER_STORAGE_BUFFER, sizeof(LogStruct) * maxLogCount, NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
-
-    if (isOctree) {
+    
+    switch(mType) {
+    case OCTREE:
         mModuleRenderToOctree.initialize();
         mModuleAddToOctree.initialize();
         //mModuleRenderLightIntoOctree.initialize();
@@ -67,80 +68,29 @@ Voxelizer::Voxelizer()
         ssboFragmentList.initialize(GL_SHADER_STORAGE_BUFFER, fragCount * sizeof(FragStruct), NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, 0); ssboNodeList.initialize(GL_SHADER_STORAGE_BUFFER, sizeof(NodeStruct) * nodeCount, NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, 0);
         ssboLeafIndexList.initialize(GL_SHADER_STORAGE_BUFFER, sizeof(GLuint) * nodeCount, NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, 0);
 
-        glGenTextures(1, &texture3DColorList);
-        glBindTexture(GL_TEXTURE_3D, texture3DColorList);
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
+        initialize3DTextures(texture3DColorList, 2, GL_RGBA8, texWdith * brickDim, texHeight * brickDim, brickDim);
+        initialize3DTextures(texture3DNormalList, 2, GL_RGBA8, texWdith * brickDim, texHeight * brickDim, brickDim);
+        initialize3DTextures(texture3DLightDirList, 2, GL_RGBA8, texWdith * brickDim, texHeight * brickDim, brickDim);
+        initialize3DTextures(texture3DLightEnergyList, 2, GL_R32UI, texWdith * brickDim, texHeight * brickDim, brickDim);
 
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-        glTexStorage3D(GL_TEXTURE_3D, 2, GL_RGBA8, texWdith * brickDim, texHeight * brickDim, brickDim);
-        glBindTexture(GL_TEXTURE_3D, 0);
+        break;
+    case CAS_GRID:
+        mModuleRenderToCasGrid.initialize();
+        mModuleRenderLightIntoCasGrid.initialize();
 
-        glGenTextures(1, &texture3DNormalList);
-        glBindTexture(GL_TEXTURE_3D, texture3DNormalList);
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
-
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-        glTexStorage3D(GL_TEXTURE_3D, 2, GL_RGBA8, texWdith * brickDim, texHeight * brickDim, brickDim);
-        glBindTexture(GL_TEXTURE_3D, 0);
-
-        glGenTextures(1, &texture3DLightDirList);
-        glBindTexture(GL_TEXTURE_3D, texture3DLightDirList);
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
-
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-        glTexStorage3D(GL_TEXTURE_3D, 2, GL_RGBA8, texWdith * brickDim, texHeight * brickDim, brickDim);
-        glBindTexture(GL_TEXTURE_3D, 0);
-
-        glGenTextures(1, &texture3DLightEnergyList);
-        glBindTexture(GL_TEXTURE_3D, texture3DLightEnergyList);
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
-
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-        glTexStorage3D(GL_TEXTURE_3D, 2, GL_R32UI, texWdith * brickDim, texHeight * brickDim, brickDim);
-        glBindTexture(GL_TEXTURE_3D, 0);
-    } else {
+        mCascadedGrid.initializeGrids(3);
+        break;
+    case GRID:
         ssboVoxelList.initialize(GL_SHADER_STORAGE_BUFFER, sizeof(glm::vec4) * 1024 * 1024 * 4, NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT);
         mModuleRenderToGrid.initialize();
 
-        glGenTextures(1, &texture3DColorGrid);
-        glBindTexture(GL_TEXTURE_3D, texture3DColorGrid);
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
+        initialize3DTextures(texture3DColorGrid, 9, GL_RGBA8, 512, 512, 512);
+        initialize3DTextures(texture3DNormalGrid, 9, GL_RGBA8, 512, 512, 512);
+        break;
 
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-        glTexStorage3D(GL_TEXTURE_3D, 2, GL_RGBA8, 512, 512, 512);
-        glBindTexture(GL_TEXTURE_3D, 0);
-
-        glGenTextures(1, &texture3DNormalGrid);
-        glBindTexture(GL_TEXTURE_3D, texture3DNormalGrid);
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
-
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-        glTexStorage3D(GL_TEXTURE_3D, 2, GL_RGBA8, 512, 512, 512);
-        glBindTexture(GL_TEXTURE_3D, 0);
+    default:
+        throw new std::exception("Invalid enum mType");
     }
 }
 
@@ -175,7 +125,9 @@ void Voxelizer::render(Scene& scene)
     using Clock = std::chrono::high_resolution_clock;
     auto timeStart = Clock::now();
 
-    if (isOctree) {
+    switch (mType) {
+    case OCTREE:
+    {
         mModuleRenderToOctree.run(scene, ssboCounterSet, voxelMatrixUniformBuffer, voxelLogUniformBuffer, ssboLeafIndexList, ssboNodeList, texture3DColorList, texture3DNormalList, ssboFragmentList, ssboLogList);
         auto syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
         GLenum waitReturn = GL_UNSIGNALED;
@@ -209,9 +161,20 @@ void Voxelizer::render(Scene& scene)
         // render cam RSM and draw shading using VCT
         //mModuleRenderVCT.run(scene, ssboCounterSet, ssboNodeList, texture3DColorList, texture3DNormalGrid, texture3DLightEnergyList, texture3DLightDirList);
     }
-    else {
+    break;
+    case CAS_GRID:
+    {
+        mModuleRenderToCasGrid.run(scene, ssboCounterSet, voxelMatrixData.worldToVoxelMat, voxelLogUniformBuffer, ssboLogList, mCascadedGrid);
+    }
+    break;
+    case GRID:
+    {
         mModuleRenderToGrid.run(scene, ssboCounterSet, voxelMatrixUniformBuffer, voxelLogUniformBuffer, ssboLogList, texture3DColorGrid, texture3DNormalGrid, ssboVoxelList);
         mModuleVoxelVisualizer.rayCastVoxels(scene.cam, voxelMatrixData.worldToVoxelMat, ssboCounterSet, voxelLogUniformBuffer, texture3DColorGrid, VoxelVisualizer::GRID, ssboLogList);
+    }
+    break;
+    default:
+        break;
     }
 
 
@@ -226,7 +189,9 @@ void Voxelizer::render(Scene& scene)
 void Voxelizer::resetAllData()
 {
     CheckGLError();
-    if (isOctree) {
+    switch (mType) {
+    case OCTREE:
+    {
         ssboNodeList.clearData();
         auto node = ssboNodeList.getPtr();
         std::vector<NodeStruct> nodeList;
@@ -244,16 +209,33 @@ void Voxelizer::resetAllData()
         glInvalidateTexImage(texture3DLightDirList, 0);
         glClearTexImage(texture3DLightDirList, 0, GL_RGBA, GL_FLOAT, NULL);
     }
-    else {
+    break;
+    case GRID:
+    {
         mModuleRenderToGrid.resetData();
         glInvalidateTexImage(texture3DColorGrid, 0);
         glClearTexImage(texture3DColorGrid, 0, GL_RGBA, GL_FLOAT, NULL);
         glInvalidateTexImage(texture3DNormalGrid, 0);
         glClearTexImage(texture3DNormalGrid, 0, GL_RGBA, GL_FLOAT, NULL);
     }
+    break;
+    }
 
     auto cPtr = ssboCounterSet.getPtr();
     cPtr[0] = mZeroedCounterBlock;
     ssboCounterSet.unMapPtr();
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_UPDATE_BARRIER_BIT);
+}
+
+void Voxelizer::initialize3DTextures(GLuint & textureId, GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height, GLsizei depth)
+{
+    glCreateTextures(GL_TEXTURE_3D, 1, &textureId);
+    glTextureStorage3D(textureId, levels, internalformat, width, height, depth);
+    glTextureParameteri(textureId, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTextureParameteri(textureId, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    glTextureParameteri(textureId, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
+
+    glTextureParameteri(textureId, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTextureParameteri(textureId, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
 }

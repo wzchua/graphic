@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="AddToOctree.cpp" />
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="CascadedGrid.cpp" />
     <ClCompile Include="FilterCasGrid.cpp" />
     <ClCompile Include="FilterOctree.cpp" />
     <ClCompile Include="RenderLightIntoCasGrid.cpp" />
@@ -47,6 +48,7 @@
   <ItemGroup>
     <ClInclude Include="AddToOctree.h" />
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="CascadedGrid.h" />
     <ClInclude Include="CounterBlock.h" />
     <ClInclude Include="FilterCasGrid.h" />
     <ClInclude Include="FilterOctree.h" />
