@@ -1,5 +1,7 @@
 #pragma once
 #include "ShaderProgram.h"
+#include "CascadedGrid.h"
+
 class FilterCasGrid
 {
 private:
@@ -8,7 +10,7 @@ private:
 
 public:
     //void initialize();
-    void run(GLuint numOfGrid, GLuint textureColors[3], GLuint textureNormal[3], GLuint textureLightDir[3], GLuint textureLightEnergy[3]);
+    void run(CascadedGrid & cascadedGrid);
     FilterCasGrid();
     ~FilterCasGrid();
 };

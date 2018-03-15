@@ -12,8 +12,11 @@ void RenderLightIntoCasGrid::initialize()
     shader.linkCompileValidate();
 }
 
-void RenderLightIntoCasGrid::run(Scene & inputScene, GLuint numOfGrid, GLuint textureLightDirections[3], GLuint textureLightEnergies[3], GLuint voxelizeMatrixBlock, GLuint voxelizeCasGridBlock)
+void RenderLightIntoCasGrid::run(Scene & inputScene, GLuint voxelizeMatrixBlock, CascadedGrid & cascadedGrid)
 {
+    auto& textureLightDirections = cascadedGrid.getCasGridTextureIds(CascadedGrid::GridType::LIGHT_DIRECTION);
+    auto& textureLightEnergies = cascadedGrid.getCasGridTextureIds(CascadedGrid::GridType::LIGHT_ENERGY);
+
     glViewport(0, 0, 1024, 1024); // light render is done at 1024x1024
     glClearColor(0.0f, 0.0f, 0.0f, 1.0);
     glEnable(GL_DEPTH_TEST);
@@ -25,7 +28,7 @@ void RenderLightIntoCasGrid::run(Scene & inputScene, GLuint numOfGrid, GLuint te
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, inputScene.getLightMatrixBuffer()); // light as camera
     glBindBufferBase(GL_UNIFORM_BUFFER, 2, inputScene.getLightBuffer());
     glBindBufferBase(GL_UNIFORM_BUFFER, 3, voxelizeMatrixBlock);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 4, voxelizeCasGridBlock);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 4, cascadedGrid.getVoxelizedCascadedBlockBufferId());
 
     glBindImageTexture(0, textureLightDirections[0], 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
     glBindImageTexture(1, textureLightEnergies[0], 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
@@ -47,7 +50,6 @@ void RenderLightIntoCasGrid::run(Scene & inputScene, GLuint numOfGrid, GLuint te
     inputScene.render(shader.getProgramId());
     inputScene.updateLightMatrixBuffer(0, glm::vec3(0, -1, 0), glm::vec3(1, 0, 0));
     inputScene.render(shader.getProgramId());
-
 
 }
 

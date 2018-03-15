@@ -1,6 +1,7 @@
 #pragma once
 #include "ShaderProgram.h"
 #include "Scene.h"
+#include "CascadedGrid.h"
 class RenderLightIntoCasGrid
 {
 private:
@@ -8,7 +9,7 @@ private:
     ShaderProgram shader;
 public:
     void initialize();
-    void run(Scene & inputScene, GLuint numOfGrid, GLuint textureLightDirections[3], GLuint textureLightEnergies[3], GLuint voxelizeMatrixBlock, GLuint voxelizeCasGridBlock);
+    void run(Scene & inputScene, GLuint voxelizeMatrixBlock, CascadedGrid & cascadedGrid);
     RenderLightIntoCasGrid();
     ~RenderLightIntoCasGrid();
 };

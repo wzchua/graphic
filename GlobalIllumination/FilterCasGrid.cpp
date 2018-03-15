@@ -2,14 +2,14 @@
 
 
 
-void FilterCasGrid::run(GLuint numOfGrid, GLuint textureColors[3], GLuint textureNormal[3], GLuint textureLightDir[3], GLuint textureLightEnergy[3])
+void FilterCasGrid::run(CascadedGrid & cascadedGrid)
 {
-    GLuint highestLevel = numOfGrid - 1;
+    GLuint highestLevel = cascadedGrid.getCascadedLevels() - 1;
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-    glGenerateTextureMipmap(textureColors[highestLevel]);
-    glGenerateTextureMipmap(textureNormal[highestLevel]);
-    glGenerateTextureMipmap(textureLightDir[highestLevel]);
-    glGenerateTextureMipmap(textureLightEnergy[highestLevel]);
+    glGenerateTextureMipmap(cascadedGrid.getCasGridTextureIds(CascadedGrid::GridType::COLOR)[highestLevel]);
+    glGenerateTextureMipmap(cascadedGrid.getCasGridTextureIds(CascadedGrid::GridType::NORMAL)[highestLevel]);
+    glGenerateTextureMipmap(cascadedGrid.getCasGridTextureIds(CascadedGrid::GridType::LIGHT_DIRECTION)[highestLevel]);
+    glGenerateTextureMipmap(cascadedGrid.getCasGridTextureIds(CascadedGrid::GridType::LIGHT_ENERGY)[highestLevel]);
 }
 
 FilterCasGrid::FilterCasGrid()

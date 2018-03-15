@@ -165,6 +165,8 @@ void Voxelizer::render(Scene& scene)
     case CAS_GRID:
     {
         mModuleRenderToCasGrid.run(scene, ssboCounterSet, voxelMatrixData.worldToVoxelMat, voxelLogUniformBuffer, ssboLogList, mCascadedGrid);
+        mModuleRenderLightIntoCasGrid.run(scene, voxelMatrixUniformBuffer, mCascadedGrid);
+        mModuleFilterCasGrid.run(mCascadedGrid);
     }
     break;
     case GRID:
