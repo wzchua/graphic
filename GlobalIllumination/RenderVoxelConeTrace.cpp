@@ -51,15 +51,17 @@ void RenderVoxelConeTrace::run(Scene & inputScene, GLBufferObject<CounterBlock>&
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
     
+    /*
     glBindTextureUnit(4, octree.getTextureIds(Octree::COLOR));
     glBindTextureUnit(5, octree.getTextureIds(Octree::NORMAL));
     glBindTextureUnit(6, octree.getTextureIds(Octree::LIGHT_DIRECTION));
     glBindTextureUnit(7, octree.getTextureIds(Octree::LIGHT_ENERGY));
-
+    */
 
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, inputScene.getMatrixBuffer()); //scene cam matrices
     counterBlk.bind(1);
     octree.getNodeList().bind(2);
+    octree.getNodeValueList().bind(3);
 
     inputScene.render(shader.getProgramId());
 }

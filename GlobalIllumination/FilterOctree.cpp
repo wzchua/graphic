@@ -22,13 +22,16 @@ void FilterOctree::run(GLBufferObject<CounterBlock>& counterSet, Octree & octree
     octree.getNodeList().bind(2);
     ssboIndirect.bind(6);
 
+    octree.getNodeValueList().bind(3);
+
+    /*
     glBindImageTexture(4, octree.getTextureIds(Octree::COLOR), 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
     glBindImageTexture(5, octree.getTextureIds(Octree::NORMAL), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
 
     glBindImageTexture(6, octree.getTextureIds(Octree::LIGHT_DIRECTION), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
     glBindImageTexture(7, octree.getTextureIds(Octree::LIGHT_ENERGY), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
     glBindBuffer(GL_DISPATCH_INDIRECT_BUFFER, ssboIndirect.getId());
-
+    */
     auto& ssboLeafIndexList = octree.getLeafIndexList();
 
     bool isOdd = true;

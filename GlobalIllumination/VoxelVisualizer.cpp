@@ -93,7 +93,7 @@ void VoxelVisualizer::rayCastVoxels(Camera & cam, glm::mat4 & worldToVoxelMat, G
 {
     voxelRayCastOctreeShader.use();
     octree.getNodeList().bind(2);
-    glBindImageTexture(4, octree.getTextureIds(Octree::TexType::COLOR), 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
+    octree.getNodeValueList().bind(3);
     rayCastVoxels(cam, worldToVoxelMat, counterSet, logUniformBlock, logList);
 }
 

@@ -32,9 +32,10 @@ void AddToOctree::run(Octree & octree, GLBufferObject<FragStruct>& ssboFragList,
     counterSet.bind(1);
     octree.getNodeList().bind(2);
     octree.getLeafIndexList().bind(3);
+    octree.getNodeValueList().bind(4);
     ssboLogList.bind(7);
-    glBindImageTexture(4, octree.getTextureIds(Octree::COLOR), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
-    glBindImageTexture(5, octree.getTextureIds(Octree::NORMAL), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
+    //glBindImageTexture(4, octree.getTextureIds(Octree::COLOR), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
+    //glBindImageTexture(5, octree.getTextureIds(Octree::NORMAL), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
     
     while (fragmentCount != 0) {
         addToOctreeShader.use();
