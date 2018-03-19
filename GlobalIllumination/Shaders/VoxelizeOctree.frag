@@ -1,11 +1,3 @@
-#version 450
-#extension GL_ARB_shader_atomic_counter_ops : require
-#extension GL_ARB_bindless_texture : require
-
-in vec3 wcPosition;   // Vertex position in scaled world space.
-in vec3 wcNormal;     // Vertex normal in world space.
-in vec2 fTexCoord;
-
 layout(binding = 1) uniform MatBlock {
     sampler2D texAmbient;
     sampler2D texDiffuse;
@@ -17,84 +9,12 @@ layout(binding = 1) uniform MatBlock {
     int useBumpMap;
     float shininess;
 };
-layout(binding = 7, std140) uniform LimitsUniformBlock {
-    uint maxNoOfFragments;
-    uint maxNoOfNodes;
-    uint maxNoOfBricks;
-    uint maxNoOfLogs;
-};
-
-struct FragmentStruct {
-    vec4 position;
-    vec4 color;
-    vec4 normal;
-};
-struct NodeStruct {
-    uint parentPtr;
-    uint childPtr;
-    uint childBit;
-    uint modelBrickPtr;
-    uint lightBit;
-    uint lightBrickPtr;
-    uint xPositive;
-    uint xNegative;
-    uint yPositive;
-    uint yNegative;
-    uint zPositive;
-    uint zNegative;
-};
-struct LogStruct {
-    vec4 position;
-    vec4 color;
-    uint nodeIndex;
-    uint brickPtr;
-    uint index1;
-    uint index2;
-};
-
-layout(binding = 0) coherent buffer FragmentListBlock {
-    FragmentStruct frag[];
-};
-layout(binding = 1) coherent buffer CounterBlock {
-    uint fragmentCounter;
-    uint nodeCounter;
-    uint brickCounter;
-    uint leafCounter;
-    uint logCounter;
-    uint noOfFragments;
-};
-layout(binding = 2) coherent buffer NodeBlock {
-    NodeStruct node[];
-};
-layout(binding = 3) coherent buffer LeafListBlock {
-    uint leafList[];
-};
-layout(binding = 7) coherent buffer LogBlock {
-    LogStruct logList[];
-};
-
-layout(binding = 4, r32ui) uniform coherent volatile uimage3D colorBrick;
-layout(binding = 5, r32ui) uniform coherent volatile uimage3D normalBrick;
-
-void logFragment(vec4 pos, vec4 color, uint nodeIndex, uint brickPtr, uint index1, uint index2) {
-    uint index = atomicAdd(logCounter, 1);
-    if(index < maxNoOfLogs) {        
-        logList[index].position = pos;
-        logList[index].color = color;
-        logList[index].nodeIndex = nodeIndex;
-        logList[index].brickPtr = brickPtr;
-        logList[index].index1 = index1;
-        logList[index].index2 = index2;
-    } else {
-        atomicAdd(logCounter, uint(-1));
-    }
-}
 
 const vec2 size = vec2(2.0,0.0);
 const ivec3 off = ivec3(-1,0,1);
 const uint ISINPROCESS = 0 - 1;
 const uint LEAFHOST = 0 - 2;
-const float levels[9] = float[9](0.00390625f, 0.0078125f,
+const float levels[10] = float[10](0.001953125f, 0.00390625f, 0.0078125f,
                                 0.015625f, 0.03125f, 0.0625f,
                                 0.125f, 0.25f, 0.5f, 1.0f);
 //z=0  2  3   z=1  6  7
@@ -120,7 +40,7 @@ uint checkAndInitializeNode(uint parentNodeIndex) {
             logFragment(vec4(55.0f), vec4(55.0f), 55, 55, 55, 55);
             discard;
         } else {                
-            node[parentNodeIndex].modelBrickPtr = atomicAdd(brickCounter, 1);
+            node[parentNodeIndex].valueIndex = atomicAdd(brickCounter, 1);
             for(int i = 0; i < 8; i++) {
                 node[childIndex + i].parentPtr = parentNodeIndex;
             }
@@ -155,7 +75,7 @@ uint checkAndInitializeLeafHost(uint leafIndex) {
     }
 
     if(leafState == 0) {
-        node[leafIndex].modelBrickPtr = atomicAdd(brickCounter, 1);
+        node[leafIndex].valueIndex = atomicAdd(brickCounter, 1);
         uint index = atomicAdd(leafCounter, 1);
         if(index < maxNoOfFragments) {
             leafList[index] = leafIndex;
@@ -174,12 +94,12 @@ vec4 convRGBA8ToVec4( uint val) {
 uint convVec4ToRGBA8( vec4 val) {
     return ( uint ( val.w) &0x000000FF) <<24U | ( uint( val.z) &0x000000FF) <<16U | ( uint( val.y ) &0x000000FF) <<8U | ( uint( val.x) &0x000000FF);
 }
-void imageAtomicRGBA8Avg( layout ( r32ui ) coherent volatile uimage3D imgUI , ivec3 coords , vec4 val ) {
+void atomicColorAvg(uint index , vec4 val ) {
     val.rgb *=255.0f; // Optimise following calculations
     uint newVal = convVec4ToRGBA8( val );
     uint prevStoredVal = 0; uint curStoredVal;
     // Loop as long as destination value gets changed by other threads
-    while ( ( curStoredVal = imageAtomicCompSwap( imgUI , coords , prevStoredVal , newVal )) != prevStoredVal) {
+    while ( ( curStoredVal = atomicCompSwap( nodeBrick[index].color , prevStoredVal , newVal )) != prevStoredVal) {
         prevStoredVal = curStoredVal;
         vec4 rval = convRGBA8ToVec4( curStoredVal);
         rval.xyz =( rval.xyz * rval.w) ; // Denormalize
@@ -199,12 +119,12 @@ uint convVec4ToXYZW( vec4 val) {
     val.xyz = (val.xyz + 128.0f);
     return ( uint ( val.w) &0x000000FF) <<24U | ( uint( val.z) &0x000000FF) <<16U | ( uint( val.y ) &0x000000FF) <<8U | ( uint( val.x) &0x000000FF);
 }
-void imageAtomicXYZWAvg( layout ( r32ui ) coherent volatile uimage3D imgUI , ivec3 coords , vec4 val ) {
+void atomicNormalAvg( uint index , vec4 val) {
     val.rgb *= 127.0f;
     uint newVal = convVec4ToXYZW( val );
     uint prevStoredVal = 0; uint curStoredVal;
     // Loop as long as destination value gets changed by other threads
-    while ( ( curStoredVal = imageAtomicCompSwap( imgUI , coords , prevStoredVal , newVal )) != prevStoredVal) {
+    while ( ( curStoredVal = atomicCompSwap( nodeBrick[index].normal , prevStoredVal , newVal )) != prevStoredVal) {
         prevStoredVal = curStoredVal;
         vec4 rval = convXYZWToVec4( curStoredVal);
         rval.xyz =( rval.xyz * rval.w) ; // Denormalize
@@ -213,18 +133,33 @@ void imageAtomicXYZWAvg( layout ( r32ui ) coherent volatile uimage3D imgUI , ive
         newVal = convVec4ToXYZW( curValF );
     }
 }
-const int leafLevel = 3;
+void atomicLightDirAvg( uint index , vec4 val) {
+    val.rgb *= 127.0f;
+    uint newVal = convVec4ToXYZW( val );
+    uint prevStoredVal = 0; uint curStoredVal;
+    // Loop as long as destination value gets changed by other threads
+    while ( ( curStoredVal = atomicCompSwap( nodeBrick[index].lightDirection , prevStoredVal , newVal )) != prevStoredVal) {
+        prevStoredVal = curStoredVal;
+        vec4 rval = convXYZWToVec4( curStoredVal);
+        rval.xyz =( rval.xyz * rval.w) ; // Denormalize
+        vec4 curValF = rval + val; // Add new value
+        curValF.xyz /=( curValF.w); // Renormalize
+        newVal = convVec4ToXYZW( curValF );
+    }
+}
+const int leafLevel = 9;
 void addToOctree(vec3 pos, vec4 color, vec3 normal) {
     //pos from 0 to 512
-    // Level 0 : 0.0 to 2.0
-    // Level 1 : 0.0 to 4.0
-    // Level 2 : 0.0 to 8.0
-    // Level 3 : 0.0 to 16.0
-    // Level 4 : 0.0 to 32.0
-    // Level 5 : 0.0 to 64.0
-    // Level 6 : 0.0 to 128.0
-    // Level 7 : 0.0 to 256.0
-    // Level 8 : 0.0 to 512.0
+    // Level 0 : 0.0 to 1.0
+    // Level 1 : 0.0 to 2.0
+    // Level 2 : 0.0 to 4.0
+    // Level 3 : 0.0 to 8.0
+    // Level 4 : 0.0 to 16.0
+    // Level 5 : 0.0 to 32.0
+    // Level 6 : 0.0 to 64.0
+    // Level 7 : 0.0 to 128.0
+    // Level 8 : 0.0 to 256.0
+    // Level 9 : 0.0 to 512.0
     uint parentNodeIndex = checkRoot();
     uint childNodeIndex = 0;
     vec3 prevSamplePos;
@@ -254,13 +189,13 @@ void addToOctree(vec3 pos, vec4 color, vec3 normal) {
     }
     prevSamplePos = samplePos;
     samplePos = pos * levels[leafLevel];
-    refOffset = samplePos - 2 * floor(prevSamplePos);
-    uint brickPtr = node[parentNodeIndex].modelBrickPtr;
+    refOffset = samplePos - 2 * floor(prevSamplePos);    
     ivec3 innerFramePos = ivec3(refOffset);
-    ivec3 brickPos = innerFramePos + ivec3((brickPtr & 0x1FF) * 2, (brickPtr >> 9) * 2, 0);
     atomicOr(node[parentNodeIndex].childBit, 1 << getPtrOffset(innerFramePos));
-    imageAtomicRGBA8Avg(colorBrick, brickPos, color);
-    imageAtomicXYZWAvg(normalBrick, brickPos, vec4(normal, 1.0f));
+
+    uint valueIndex = node[parentNodeIndex].valueIndex;
+    atomicColorAvg(valueIndex, color);
+    atomicNormalAvg(valueIndex, vec4(normal, 1.0f));
 }
 
 //Generates a voxel list from rasterization

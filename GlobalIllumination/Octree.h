@@ -36,30 +36,46 @@ public:
     uint zPositive;
     uint zNegative;
 };
-layout(binding = , std430)" + level;
-        s = s + R"() coherent buffer NodeBlock{
+layout(binding = )" + std::to_string(level);
+        s = s + R"(, std430) coherent buffer NodeBlock{
     NodeStruct node[];
 };
 )";
         return s;
     }
     struct NodeValueStruct {
-        glm::vec4 color;
-        glm::vec4 normal;
-        glm::vec3 lightDirection;
+        GLuint color;
+        GLuint normal;
+        GLuint lightDirection;
         GLuint lightEnergy;
     };
+    static glm::vec4 getRGBA(GLuint val) {
+        return glm::vec4(float((val & 0x000000FF)), float((val & 0x0000FF00) >> 8U), float((val & 0x00FF0000) >> 16U), float((val & 0xFF000000) >> 24U));
+    }
+    static glm::vec4 getXYZ_Num(GLuint val) {
+        glm::vec3 xyz = glm::vec3(float((val & 0x000000FF)), float((val & 0x0000FF00) >> 8U), float((val & 0x00FF0000) >> 16U));
+        xyz = xyz - 128.0f;
+        return glm::vec4(xyz, float((val & 0xFF000000) >> 24U));
+    }
 
         static std::string nodeValueStructShaderCodeString(GLuint level) {
             std::string s = R"(struct NodeValueStruct {
-    vec4 color;
-    vec4 normal;
-    vec3 lightDirection;
+    uint color;
+    uint normal;
+    uint lightDirection;
     uint lightEnergy;
 };
-layout(binding = , std430)" + level;
-            s = s + R"() coherent buffer NodeBlock{
+layout(binding = )" + std::to_string(level);
+            s = s + R"(, std430) coherent buffer NodeValueBlock{
     NodeValueStruct nodeBrick[];
+};
+)";
+            return s;
+        }
+        static std::string leafStructShaderCodeString(GLuint level) {
+            std::string s = R"(layout(binding = )" + std::to_string(level);
+            s = s + R"(, std430) coherent buffer LeafListBlock{
+    uint leafList[];
 };
 )";
             return s;

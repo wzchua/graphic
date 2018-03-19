@@ -1,27 +1,4 @@
 // adapted from https://github.com/Friduric/voxel-cone-tracing/blob/master/Shaders/Voxelization/voxelization.geom
-
-#version 450 core
-#extension GL_ARB_bindless_texture : require
-
-layout(triangles) in;
-layout(triangle_strip, max_vertices = 3) out;
-
-in vec3 geomwcPosition[];
-in vec3 geomwcNormal[];
-in vec2 geomTexCoord[];
-
-layout(binding = 0) uniform VoxelizeMatrixBlock {
-    mat4 WorldToVoxelMat;
-    mat4 ViewProjMatrixXY; 
-    mat4 worldToVoxelClipmapL0Mat;
-    mat4 worldToVoxelClipmapL1Mat;
-    mat4 worldToVoxelClipmapL2Mat;
-};
-
-out vec3 wcPosition;
-out vec3 wcNormal;
-out vec2 fTexCoord;
-
 void main() {
     vec3 triangleNormal = normalize( cross( geomwcPosition[1]-geomwcPosition[0], geomwcPosition[2]-geomwcPosition[0] ) );
     triangleNormal = abs(triangleNormal);

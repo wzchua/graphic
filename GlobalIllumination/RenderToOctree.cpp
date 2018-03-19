@@ -12,10 +12,20 @@ void RenderToOctree::initialize()
     vertShaderString << GenericShaderCodeString::vertHeader << GenericShaderCodeString::vertGeomOutput;
     vertShaderString << GenericShaderCodeString::genericLimitsUniformBlock(7);
     vertShaderString << voxelizeBlockString(0) << counterBlockBufferShaderCodeString(1) << logFunctionAndBufferShaderCodeString(7);
-
     voxelizeOctreeShader.generateShader(vertShaderString, "./Shaders/Voxelize.vert", ShaderProgram::VERTEX);
-    voxelizeOctreeShader.generateShader("./Shaders/Voxelize.geom", ShaderProgram::GEOMETRY);
-    voxelizeOctreeShader.generateShader("./Shaders/VoxelizeOctree.frag", ShaderProgram::FRAGMENT);
+
+    std::stringstream geomShaderString;
+    geomShaderString << GenericShaderCodeString::geomHeader << GenericShaderCodeString::geomFragOutput;
+    geomShaderString << voxelizeBlockString(0);
+    voxelizeOctreeShader.generateShader(geomShaderString, "./Shaders/Voxelize.geom", ShaderProgram::GEOMETRY);
+
+    std::stringstream fragShaderString;
+    fragShaderString << GenericShaderCodeString::fragHeader;
+    fragShaderString << GenericShaderCodeString::genericLimitsUniformBlock(7);
+    fragShaderString << fragStructShaderCodeString(0) << counterBlockBufferShaderCodeString(1) << logFunctionAndBufferShaderCodeString(7);
+    fragShaderString << Octree::nodeStructShaderCodeString(2) << Octree::nodeValueStructShaderCodeString(3) << Octree::leafStructShaderCodeString(4);
+
+    voxelizeOctreeShader.generateShader(fragShaderString, "./Shaders/VoxelizeOctree.frag", ShaderProgram::FRAGMENT);
     voxelizeOctreeShader.linkCompileValidate();
 }
 
@@ -30,10 +40,10 @@ void RenderToOctree::run(Scene & inputScene, GLBufferObject<CounterBlock>& count
     ssboFragList.bind(0);
     counterSet.bind(1);
     octree.getNodeList().bind(2);
-    octree.getLeafIndexList().bind(3);
+    octree.getLeafIndexList().bind(4);
     ssboLogList.bind(7);
 
-    octree.getNodeValueList().bind(4);
+    octree.getNodeValueList().bind(3);
     //glBindImageTexture(4, octree.getTextureIds(Octree::TexType::COLOR), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
     //glBindImageTexture(5, octree.getTextureIds(Octree::TexType::NORMAL), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
 
