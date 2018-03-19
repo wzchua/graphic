@@ -6,7 +6,6 @@
 #include "GLBufferObject.h"
 #include "CounterBlock.h"
 #include "FragStruct.h"
-#include "NodeStruct.h"
 #include "LogStruct.h"
 #include "Octree.h"
 

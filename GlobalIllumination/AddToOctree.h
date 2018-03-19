@@ -1,6 +1,5 @@
 #pragma once
 #include "ShaderProgram.h"
-#include "NodeStruct.h"
 #include "CounterBlock.h"
 #include "GLBufferObject.h"
 #include "FragStruct.h"

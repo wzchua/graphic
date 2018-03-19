@@ -167,9 +167,6 @@
     <ClInclude Include="LogStruct.h">
       <Filter>Header Files\DataStructure</Filter>
     </ClInclude>
-    <ClInclude Include="NodeStruct.h">
-      <Filter>Header Files\DataStructure</Filter>
-    </ClInclude>
     <ClInclude Include="VoxelizeBlock.h">
       <Filter>Header Files\DataStructure</Filter>
     </ClInclude>

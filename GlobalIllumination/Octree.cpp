@@ -47,7 +47,7 @@ void Octree::resetData()
     glClearTexImage(texture3DLightDirList, 0, GL_RGBA, GL_FLOAT, NULL);
 }
 
-GLBufferObject<NodeStruct>& Octree::getNodeList()
+GLBufferObject<Octree::NodeStruct>& Octree::getNodeList()
 {
     return ssboNodeList;
 }

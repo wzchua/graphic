@@ -28,7 +28,7 @@ Voxelizer::Voxelizer()
     glGetIntegerv(GL_MAX_SHADER_STORAGE_BLOCK_SIZE, &size);
     std::cout << "GL_MAX_SHADER_STORAGE_BLOCK_SIZE is " << size << " bytes." << std::endl;
     std::cout << "frag " << size / sizeof(FragStruct) << " ." << std::endl;
-    std::cout << "node " << size / sizeof(NodeStruct) << " ." << std::endl;
+    std::cout << "node " << size / sizeof(Octree::NodeStruct) << " ." << std::endl;
     glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &size);
     std::cout << "GL_MAX_UNIFORM_BLOCK_SIZE is " << size << " bytes." << std::endl;
     glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &size);
@@ -137,7 +137,7 @@ void Voxelizer::render(Scene& scene)
         auto c2 = *cPtr;
         ssboCounterSet.unMapPtr();
         auto node = mOctree.getNodeList().getPtr();
-        std::vector<NodeStruct> nodeList;
+        std::vector<Octree::NodeStruct> nodeList;
         for (int i = 0; i < c2.nodeCounter; i++) {
             nodeList.push_back(node[i]);
         }

@@ -55,7 +55,6 @@
     <ClInclude Include="FilterCasGrid.h" />
     <ClInclude Include="FilterOctree.h" />
     <ClInclude Include="GenericShaderCodeString.h" />
-    <ClInclude Include="NodeStruct.h" />
     <ClInclude Include="Octree.h" />
     <ClInclude Include="RenderLightIntoCasGrid.h" />
     <ClInclude Include="RenderLightIntoOctree.h" />

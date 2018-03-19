@@ -10,7 +10,6 @@
 #include "VoxelizeBlock.h"
 #include "GLBufferObject.h"
 #include "CounterBlock.h"
-#include "NodeStruct.h"
 #include "VoxelVisualizer.h"
 
 #include "RenderToGrid.h"
