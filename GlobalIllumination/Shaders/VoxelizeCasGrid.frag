@@ -1,11 +1,3 @@
-#version 450
-#extension GL_ARB_shader_atomic_counter_ops : require
-#extension GL_ARB_bindless_texture : require
-
-in vec3 wcPosition;   // Vertex position in scaled world space.
-in vec3 wcNormal;     // Vertex normal in world space.
-in vec2 fTexCoord;
-
 layout(binding = 1) uniform MatBlock {
     sampler2D texAmbient;
     sampler2D texDiffuse;
@@ -17,55 +9,9 @@ layout(binding = 1) uniform MatBlock {
     int useBumpMap;
     float shininess;
 };
-layout(binding = 7, std140) uniform LimitsUniformBlock {
-    uint maxNoOfFragments;
-    uint maxNoOfNodes;
-    uint maxNoOfBricks;
-    uint maxNoOfLogs;
-};
 
 layout(binding = 4, r32ui) uniform coherent volatile uimage3D colorBrick;
 layout(binding = 5, r32ui) uniform coherent volatile uimage3D normalBrick;
-layout(binding = 7, r32ui) uniform coherent volatile uimage3D fragmentImageCounter;
-
-
-layout(binding = 1) coherent buffer CounterBlock {
-    uint fragmentCounter;
-    uint nodeCounter;
-    uint brickCounter;
-    uint leafCounter;
-    uint logCounter;
-    uint noOfFragments;
-};
-layout(binding = 2) coherent buffer VoxelListBlock {
-    vec4 voxelList[];
-};
-
-struct LogStruct {
-    vec4 position;
-    vec4 color;
-    uint nodeIndex;
-    uint brickPtr;
-    uint index1;
-    uint index2;
-};
-layout(binding = 7) coherent buffer LogBlock {
-    LogStruct logList[];
-};
-
-void logFragment(vec4 pos, vec4 color, uint nodeIndex, uint brickPtr, uint index1, uint index2) {
-    uint index = atomicAdd(logCounter, 1);
-    if(index < maxNoOfLogs) {        
-        logList[index].position = pos;
-        logList[index].color = color;
-        logList[index].nodeIndex = nodeIndex;
-        logList[index].brickPtr = brickPtr;
-        logList[index].index1 = index1;
-        logList[index].index2 = index2;
-    } else {
-        atomicAdd(logCounter, uint(-1));
-    }
-}
 
 const vec2 size = vec2(2.0,0.0);
 const ivec3 off = ivec3(-1,0,1);
@@ -121,11 +67,12 @@ void addToGrid(vec4 color, vec3 normal) {
     ivec3 pos = ivec3(wcPosition);    
     imageAtomicRGBA8Avg(colorBrick, pos, color);
     imageAtomicXYZWAvg(normalBrick, pos, vec4(normal, 1.0f));
+    /*
     uint count = imageAtomicAdd(fragmentImageCounter, pos, 1);
     if(count == 0) {
         uint index = atomicAdd(fragmentCounter, 1);
         voxelList[index] = vec4(pos, 1.0f);
-    }
+    }*/
 }
 
 

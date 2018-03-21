@@ -60,6 +60,8 @@ Voxelizer::Voxelizer()
     
     switch(mType) {
     case OCTREE:
+        mOctree.initialize();
+
         mModuleRenderToOctree.initialize();
         mModuleAddToOctree.initialize();
         //mModuleRenderLightIntoOctree.initialize();
@@ -67,15 +69,13 @@ Voxelizer::Voxelizer()
         //mModuleRenderVCT.initialize();
         ssboFragmentList.initialize(GL_SHADER_STORAGE_BUFFER, fragCount * sizeof(FragStruct), NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, 0); 
 
-        mOctree.initialize();
-
         break;
     case CAS_GRID:
+        mCascadedGrid.initializeGrids(3);
+
         mModuleRenderToCasGrid.initialize();
         mModuleRenderLightIntoCasGrid.initialize();
         mModuleRenderVoxelConeTraceCasGrid.initialize();
-
-        mCascadedGrid.initializeGrids(3);
         break;
     case GRID:
         ssboVoxelList.initialize(GL_SHADER_STORAGE_BUFFER, sizeof(glm::vec4) * 1024 * 1024 * 4, NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT);

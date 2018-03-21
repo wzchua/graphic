@@ -5,9 +5,23 @@ void RenderToCasGrid::initialize()
     if (hasInitialized) {
         return;
     }
-    shader.generateShader("./Shaders/Voxelize.vert", ShaderProgram::VERTEX);
-    shader.generateShader("./Shaders/Voxelize.geom", ShaderProgram::GEOMETRY);
-    shader.generateShader("./Shaders/VoxelizeCasGrid.frag", ShaderProgram::FRAGMENT);
+    std::stringstream vertShaderString;
+    vertShaderString << GenericShaderCodeString::vertHeader << GenericShaderCodeString::vertGeomOutput;
+    vertShaderString << voxelizeBlockString(0) << GenericShaderCodeString::genericLimitsUniformBlock(7);
+    vertShaderString << counterBlockBufferShaderCodeString(1) << logFunctionAndBufferShaderCodeString(7);
+
+    shader.generateShader(vertShaderString, "./Shaders/Voxelize.vert", ShaderProgram::VERTEX);
+
+    std::stringstream geomShaderString;
+    geomShaderString << GenericShaderCodeString::geomHeader << GenericShaderCodeString::geomFragOutput;
+    geomShaderString << voxelizeBlockString(0);
+    shader.generateShader(geomShaderString, "./Shaders/Voxelize.geom", ShaderProgram::GEOMETRY);
+
+    std::stringstream fragShaderString;
+    fragShaderString << GenericShaderCodeString::fragHeader;
+    fragShaderString << GenericShaderCodeString::genericLimitsUniformBlock(7);
+    fragShaderString << counterBlockBufferShaderCodeString(1) << logFunctionAndBufferShaderCodeString(7);
+    shader.generateShader(fragShaderString, "./Shaders/VoxelizeCasGrid.frag", ShaderProgram::FRAGMENT);
     shader.linkCompileValidate();
 }
 

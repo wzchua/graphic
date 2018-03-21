@@ -47,7 +47,7 @@ public:
     int projectionAxis = 0;
 private:
 
-    Type mType = OCTREE;
+    Type mType = CAS_GRID;
     unsigned int fragCount = 1024 * 1024 * 2;
     unsigned int nodeCount = 1024 * 1024 * 2;
     int brickDim = 2;
