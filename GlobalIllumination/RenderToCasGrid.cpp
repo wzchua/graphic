@@ -38,7 +38,7 @@ void RenderToCasGrid::run(Scene & inputScene, GLBufferObject<CounterBlock>& ssbo
 
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     for (int i = 0; i < numOfGrid; i++) {
-        glBindBufferBase(GL_UNIFORM_BUFFER, 0, voxelMatrixBlockIds[i]); //generate new voxelizeblocks
+        glBindBufferBase(GL_UNIFORM_BUFFER, 0, voxelMatrixBlockIds[i]); 
         glBindImageTexture(4, textureColors[i], 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
         glBindImageTexture(5, textureNormals[i], 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

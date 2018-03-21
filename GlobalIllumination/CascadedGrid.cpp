@@ -125,7 +125,7 @@ void CascadedGrid::initializeGrids(GLuint cascadeNumber)
     for (int i = 0; i < cascadeNumber; i++) {
         GLuint mipLevel = (cascadeNumber - 1 == i) ? 10 - cascadeNumber : 1;
         
-        GLuint & textureId = texture3DColorCasGrid[i];
+        GLuint textureId = 0;
 
         glCreateTextures(GL_TEXTURE_3D, 1, &textureId);
         glTextureStorage3D(textureId, mipLevel, GL_RGBA8, dim, dim, dim);
@@ -135,8 +135,17 @@ void CascadedGrid::initializeGrids(GLuint cascadeNumber)
 
         glTextureParameteri(textureId, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTextureParameteri(textureId, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        texture3DColorCasGrid[i] = textureId;
+        
+        glCreateTextures(GL_TEXTURE_3D, 1, &textureId);
+        glTextureStorage3D(textureId, mipLevel, GL_RGBA8, dim, dim, dim);
+        glTextureParameteri(textureId, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTextureParameteri(textureId, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        glTextureParameteri(textureId, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
 
-        textureId = texture3DNormalCasGrid[i];
+        glTextureParameteri(textureId, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTextureParameteri(textureId, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        texture3DNormalCasGrid[i] = textureId;
 
         glCreateTextures(GL_TEXTURE_3D, 1, &textureId);
         glTextureStorage3D(textureId, mipLevel, GL_RGBA8, dim, dim, dim);
@@ -146,20 +155,8 @@ void CascadedGrid::initializeGrids(GLuint cascadeNumber)
 
         glTextureParameteri(textureId, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTextureParameteri(textureId, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-        textureId = texture3DLightDirCasGrid[i];
-
-        glCreateTextures(GL_TEXTURE_3D, 1, &textureId);
-        glTextureStorage3D(textureId, mipLevel, GL_RGBA8, dim, dim, dim);
-        glTextureParameteri(textureId, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-        glTextureParameteri(textureId, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-        glTextureParameteri(textureId, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
-
-        glTextureParameteri(textureId, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTextureParameteri(textureId, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-        textureId = texture3DLightEnergyCasGrid[i];
-
+        texture3DLightDirCasGrid[i] = textureId;
+        
         glCreateTextures(GL_TEXTURE_3D, 1, &textureId);
         glTextureStorage3D(textureId, mipLevel, GL_R32UI, dim, dim, dim);
         glTextureParameteri(textureId, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
@@ -168,6 +165,7 @@ void CascadedGrid::initializeGrids(GLuint cascadeNumber)
 
         glTextureParameteri(textureId, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTextureParameteri(textureId, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        texture3DLightEnergyCasGrid[i] = textureId;
     }
 
     glGenBuffers(1, &voxelCascadedBlockId);
