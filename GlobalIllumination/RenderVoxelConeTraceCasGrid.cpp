@@ -7,15 +7,25 @@ void RenderVoxelConeTraceCasGrid::initialize()
     if (hasInitialized) {
         return;
     }
-    shader.generateShader("./Shaders/VoxelConeTracingRender.vert", ShaderProgram::VERTEX);
-    shader.generateShader("./Shaders/VoxelConeTracingCasGridRender.frag", ShaderProgram::FRAGMENT);
+    std::stringstream vertShaderString;
+    vertShaderString << GenericShaderCodeString::vertHeader << GenericShaderCodeString::vertFragOutputNoTexCoord;
+    shader.generateShader(vertShaderString, "./Shaders/VoxelConeTracingRender.vert", ShaderProgram::VERTEX);
+
+    std::stringstream fragShaderString;
+    fragShaderString << GenericShaderCodeString::fragHeaderNoTexCoord;
+    fragShaderString << GenericShaderCodeString::genericLimitsUniformBlock(7);
+    fragShaderString << counterBlockBufferShaderCodeString(1) << logFunctionAndBufferShaderCodeString(7);
+    fragShaderString << voxelizeBlockString(3) << voxelizeCascadedBlockString(4);
+
+    shader.generateShader(fragShaderString, "./Shaders/VoxelConeTracingCasGridRender.frag", ShaderProgram::FRAGMENT);
     shader.linkCompileValidate();
 }
 
 void RenderVoxelConeTraceCasGrid::run(Scene & inputScene, GLBufferObject<CounterBlock>& ssboCounterSet, CascadedGrid & cascadedGrid)
 {
     shader.use();
-    glViewport(0, 0, 800, 600);
+    auto & res = inputScene.cam.getResolution();
+    glViewport(0, 0, res.x, res.y);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);

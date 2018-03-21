@@ -10,6 +10,7 @@ private:
     glm::vec3 forward = glm::vec3(0.0f, 0.0f, 1.0);
     glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0);
     glm::vec3 right = glm::vec3(1.0f, 0.0f, 0.0);
+    glm::ivec2 mResolution{ 800, 600 };
     float xRot = 0.0f;
     float yRot = 0.0f;
     float fovDegree = 60.0f;
@@ -26,6 +27,7 @@ public:
     ~Camera();
     void moveTo(glm::vec3 position);
     void move(glm::vec3 translation);
+    glm::ivec2 getResolution() { return mResolution; }
     void viewMove(int mouseXDelta, int mouseYDelta);
     void set(glm::vec3 position, glm::vec3 forward, glm::vec3 up, float degree, float aspect);
     glm::vec3 getPosition();

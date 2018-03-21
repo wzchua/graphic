@@ -1,25 +1,3 @@
-#version 450
-#extension GL_ARB_bindless_texture : require
-
-in vec3 wcPosition;   // Fragment's 3D position in world space.
-in vec3 wcNormal;
-
-layout(binding = 3, std140) uniform VoxelizeMatrixBlock {
-    mat4 WorldToVoxelMat;
-    mat4 ViewProjMatrixXY; 
-};
-layout(binding = 4, std140) uniform VoxelizeCascadedBlock {
-    mat4 voxelToClipmapL0Mat;
-    mat4 voxelToClipmapL1Mat;
-    mat4 voxelToClipmapL2Mat;
-    vec4 level0min;
-    vec4 level0max;
-    vec4 level1min;
-    vec4 level1max;
-    vec4 level2min;
-    vec4 level2max;
-};
-
 layout(binding = 0) uniform sampler3D colorBrickL0;
 layout(binding = 1) uniform sampler3D normalBrickL0;
 layout(binding = 2) uniform sampler3D lightDirBrickL0;
@@ -33,11 +11,15 @@ layout(binding = 9) uniform sampler3D normalBrickL2;
 layout(binding = 10) uniform sampler3D lightDirBrickL2;
 layout(binding = 11) uniform usampler3D lightEnergyBrickL2;
 
+layout (location = 0) out vec4 FragColor;
+
+#define PI           3.14159265358979323846
+
 struct GaussianLobe {
     vec3 amplitude;
     vec3 axis;
     float sharpness;
-}
+};
 //https://mynameismjp.wordpress.com/2016/10/09/sg-series-part-2-spherical-gaussians-101/
 //http://www.jp.square-enix.com/tech/library/pdf/Fast%20Indirect%20illumination%20Using%20Two%20Virtual%20Spherical%20Gaussian%20Lights%20(Supplemental%20Material).pdf
 GaussianLobe generateSG(vec3 amplitude, vec3 mean) {
@@ -65,7 +47,7 @@ vec3 InnerProject(GaussianLobe g1, GaussianLobe g2) {
     float uLength = length(g1.sharpness * g1.axis + g2.sharpness * g2.axis);
     float eFactorized = exp(uLength - g1.sharpness - g2.sharpness);
     float factorized2 = 1.0f - exp(-2.0f * uLength);
-    return (2.0f * Pi * g1.amplitude * g2.amplitude * eFactorized * factorized2) / uLength;
+    return (2.0f * PI * g1.amplitude * g2.amplitude * eFactorized * factorized2) / uLength;
 }
 //inputPos in world space
 vec3 findPosAndLevel(vec3 inputPos, out int level) {    
@@ -133,7 +115,7 @@ vec4 diffuseConeTrace(vec3 origin, vec3 dir, float coneSize) {
         }
         vec4 c = texture(colorClip, clipOrigin);
         vec4 n = 2 * texture(normalClip, clipOrigin) - 1.0f;
-        uint lEnergy = texture(lightEnergyBrick, clipOrigin).a;
+        uint lEnergy = texture(lightEnergyClip, clipOrigin).a;
         vec4 l = 2 * texture(lightDirClip, clipOrigin) - 1.0f;
 
         GaussianLobe normalLobe = generateSG(vec3(1.0f), n.xyz);
@@ -152,7 +134,6 @@ vec4 diffuseConeTrace(vec3 origin, vec3 dir, float coneSize) {
         rayWorldPos += adjustedDir;
     }
 }
-layout (location = 0) out vec4 FragColor;
 
 vec3 findOrthoVector(vec3 v) {
     vec3 u = cross(v, vec3(1, 0, 0));
@@ -169,13 +150,13 @@ void main()
     // 4x 60 from normal + 1 at normal;
     vec3 orthoX = findOrthoVector(wcNormal);
     vec3 orthoY = cross(wcNormal, orthoX); 
-    vec3 diffuseColor += diffuseConeTrace(pos, wcNormal, 2.0f);
+    vec4 diffuseColor = diffuseConeTrace(pos, wcNormal, 2.0f);
     diffuseColor += diffuseConeTrace(pos, mix(wcNormal, orthoX, 0.3), 2.0f);
     diffuseColor += diffuseConeTrace(pos, mix(wcNormal, -orthoX, 0.3), 2.0f);
     diffuseColor += diffuseConeTrace(pos, mix(wcNormal, orthoY, 0.3), 2.0f);
     diffuseColor += diffuseConeTrace(pos, mix(wcNormal, -orthoY, 0.3), 2.0f);
     vec3 view  = normalize(wcPosition - eyePos);
-    vec3 specularColor = specularConeTrace(pos, reflect(view, wcNormal), 0.5f);
+    vec4 specularColor = specularConeTrace(pos, reflect(view, wcNormal), 0.5f);
 
-    FragColor = vec4(diffuseColor + specularColor, 1.0f);
+    FragColor = diffuseColor + specularColor;
 }

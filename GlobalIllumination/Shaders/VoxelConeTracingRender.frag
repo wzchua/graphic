@@ -183,13 +183,13 @@ void main()
     // 4x 60 from normal + 1 at normal;
     vec3 orthoX = findOrthoVector(wcNormal);
     vec3 orthoY = cross(wcNormal, orthoX); 
-    vec3 diffuseColor += diffuseConeTrace(pos, wcNormal, 2.0f);
+    vec4 diffuseColor += diffuseConeTrace(pos, wcNormal, 2.0f);
     diffuseColor += diffuseConeTrace(pos, mix(wcNormal, orthoX, 0.3), 2.0f);
     diffuseColor += diffuseConeTrace(pos, mix(wcNormal, -orthoX, 0.3), 2.0f);
     diffuseColor += diffuseConeTrace(pos, mix(wcNormal, orthoY, 0.3), 2.0f);
     diffuseColor += diffuseConeTrace(pos, mix(wcNormal, -orthoY, 0.3), 2.0f);
     vec3 view  = normalize(wcPosition - eyePos);
-    vec3 specularColor = specularConeTrace(pos, reflect(view, wcNormal), 0.5f);
+    vec4 specularColor = specularConeTrace(pos, reflect(view, wcNormal), 0.5f);
 
-    FragColor = vec4(diffuseColor + specularColor, 1.0f);
+    FragColor = diffuseColor + specularColor;
 }

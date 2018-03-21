@@ -13,6 +13,9 @@ layout (location = 2) in vec2 vTexCoord;    // Vertex normal in object space.
 out vec3 geomwcNormal;     // Vertex normal in world space.
 out vec2 geomTexCoord;
 )";
+    static std::string vertFragOutputNoTexCoord = R"(out vec3 wcPosition;
+out vec3 wcNormal;
+)";
 
     static std::string geomHeader = R"(#version 450 core
 #extension GL_ARB_bindless_texture : require
@@ -36,6 +39,12 @@ out vec2 fTexCoord;
 in vec3 wcPosition;   // Vertex position in scaled world space.
 in vec3 wcNormal;     // Vertex normal in world space.
 in vec2 fTexCoord;
+)";
+    static std::string fragHeaderNoTexCoord = R"(#version 450
+#extension GL_ARB_bindless_texture : require
+
+in vec3 wcPosition;   // Vertex position in scaled world space.
+in vec3 wcNormal;     // Vertex normal in world space.
 )";
 
     static std::string genericLimitsUniformBlock(int level) {
