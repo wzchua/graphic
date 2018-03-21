@@ -194,10 +194,10 @@
     <ClInclude Include="Octree.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="AbstractModule.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="RenderVoxelConeTraceCasGrid.h">
+      <Filter>Header Files\Modules</Filter>
+    </ClInclude>
+    <ClInclude Include="AbstractModule.h">
       <Filter>Header Files\Modules</Filter>
     </ClInclude>
   </ItemGroup>

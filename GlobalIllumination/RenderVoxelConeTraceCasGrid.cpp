@@ -8,12 +8,12 @@ void RenderVoxelConeTraceCasGrid::initialize()
         return;
     }
     std::stringstream vertShaderString;
-    vertShaderString << GenericShaderCodeString::vertHeader << GenericShaderCodeString::vertFragOutputNoTexCoord;
+    vertShaderString << GenericShaderCodeString::vertHeader << GenericShaderCodeString::vertFragOutput;
     shader.generateShader(vertShaderString, "./Shaders/VoxelConeTracingRender.vert", ShaderProgram::VERTEX);
 
     std::stringstream fragShaderString;
-    fragShaderString << GenericShaderCodeString::fragHeaderNoTexCoord;
-    fragShaderString << GenericShaderCodeString::genericLimitsUniformBlock(7);
+    fragShaderString << GenericShaderCodeString::fragHeader;
+    fragShaderString << GenericShaderCodeString::materialUniformBlock(1) << GenericShaderCodeString::genericLimitsUniformBlock(7);
     fragShaderString << counterBlockBufferShaderCodeString(1) << logFunctionAndBufferShaderCodeString(7);
     fragShaderString << voxelizeBlockString(3) << voxelizeCascadedBlockString(4);
 
