@@ -32,6 +32,7 @@ private:
 public:
     enum GridType { COLOR, NORMAL, LIGHT_DIRECTION, LIGHT_ENERGY };
     void initializeGrids(GLuint cascadeNumber);
+    void filter();
     void resetData();
     GLuint getClipDimensions();
     GLuint getCascadedLevels();
@@ -44,4 +45,7 @@ public:
     GLuint getVoxelizedCascadedBlockBufferId();
     CascadedGrid();
     ~CascadedGrid();
+    CascadedGrid(const CascadedGrid&) = delete;
+    CascadedGrid& operator = (const CascadedGrid &) = delete;
+
 };

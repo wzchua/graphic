@@ -22,7 +22,6 @@
     <ClCompile Include="AddToOctree.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="CascadedGrid.cpp" />
-    <ClCompile Include="FilterCasGrid.cpp" />
     <ClCompile Include="FilterOctree.cpp" />
     <ClCompile Include="Octree.cpp" />
     <ClCompile Include="RenderLightIntoCasGrid.cpp" />
@@ -48,11 +47,11 @@
     <ClCompile Include="VoxelVisualizer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AbstractModule.h" />
     <ClInclude Include="AddToOctree.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="CascadedGrid.h" />
     <ClInclude Include="CounterBlock.h" />
-    <ClInclude Include="FilterCasGrid.h" />
     <ClInclude Include="FilterOctree.h" />
     <ClInclude Include="GenericShaderCodeString.h" />
     <ClInclude Include="Octree.h" />

@@ -1,23 +1,18 @@
 #pragma once
-#include "ShaderProgram.h"
+#include "AbstractModule.h"
 #include "Scene.h"
 #include "GLBufferObject.h"
 #include "CounterBlock.h"
 #include "CascadedGrid.h"
 
-class RenderVoxelConeTraceCasGrid
+class RenderVoxelConeTraceCasGrid : public AbstractModule
 {
 private:
-    bool hasInitialized = false;
-    ShaderProgram shader;
-
     GLuint quadVAOId;
     GLuint quadVBOId;
     GLuint quadEBOId;
 public:
     void initialize();
     void run(Scene & inputScene, GLBufferObject<CounterBlock> & ssboCounterSet, CascadedGrid & cascadedGrid);
-    RenderVoxelConeTraceCasGrid();
-    ~RenderVoxelConeTraceCasGrid();
 };
 

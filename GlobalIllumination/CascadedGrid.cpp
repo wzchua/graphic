@@ -182,6 +182,16 @@ void CascadedGrid::initializeGrids(GLuint cascadeNumber)
     }
 }
 
+void CascadedGrid::filter()
+{
+    GLuint highestLevel = mCascadeNumber - 1;
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+    glGenerateTextureMipmap(texture3DColorCasGrid[highestLevel]);
+    glGenerateTextureMipmap(texture3DNormalCasGrid[highestLevel]);
+    glGenerateTextureMipmap(texture3DLightDirCasGrid[highestLevel]);
+    glGenerateTextureMipmap(texture3DLightEnergyCasGrid[highestLevel]);
+}
+
 void CascadedGrid::resetData()
 {
     for (int i = 0; i < mCascadeNumber; i++) {

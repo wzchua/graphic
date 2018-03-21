@@ -52,12 +52,3 @@ void RenderLightIntoCasGrid::run(Scene & inputScene, GLuint voxelizeMatrixBlock,
     inputScene.render(shader.getProgramId());
 
 }
-
-RenderLightIntoCasGrid::RenderLightIntoCasGrid()
-{
-}
-
-
-RenderLightIntoCasGrid::~RenderLightIntoCasGrid()
-{
-}

@@ -59,12 +59,3 @@ void RenderToCasGrid::run(Scene & inputScene, GLBufferObject<CounterBlock>& ssbo
         inputScene.render(currentShaderProgram);
     }
 }
-
-RenderToCasGrid::RenderToCasGrid()
-{
-}
-
-
-RenderToCasGrid::~RenderToCasGrid()
-{
-}

@@ -93,9 +93,6 @@
     <ClCompile Include="RenderToCasGrid.cpp">
       <Filter>Source Files\Modules</Filter>
     </ClCompile>
-    <ClCompile Include="FilterCasGrid.cpp">
-      <Filter>Source Files\Modules</Filter>
-    </ClCompile>
     <ClCompile Include="CascadedGrid.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -176,9 +173,6 @@
     <ClInclude Include="ShapeGroup.h">
       <Filter>Header Files\DataStructure</Filter>
     </ClInclude>
-    <ClInclude Include="FilterCasGrid.h">
-      <Filter>Header Files\Modules</Filter>
-    </ClInclude>
     <ClInclude Include="RenderToCasGrid.h">
       <Filter>Header Files\Modules</Filter>
     </ClInclude>
@@ -201,6 +195,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Octree.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AbstractModule.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

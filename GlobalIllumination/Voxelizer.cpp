@@ -57,7 +57,7 @@ Voxelizer::Voxelizer()
     mModuleVoxelVisualizer.initialize();
     ssboCounterSet.initialize(GL_SHADER_STORAGE_BUFFER, sizeof(CounterBlock), &mCounterBlock, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, 0);
     ssboLogList.initialize(GL_SHADER_STORAGE_BUFFER, sizeof(LogStruct) * maxLogCount, NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
-    
+
     switch(mType) {
     case OCTREE:
         mOctree.initialize();
@@ -72,7 +72,6 @@ Voxelizer::Voxelizer()
         break;
     case CAS_GRID:
         mCascadedGrid.initializeGrids(3);
-
         mModuleRenderToCasGrid.initialize();
         mModuleRenderLightIntoCasGrid.initialize();
         mModuleRenderVoxelConeTraceCasGrid.initialize();
@@ -161,7 +160,7 @@ void Voxelizer::render(Scene& scene)
     {
         mModuleRenderToCasGrid.run(scene, ssboCounterSet, voxelMatrixData.worldToVoxelMat, voxelLogUniformBuffer, ssboLogList, mCascadedGrid);
         mModuleRenderLightIntoCasGrid.run(scene, voxelMatrixUniformBuffer, mCascadedGrid);
-        mModuleFilterCasGrid.run(mCascadedGrid);
+        mCascadedGrid.filter();
         mModuleRenderVoxelConeTraceCasGrid.run(scene, ssboCounterSet, mCascadedGrid);
     }
     break;
