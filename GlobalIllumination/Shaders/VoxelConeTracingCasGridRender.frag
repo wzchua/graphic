@@ -77,52 +77,14 @@ bool isWithinBoundary(vec3 inputPos) {
 float evaluateLOD(float degree, float len) {
     return log2(2 * len * tan(radians(degree)));
 }
-// origin & dir in world space
-vec3 diffuseConeTrace(vec3 origin, vec3 dir) {
-    if(!isWithinBoundary(origin)) {
-        return vec3(0.0);
-    }
-    float angle = 60.0f;
-    float alpha = 0.0f;
-    vec3 adjustedDir = pow(2, findMinLevel(origin)) * dir; // lengthen dir when traversing through larger grid dim
-    vec3 rayVoxelPos = origin + adjustedDir;
-    float lod; vec3 clipPos;
-
-    vec3 color = vec3(0.0f);
-    sampler3D colorClip;
-    sampler3D normalClip;
-    sampler3D lightDirClip;
-    usampler3D lightEnergyClip;
-    if(gl_FragCoord.x < 1.0f && gl_FragCoord.y < 1.0f) {
-        logFragment(vec4(rayVoxelPos, lod), vec4(adjustedDir, 1.0f), uint(findMinLevel(origin)), 1, 2, 3);
-    }
-    while(alpha < 1.0f && isWithinBoundary(rayVoxelPos)) {
-        lod = evaluateLOD(30.0f, length(rayVoxelPos - origin));
-        if(lod < 1.0f) {
-            colorClip = colorBrickL0;
-            normalClip = normalBrickL0;
-            lightDirClip = lightDirBrickL0;
-            lightEnergyClip = lightEnergyBrickL0;
-            clipPos = (voxelToClipmapL0Mat * vec4(rayVoxelPos, 1.0f)).xyz;
-            lod = 0.0f;
-        } else if(lod < 2.0f) {
-            colorClip = colorBrickL1;
-            normalClip = normalBrickL1;
-            lightDirClip = lightDirBrickL1;
-            lightEnergyClip = lightEnergyBrickL1;
-            clipPos = (voxelToClipmapL1Mat * vec4(rayVoxelPos, 1.0f)).xyz;
-            lod = 0.0f;
-        } else {
-            colorClip = colorBrickL2;
-            normalClip = normalBrickL2;
-            lightDirClip = lightDirBrickL2;
-            lightEnergyClip = lightEnergyBrickL2;
-            clipPos = (voxelToClipmapL2Mat * vec4(rayVoxelPos, 1.0f)).xyz;
-            lod = lod - 2.0f;
-        }
+vec4 evaluateColor(in sampler3D colorClip, in sampler3D normalClip, in sampler3D lightDirClip, 
+    in usampler3D lightEnergyClip, float lod, vec3 clipPos) {
+        vec4 color;
         vec4 c = textureLod(colorClip, clipPos, lod);
         if(gl_FragCoord.x < 1.0f && gl_FragCoord.y < 1.0f) {
-            logFragment(c, vec4(clipPos, lod), 0, 2, 2, 3);
+            logFragment(c, vec4(clipPos, lod), 0, 4, 2, 3);
+            //logFragment(voxelToClipmapL0Mat[0], voxelToClipmapL0Mat[1], 0, 0, 0, 0);
+            //logFragment(voxelToClipmapL0Mat[2], voxelToClipmapL0Mat[3], 0, 0, 0, 0);
         }
         if(c.a > 0.0f) {                
             vec4 n = 2 * textureLod(normalClip, clipPos, lod) - 1.0f;
@@ -143,10 +105,48 @@ vec3 diffuseConeTrace(vec3 origin, vec3 dir) {
             vec3 brdf = c.rgb / PI;
             vec3 convLightNormal = max(InnerProduct(normalLobe, lightLobe), 0.0f);
 
-            color += brdf * convLightNormal;
+            color.rgb += brdf * convLightNormal;
+            color.a = c.a;
         }
+        return color;
+    }
+// origin & dir in world space
+vec3 diffuseConeTrace(vec3 origin, vec3 dir) {
+    if(!isWithinBoundary(origin)) {
+        return vec3(0.0);
+    }
+    float angle = 60.0f;
+    float alpha = 0.0f;
+    vec3 adjustedDir = pow(2, findMinLevel(origin)) * dir; // lengthen dir when traversing through larger grid dim
+    vec3 rayVoxelPos = origin + adjustedDir;
+    float lod; vec4 clipPos;
+
+    vec3 color = vec3(0.0f);
+    vec4 c;
+    while(alpha < 1.0f && isWithinBoundary(rayVoxelPos)) {
+        lod = evaluateLOD(30.0f, length(rayVoxelPos - origin));
+        if(gl_FragCoord.x < 1.0f && gl_FragCoord.y < 1.0f) {
+            logFragment(vec4(adjustedDir, 1.0f), vec4(rayVoxelPos, lod), uint(findMinLevel(rayVoxelPos)), 1, 1, 3);
+        }
+        adjustedDir = pow(2, int(lod)) * dir;
+        if(lod < 1.0f) {
+            clipPos = (voxelToClipmapL0Mat * vec4(rayVoxelPos, 1.0f));
+            clipPos = clipPos/clipPos.w / 128.0f;
+            lod = 0.0f;
+            c = evaluateColor(colorBrickL0, normalBrickL0, lightDirBrickL0, lightEnergyBrickL0, lod, clipPos.xyz);
+        } else if(lod < 2.0f) {
+            clipPos = (voxelToClipmapL1Mat * vec4(rayVoxelPos, 1.0f));
+            clipPos = clipPos/clipPos.w / 128.0f;
+            lod = 0.0f;
+            c = evaluateColor(colorBrickL1, normalBrickL1, lightDirBrickL1, lightEnergyBrickL1, lod, clipPos.xyz);
+        } else {
+            clipPos = (voxelToClipmapL2Mat * vec4(rayVoxelPos, 1.0f));
+            clipPos = clipPos/clipPos.w / 128.0f;
+            lod = lod - 2.0f;
+            c = evaluateColor(colorBrickL2, normalBrickL2, lightDirBrickL2, lightEnergyBrickL2, lod, clipPos.xyz);
+        }
+        color += c.rgb;
         alpha = alpha + (1.0f - alpha) * c.a;
-        //adjustedDir = pow(2, level) * dir;
         rayVoxelPos += adjustedDir;
     }
     return color;

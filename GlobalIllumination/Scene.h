@@ -41,7 +41,7 @@ private:
     Scene(const Scene&); // no implementation 
     Scene& operator=(const Scene&); // no implementation 
 public:
-    Camera cam = Camera(glm::vec3(5.0f));
+    Camera cam = Camera(glm::vec3(10.0f));
     Scene();
     ~Scene();
     bool LoadObjScene(std::string filename);

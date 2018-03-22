@@ -39,9 +39,9 @@ layout(binding = 1) coherent buffer CounterBlock{
     uint noOfFragments;
 };
 
-layout(binding = 0, RGBA8) uniform image3D colorGridL0;
-layout(binding = 1, RGBA8) uniform image3D colorGridL1;
-layout(binding = 2, RGBA8) uniform image3D colorGridL2;
+layout(binding = 0) uniform sampler3D colorGridL0;
+layout(binding = 1) uniform sampler3D colorGridL1;
+layout(binding = 2) uniform sampler3D colorGridL2;
 
 struct LogStruct {
     vec4 position;
@@ -105,13 +105,13 @@ vec4 loadColor(vec3 pos, int level) {
     vec4 clipPos;
     if(level == 0) {
         clipPos = (voxelToClipmapL0Mat * vec4(pos, 1.0f));
-        return imageLoad(colorGridL0, ivec3(clipPos.xyz));
+        return texture(colorGridL0, clipPos.xyz/128.0f);
     } else if(level == 1) {
         clipPos = (voxelToClipmapL1Mat * vec4(pos, 1.0f));
-        return imageLoad(colorGridL1, ivec3(clipPos.xyz));
+        return texture(colorGridL1, clipPos.xyz/128.0f);
     } else {
         clipPos = (voxelToClipmapL2Mat * vec4(pos, 1.0f));
-        return imageLoad(colorGridL2, ivec3(clipPos.xyz));
+        return texture(colorGridL2, clipPos.xyz/128.0f);
     }
 }
 
@@ -137,7 +137,7 @@ void main() {
     vec3 rayPosition = rOrigin;
     bool hasHit = false;
     bool isRayInCube = true;
-    vec4 color; int level = 2;
+    vec4 color; int level = 1;
     if(gl_FragCoord.x < 1 && gl_FragCoord.y < 1) {        
         logFragment(vec4(rayPosition, 1.0f), level0min, 0, 0, height, width);
         logFragment(vec4(rayPosition, 1.0f), level0max, 0, 0, height, width);

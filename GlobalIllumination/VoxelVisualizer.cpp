@@ -106,9 +106,9 @@ void VoxelVisualizer::rayCastVoxels(Camera & cam, glm::mat4 & worldToVoxelMat, G
 {
     voxelRayCastCasGridShader.use();
     auto& color = cascadedGrid.getCasGridTextureIds(CascadedGrid::COLOR);
-    glBindImageTexture(0, color[0], 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
-    glBindImageTexture(1, color[1], 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
-    glBindImageTexture(2, color[2], 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
+    glBindTextureUnit(0, color[0]);
+    glBindTextureUnit(1, color[1]);
+    glBindTextureUnit(2, color[2]);
     glBindBufferBase(GL_UNIFORM_BUFFER, 4, cascadedGrid.getVoxelizedCascadedBlockBufferId());
     rayCastVoxels(cam, worldToVoxelMat, counterSet, logUniformBlock, logList);
 }
