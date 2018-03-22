@@ -158,10 +158,15 @@ void Voxelizer::render(Scene& scene)
     break;
     case CAS_GRID:
     {
+        OpenGLTimer::timeTillGPUIsFree("Before voxelization");
         mModuleRenderToCasGrid.run(scene, ssboCounterSet, voxelMatrixData.worldToVoxelMat, voxelLogUniformBuffer, ssboLogList, mCascadedGrid);
+        OpenGLTimer::timeTillGPUIsFree("After voxelization");
         mModuleRenderLightIntoCasGrid.run(scene, voxelMatrixUniformBuffer, mCascadedGrid);
+        OpenGLTimer::timeTillGPUIsFree("After light injection");
         mCascadedGrid.filter();
+        OpenGLTimer::timeTillGPUIsFree("After filter");
         mModuleRenderVoxelConeTraceCasGrid.run(scene, ssboCounterSet, mCascadedGrid);
+        OpenGLTimer::timeTillGPUIsFree("After VCT render");
     }
     break;
     case GRID:
@@ -195,7 +200,6 @@ void Voxelizer::resetAllData()
     case CAS_GRID:
     {
         mCascadedGrid.resetData();
-        CheckGLError();
     }
     break;
     case GRID:

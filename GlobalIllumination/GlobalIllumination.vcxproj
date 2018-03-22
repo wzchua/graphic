@@ -26,6 +26,7 @@
     <ClCompile Include="glad.c" />
     <ClCompile Include="Octree.cpp" />
     <ClCompile Include="OpenGLQueryObject.cpp" />
+    <ClCompile Include="OpenGLTimer.cpp" />
     <ClCompile Include="RenderLightIntoCasGrid.cpp" />
     <ClCompile Include="RenderLightIntoOctree.cpp" />
     <ClCompile Include="RenderToCasGrid.cpp" />
@@ -59,6 +60,7 @@
     <ClInclude Include="GenericShaderCodeString.h" />
     <ClInclude Include="Octree.h" />
     <ClInclude Include="OpenGLQueryObject.h" />
+    <ClInclude Include="OpenGLTimer.h" />
     <ClInclude Include="RenderLightIntoCasGrid.h" />
     <ClInclude Include="RenderLightIntoOctree.h" />
     <ClInclude Include="RenderToCasGrid.h" />

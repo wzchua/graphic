@@ -6,6 +6,7 @@
 #include <iostream>
 #include <chrono>
 
+#include "OpenGLTimer.h"
 #include "Scene.h"
 #include "VoxelizeBlock.h"
 #include "GLBufferObject.h"
