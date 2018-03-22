@@ -44,6 +44,7 @@ void RenderVoxelConeTraceCasGrid::run(Scene & inputScene, GLBufferObject<Counter
     camBlk.height = res.y;
     camBlk.width = res.x;
     glNamedBufferSubData(camBlkBufferId, 0, sizeof(CameraBlock), &camBlk);
+    glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
     
     auto & colorCasGrid = cascadedGrid.getCasGridTextureIds(CascadedGrid::GridType::COLOR);
     auto & normalCasGrid = cascadedGrid.getCasGridTextureIds(CascadedGrid::GridType::NORMAL);

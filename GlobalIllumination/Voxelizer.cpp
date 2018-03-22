@@ -195,6 +195,7 @@ void Voxelizer::resetAllData()
     case CAS_GRID:
     {
         mCascadedGrid.resetData();
+        CheckGLError();
     }
     break;
     case GRID:

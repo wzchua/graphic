@@ -23,13 +23,13 @@
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="CascadedGrid.cpp" />
     <ClCompile Include="FilterOctree.cpp" />
+    <ClCompile Include="glad.c" />
     <ClCompile Include="Octree.cpp" />
     <ClCompile Include="OpenGLQueryObject.cpp" />
     <ClCompile Include="RenderLightIntoCasGrid.cpp" />
     <ClCompile Include="RenderLightIntoOctree.cpp" />
     <ClCompile Include="RenderToCasGrid.cpp" />
     <ClCompile Include="RenderToGrid.cpp" />
-    <ClCompile Include="glad.c" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ObjLoader.cpp" />
     <ClCompile Include="RenderPhong.cpp" />

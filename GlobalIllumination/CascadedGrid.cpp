@@ -1,7 +1,6 @@
 #include "CascadedGrid.h"
 
 
-
 void CascadedGrid::updateVoxelMatrixBlock(glm::mat4 & worldToVoxelMat, glm::vec4 refPos, glm::vec3 change)
 {
     glm::vec3 newMin, newMax;
@@ -202,7 +201,7 @@ void CascadedGrid::resetData()
         glInvalidateTexImage(texture3DLightDirCasGrid[i], 0);
         glClearTexImage(texture3DLightDirCasGrid[i], 0, GL_RGBA, GL_FLOAT, NULL);
         glInvalidateTexImage(texture3DLightEnergyCasGrid[i], 0);
-        glClearTexImage(texture3DLightEnergyCasGrid[i], 0, GL_RGBA, GL_FLOAT, NULL);
+        glClearTexImage(texture3DLightEnergyCasGrid[i], 0, GL_RED_INTEGER, GL_UNSIGNED_INT, NULL);
     }
 /*
     GLuint highestLevel = mCascadeNumber - 1;

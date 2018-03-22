@@ -43,103 +43,99 @@ GaussianLobe Product(GaussianLobe g1, GaussianLobe g2) {
     return g;
 }
 
-vec3 InnerProject(GaussianLobe g1, GaussianLobe g2) {
+vec3 InnerProduct(GaussianLobe g1, GaussianLobe g2) {
     float uLength = length(g1.sharpness * g1.axis + g2.sharpness * g2.axis);
     float eFactorized = exp(uLength - g1.sharpness - g2.sharpness);
     float factorized2 = 1.0f - exp(-2.0f * uLength);
     return (2.0f * PI * g1.amplitude * g2.amplitude * eFactorized * factorized2) / uLength;
 }
 //inputPos in world space
-vec3 findPosAndLevel(vec3 inputPos, int size, out int level) {    
-    vec3 pos;
-    mat4 voxelToReqClipmap;
-    if(size == 1) {
-        voxelToReqClipmap = voxelToClipmapL0Mat;
-    } else if (size == 2) {
-        voxelToReqClipmap = voxelToClipmapL1Mat;
-    } else {
-        voxelToReqClipmap = voxelToClipmapL2Mat;
-    }
-
-    if(inputPos.x < level2min.x || inputPos.x > level2max.x
-        || inputPos.y < level2min.y || inputPos.y > level2max.y
-        || inputPos.z < level2min.z || inputPos.z > level2max.z) {
-            //error
-            pos = vec3(-1.0);
-            level = -1;
-    } else if(inputPos.x < level1min.x || inputPos.x > level1max.x
+int findMinLevel(vec3 inputPos) {    
+    int level;
+    if(inputPos.x < level1min.x || inputPos.x > level1max.x
         || inputPos.y < level1min.y || inputPos.y > level1max.y
-        || inputPos.z < level1min.z || inputPos.z > level1max.z) {
-
-        pos = (voxelToClipmapL2Mat * WorldToVoxelMat * vec4(inputPos, 1.0f)).xyz;
+        || inputPos.z < level1min.z || inputPos.z > level1max.z) {        
         level = 2;
     } else if(inputPos.x < level0min.x || inputPos.x > level0max.x
         || inputPos.y < level0min.y || inputPos.y > level0max.y
         || inputPos.z < level0min.z || inputPos.z > level0max.z) {
-
-        pos = (voxelToClipmapL1Mat * WorldToVoxelMat * vec4(inputPos, 1.0f)).xyz;
         level = 1;
     } else {
-        pos = (voxelToClipmapL0Mat * WorldToVoxelMat * vec4(inputPos, 1.0f)).xyz;
         level = 0;
     }
-    return pos;
+    return level;
 }
 
+bool isWithinBoundary(vec3 inputPos) {
+    if(inputPos.x < level2min.x || inputPos.x > level2max.x
+        || inputPos.y < level2min.y || inputPos.y > level2max.y
+        || inputPos.z < level2min.z || inputPos.z > level2max.z) {
+            return false;
+    } 
+    return true;
+}
+float evaluateLOD(float degree, float len) {
+    return log2(2 * len * tan(radians(degree)));
+}
 // origin & dir in world space
-vec3 diffuseConeTrace(vec3 origin, vec3 dir, float coneSize) {
-    float alpha = 0.0f;
-    int level = 0;
-    vec3 clipOrigin = findPosAndLevel(origin, level);
-    if(level < 0) {
-        return vec3(0.0f);
+vec3 diffuseConeTrace(vec3 origin, vec3 dir) {
+    if(!isWithinBoundary(origin)) {
+        return vec3(0.0);
     }
-    vec3 adjustedDir = pow(2, level) * dir; // lengthen dir when traversing through larger grid dim
+    float angle = 60.0f;
+    float alpha = 0.0f;
+    vec3 adjustedDir = pow(2, findMinLevel(origin)) * dir; // lengthen dir when traversing through larger grid dim
     vec3 rayWorldPos = origin + adjustedDir;
+    float lod; vec3 clipPos;
+
     vec3 color = vec3(0.0f);
-    float cosPhi = 1.2;
     sampler3D colorClip = colorBrickL0;
     sampler3D normalClip = normalBrickL0;
     sampler3D lightDirClip = lightDirBrickL0;
     usampler3D lightEnergyClip = lightEnergyBrickL0;
-    while(alpha < 1.0f) {
-        clipOrigin = findPosAndLevel(rayWorldPos, level);
-        if(level < 0) {
-            return vec3(0.0f);
-        } else if(level == 0) {
+    while(alpha < 1.0f && isWithinBoundary(rayWorldPos)) {
+        lod = evaluateLOD(30.0f, length(adjustedDir));
+        if(lod < 1.0f) {
             colorClip = colorBrickL0;
             normalClip = normalBrickL0;
             lightDirClip = lightDirBrickL0;
             lightEnergyClip = lightEnergyBrickL0;
-        } else if(level == 1) {
+            clipPos = (voxelToClipmapL0Mat * WorldToVoxelMat * vec4(rayWorldPos, 1.0f)).xyz;
+            lod = 0.0f;
+        } else if(lod < 2.0f) {
             colorClip = colorBrickL1;
             normalClip = normalBrickL1;
             lightDirClip = lightDirBrickL1;
             lightEnergyClip = lightEnergyBrickL1;
+            clipPos = (voxelToClipmapL1Mat * WorldToVoxelMat * vec4(rayWorldPos, 1.0f)).xyz;
+            lod = 0.0f;
         } else {
             colorClip = colorBrickL2;
             normalClip = normalBrickL2;
             lightDirClip = lightDirBrickL2;
             lightEnergyClip = lightEnergyBrickL2;
+            clipPos = (voxelToClipmapL2Mat * WorldToVoxelMat * vec4(rayWorldPos, 1.0f)).xyz;
+            lod = lod - 2.0f;
         }
-        vec4 c = texture(colorClip, clipOrigin);
-        vec4 n = 2 * texture(normalClip, clipOrigin) - 1.0f;
-        uint lEnergy = texture(lightEnergyClip, clipOrigin).a;
-        vec4 l = 2 * texture(lightDirClip, clipOrigin) - 1.0f;
+        vec4 c = textureLod(colorClip, clipPos, lod);
+        vec4 n = 2 * textureLod(normalClip, clipPos, lod) - 1.0f;
+        uint lEnergy = textureLod(lightEnergyClip, clipPos, lod).a;
+        vec4 l = 2 * textureLod(lightDirClip, clipPos, lod) - 1.0f;
 
         GaussianLobe normalLobe = generateSG(vec3(1.0f), n.xyz);
         GaussianLobe lightLobe = generateSG(vec3(lEnergy), -l.xyz);
+        /*
         GaussianLobe viewLobe;
         viewLobe.amplitude = vec3(1.0f);
         viewLobe.axis = dir;
-        viewLobe.sharpness = 1/(cosPhi * cosPhi);
+        viewLobe.sharpness = 1/(cosPhi * cosPhi);*/
         vec3 brdf = c.rgb / PI;
-        vec3 convLightNormalView = InnerProject(viewLobe, Product(normalLobe, lightLobe));
+        vec3 convLightNormal = max(InnerProduct(normalLobe, lightLobe), 0.0f);
 
-        color += brdf * convLightNormalView;
+        color += brdf * convLightNormal;
         alpha = alpha + (1.0f - alpha) * c.a;
 
-        adjustedDir = pow(2, level) * dir;
+        //adjustedDir = pow(2, level) * dir;
         rayWorldPos += adjustedDir;
     }
     return color;
@@ -161,16 +157,16 @@ void main()
     vec3 normal = normalize(wcNormal);
     vec3 orthoX = findOrthoVector(normal);
     vec3 orthoY = cross(normal, orthoX); 
-    vec3 diffuseColor = diffuseConeTrace(pos, normal, 2.0f);
-    diffuseColor += diffuseConeTrace(pos, mix(normal, orthoX, 0.3), 2.0f);
-    diffuseColor += diffuseConeTrace(pos, mix(normal, -orthoX, 0.3), 2.0f);
-    diffuseColor += diffuseConeTrace(pos, mix(normal, orthoY, 0.3), 2.0f);
-    diffuseColor += diffuseConeTrace(pos, mix(normal, -orthoY, 0.3), 2.0f);
+    vec3 diffuseColor = diffuseConeTrace(pos, normal);
+    diffuseColor += diffuseConeTrace(pos, mix(normal, orthoX, 0.6));
+    diffuseColor += diffuseConeTrace(pos, mix(normal, -orthoX, 0.6));
+    diffuseColor += diffuseConeTrace(pos, mix(normal, orthoY, 0.6));
+    diffuseColor += diffuseConeTrace(pos, mix(normal, -orthoY, 0.6));
     vec3 view  = normalize(pos - camPosition.xyz);    
     vec3 specularColor = vec3(0.0f);
-    if(shininess > 0.0f) {
+    /*if(shininess > 0.0f) {
         specularColor = specularConeTrace(pos, reflect(view, normal), shininess);
-    }
+    }*/
 
     FragColor = vec4(texture(texDiffuse, fTexCoord).rgb * (diffuseColor + specularColor), 1.0f);
 }
