@@ -14,10 +14,10 @@ void RenderVoxelConeTraceCasGrid::initialize()
     std::stringstream fragShaderString;
     fragShaderString << GenericShaderCodeString::fragHeader;
     //uniform blocks
-    fragShaderString << GenericShaderCodeString::materialUniformBlock(1) << cameraUniformBlockShaderCodeString(3) << GenericShaderCodeString::genericLimitsUniformBlock(7);
+    fragShaderString << GenericShaderCodeString::materialUniformBlock(1) << voxelizeBlockString(3) << voxelizeCascadedBlockString(4);
+    fragShaderString << cameraUniformBlockShaderCodeString(5) << GenericShaderCodeString::genericLimitsUniformBlock(7);
     //ssbo
     fragShaderString << counterBlockBufferShaderCodeString(1) << logFunctionAndBufferShaderCodeString(7);
-    fragShaderString << voxelizeBlockString(3) << voxelizeCascadedBlockString(4);
 
     shader.generateShader(fragShaderString, "./Shaders/VoxelConeTracingCasGridRender.frag", ShaderProgram::FRAGMENT);
     shader.linkCompileValidate();
@@ -29,10 +29,12 @@ void RenderVoxelConeTraceCasGrid::initialize()
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
-void RenderVoxelConeTraceCasGrid::run(Scene & inputScene, GLBufferObject<CounterBlock>& ssboCounterSet, CascadedGrid & cascadedGrid)
+void RenderVoxelConeTraceCasGrid::run(Scene & inputScene, GLuint voxelizeMatrixBlock, GLBufferObject<CounterBlock>& ssboCounterSet, CascadedGrid & cascadedGrid)
 {
     shader.use();
+    inputScene.updateMatrixBuffer();
     auto & res = inputScene.cam.getResolution();
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glViewport(0, 0, res.x, res.y);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0);
     glEnable(GL_DEPTH_TEST);
@@ -44,7 +46,6 @@ void RenderVoxelConeTraceCasGrid::run(Scene & inputScene, GLBufferObject<Counter
     camBlk.height = res.y;
     camBlk.width = res.x;
     glNamedBufferSubData(camBlkBufferId, 0, sizeof(CameraBlock), &camBlk);
-    glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
     
     auto & colorCasGrid = cascadedGrid.getCasGridTextureIds(CascadedGrid::GridType::COLOR);
     auto & normalCasGrid = cascadedGrid.getCasGridTextureIds(CascadedGrid::GridType::NORMAL);
@@ -59,8 +60,11 @@ void RenderVoxelConeTraceCasGrid::run(Scene & inputScene, GLBufferObject<Counter
     }
 
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, inputScene.getMatrixBuffer()); //scene cam matrices
-    glBindBufferBase(GL_UNIFORM_BUFFER, 3, camBlkBufferId); //scene cam matrices
+    glBindBufferBase(GL_UNIFORM_BUFFER, 3, voxelizeMatrixBlock);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 4, cascadedGrid.getVoxelizedCascadedBlockBufferId());
+    glBindBufferBase(GL_UNIFORM_BUFFER, 5, camBlkBufferId); //scene cam matrices
     ssboCounterSet.bind(1);
 
+    glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
     inputScene.render(shader.getProgramId());
 }

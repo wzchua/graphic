@@ -165,7 +165,7 @@ void Voxelizer::render(Scene& scene)
         OpenGLTimer::timeTillGPUIsFree("After light injection");
         mCascadedGrid.filter();
         OpenGLTimer::timeTillGPUIsFree("After filter");
-        mModuleRenderVoxelConeTraceCasGrid.run(scene, ssboCounterSet, mCascadedGrid);
+        mModuleRenderVoxelConeTraceCasGrid.run(scene, voxelMatrixUniformBuffer, ssboCounterSet, mCascadedGrid);
         OpenGLTimer::timeTillGPUIsFree("After VCT render");
     }
     break;

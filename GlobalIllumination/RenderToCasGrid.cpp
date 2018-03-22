@@ -46,7 +46,6 @@ void RenderToCasGrid::run(Scene & inputScene, GLBufferObject<CounterBlock>& ssbo
 
 
     glViewport(0, 0, dim, dim);
-    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
     glDisable(GL_BLEND);

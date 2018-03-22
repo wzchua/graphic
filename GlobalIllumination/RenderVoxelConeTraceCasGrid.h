@@ -16,6 +16,6 @@ private:
     GLuint camBlkBufferId;
 public:
     void initialize();
-    void run(Scene & inputScene, GLBufferObject<CounterBlock> & ssboCounterSet, CascadedGrid & cascadedGrid);
+    void run(Scene & inputScene, GLuint voxelizeMatrixBlock, GLBufferObject<CounterBlock> & ssboCounterSet, CascadedGrid & cascadedGrid);
 };
 
