@@ -24,7 +24,7 @@ void RenderToCasGrid::initialize()
     fragShaderString << counterBlockBufferShaderCodeString(1) << logFunctionAndBufferShaderCodeString(7);
     shader.generateShader(fragShaderString, "./Shaders/VoxelizeCasGrid.frag", ShaderProgram::FRAGMENT);
     shader.linkCompileValidate();
-    //OpenGLQueryObject::getShaderBuffersInfo(shader.getProgramId());
+    OpenGLQueryObject::getShaderBuffersInfo(shader.getProgramId());
 }
 
 void RenderToCasGrid::run(Scene & inputScene, GLBufferObject<CounterBlock>& ssboCounterSet, glm::mat4 & worldToVoxelMat, GLuint logUniformBlock, GLBufferObject<LogStruct>& ssboLogList, CascadedGrid & casGrid)
