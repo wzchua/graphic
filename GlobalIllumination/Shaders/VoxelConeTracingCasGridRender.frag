@@ -89,15 +89,15 @@ vec3 diffuseConeTrace(vec3 origin, vec3 dir) {
     float lod; vec3 clipPos;
 
     vec3 color = vec3(0.0f);
-    sampler3D colorClip = colorBrickL0;
-    sampler3D normalClip = normalBrickL0;
-    sampler3D lightDirClip = lightDirBrickL0;
-    usampler3D lightEnergyClip = lightEnergyBrickL0;
+    sampler3D colorClip;
+    sampler3D normalClip;
+    sampler3D lightDirClip;
+    usampler3D lightEnergyClip;
     if(gl_FragCoord.x < 1.0f && gl_FragCoord.y < 1.0f) {
         logFragment(vec4(rayVoxelPos, lod), vec4(adjustedDir, 1.0f), uint(findMinLevel(origin)), 1, 2, 3);
     }
     while(alpha < 1.0f && isWithinBoundary(rayVoxelPos)) {
-        lod = evaluateLOD(30.0f, length(adjustedDir));
+        lod = evaluateLOD(30.0f, length(rayVoxelPos - origin));
         if(lod < 1.0f) {
             colorClip = colorBrickL0;
             normalClip = normalBrickL0;
@@ -121,27 +121,31 @@ vec3 diffuseConeTrace(vec3 origin, vec3 dir) {
             lod = lod - 2.0f;
         }
         vec4 c = textureLod(colorClip, clipPos, lod);
-        vec4 n = 2 * textureLod(normalClip, clipPos, lod) - 1.0f;
-        uint lEnergy = textureLod(lightEnergyClip, clipPos, lod).r;
-        vec4 l = 2 * textureLod(lightDirClip, clipPos, lod) - 1.0f;
         if(gl_FragCoord.x < 1.0f && gl_FragCoord.y < 1.0f) {
-            logFragment(c, n, lEnergy, 2, 2, 3);
-            logFragment(l, vec4(clipPos, 1.0f), lEnergy, 2, 2, 3);
+            logFragment(c, vec4(clipPos, lod), 0, 2, 2, 3);
         }
+        if(c.a > 0.0f) {                
+            vec4 n = 2 * textureLod(normalClip, clipPos, lod) - 1.0f;
+            uint lEnergy = textureLod(lightEnergyClip, clipPos, lod).r;
+            vec4 l = 2 * textureLod(lightDirClip, clipPos, lod) - 1.0f;
+            if(gl_FragCoord.x < 1.0f && gl_FragCoord.y < 1.0f) {
+                logFragment(c, n, lEnergy, 2, 2, 3);
+                logFragment(l, vec4(clipPos, 1.0f), lEnergy, 2, 2, 3);
+            }
 
-        GaussianLobe normalLobe = generateSG(vec3(1.0f), n.xyz);
-        GaussianLobe lightLobe = generateSG(vec3(lEnergy), -l.xyz);
-        /*
-        GaussianLobe viewLobe;
-        viewLobe.amplitude = vec3(1.0f);
-        viewLobe.axis = dir;
-        viewLobe.sharpness = 1/(cosPhi * cosPhi);*/
-        vec3 brdf = c.rgb / PI;
-        vec3 convLightNormal = max(InnerProduct(normalLobe, lightLobe), 0.0f);
+            GaussianLobe normalLobe = generateSG(vec3(1.0f), n.xyz);
+            GaussianLobe lightLobe = generateSG(vec3(lEnergy), -l.xyz);
+            /*
+            GaussianLobe viewLobe;
+            viewLobe.amplitude = vec3(1.0f);
+            viewLobe.axis = dir;
+            viewLobe.sharpness = 1/(cosPhi * cosPhi);*/
+            vec3 brdf = c.rgb / PI;
+            vec3 convLightNormal = max(InnerProduct(normalLobe, lightLobe), 0.0f);
 
-        color += brdf * convLightNormal;
+            color += brdf * convLightNormal;
+        }
         alpha = alpha + (1.0f - alpha) * c.a;
-
         //adjustedDir = pow(2, level) * dir;
         rayVoxelPos += adjustedDir;
     }

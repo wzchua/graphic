@@ -26,7 +26,7 @@ private:
     VoxelizeCascadedBlock voxelCascadedData;
     GLuint voxelCascadedBlockId;
     mutable glm::vec4 refCamPosCache = glm::vec4(-1.0f); //not valid in voxel space 0 to 512
-    void updateVoxelMatrixBlock(glm::mat4 & worldToVoxelMat, glm::vec4 refPos, glm::vec3 change);
+    void updateVoxelMatrixBlock(glm::mat4 & worldToVoxelMat, glm::vec4 refPos);
     bool isWithinBoundaries(glm::vec3 pos, glm::vec3 min, glm::vec3 max);
     bool isOutsideBoundaries(glm::vec3 pos, glm::vec3 min, glm::vec3 max);
 public:
@@ -39,7 +39,7 @@ public:
     std::vector<GLuint> & getVoxelMatrixBlockIds();
     glm::mat4 getWorldToVoxelClipmapMatrix(GLuint level);
     glm::mat4 getWorldToVoxelClipmapMatrixFromPos(glm::vec3 pos, GLuint & outLevel);
-    void setRefCamPosition(glm::vec4 refPos, glm::mat4 & worldToVoxelMat, glm::vec3 camForward);
+    void setRefCamPosition(glm::vec4 refPos, glm::mat4 & worldToVoxelMat);
     std::vector<GLuint> & getCasGridTextureIds(GridType type);
     VoxelizeCascadedBlock & getVoxelizedCascadedBlock();
     GLuint getVoxelizedCascadedBlockBufferId();

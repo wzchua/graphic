@@ -70,10 +70,20 @@ void logFragment(vec4 pos, vec4 color, uint nodeIndex, uint brickPtr, uint index
     }
 }
 
-bool isRayInCubeSpace(vec3 rayPosition) {
-    return rayPosition.x >= 0.0f && rayPosition.x <=512.0f
-        && rayPosition.y >= 0.0f && rayPosition.y <=512.0f
-        && rayPosition.z >= 0.0f && rayPosition.z <=512.0f;
+bool isRayInCubeSpace(vec3 rayPosition, int level) {
+    if(level == 2) {
+        return rayPosition.x >= 0.0f && rayPosition.x <=512.0f
+            && rayPosition.y >= 0.0f && rayPosition.y <=512.0f
+            && rayPosition.z >= 0.0f && rayPosition.z <=512.0f;
+    } else if(level == 1) {
+        return rayPosition.x >= level1min.x  && rayPosition.x <=level1max.x
+            && rayPosition.y >= level1min.y && rayPosition.y <=level1max.y
+            && rayPosition.z >= level1min.z && rayPosition.z <=level1max.z;
+    } else {
+        return rayPosition.x >= level0min.x  && rayPosition.x <=level0max.x
+            && rayPosition.y >= level0min.y && rayPosition.y <=level0max.y
+            && rayPosition.z >= level0min.z && rayPosition.z <=level0max.z;
+    }
 }
 //inputPos in world space
 int findMinLevel(vec3 inputPos) {    
@@ -127,21 +137,27 @@ void main() {
     vec3 rayPosition = rOrigin;
     bool hasHit = false;
     bool isRayInCube = true;
-    vec4 color; int level;
+    vec4 color; int level = 2;
     if(gl_FragCoord.x < 1 && gl_FragCoord.y < 1) {        
-        logFragment(vec4(rayPosition, 1.0f), vec4(gl_FragCoord.xyz, 1.0f), 0, 0, height, width);
+        logFragment(vec4(rayPosition, 1.0f), level0min, 0, 0, height, width);
+        logFragment(vec4(rayPosition, 1.0f), level0max, 0, 0, height, width);
+        logFragment(vec4(rayPosition, 1.0f), level1min, 0, 0, height, width);
+        logFragment(vec4(rayPosition, 1.0f), level1max, 0, 0, height, width);
+        logFragment(vec4(rayPosition, 1.0f), level2min, 0, 0, height, width);
+        logFragment(vec4(rayPosition, 1.0f), level2max, 0, 0, height, width);
     }
     //ray march
     do {
         rayPosition += dir;
-        isRayInCube = isRayInCubeSpace(rayPosition);
-        level = findMinLevel(rayPosition);
+        if(!isRayInCubeSpace(rayPosition, level)) {
+            break;
+        }
         color = loadColor(rayPosition, level);
         hasHit = color.a != 0.0f;
         if(gl_FragCoord.x < 1 && gl_FragCoord.y < 1) {        
             logFragment(vec4(rayPosition, 1.0f), color, uint(hasHit), 0, height, width);
         }
-    } while(!hasHit && isRayInCube);
+    } while(!hasHit);
 
     if(isRayInCube) {
         FragColor = color; 

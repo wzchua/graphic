@@ -29,8 +29,8 @@ void RenderToCasGrid::initialize()
 void RenderToCasGrid::run(Scene & inputScene, GLBufferObject<CounterBlock>& ssboCounterSet, glm::mat4 & worldToVoxelMat, GLuint logUniformBlock, GLBufferObject<LogStruct>& ssboLogList, CascadedGrid & casGrid)
 {
     auto & cam = inputScene.cam;
-    auto refPos = worldToVoxelMat * glm::vec4(cam.getPosition() - 2.0f * cam.getForward(), 1.0f);
-    casGrid.setRefCamPosition(refPos, worldToVoxelMat, cam.getForward());
+    auto refPos = glm::vec3(worldToVoxelMat * glm::vec4(cam.getPosition(), 1.0f)) + 8.0f * cam.getForward();
+    casGrid.setRefCamPosition(glm::vec4(refPos, 1.0f), worldToVoxelMat);
 
     GLuint currentShaderProgram = shader.use();
     glBindBufferBase(GL_UNIFORM_BUFFER, 7, logUniformBlock);

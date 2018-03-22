@@ -66,7 +66,7 @@ void RenderVoxelConeTraceCasGrid::run(Scene & inputScene, GLuint voxelizeMatrixB
     ssboCounterSet.bind(1);
     logList.bind(7);
 
-    glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
+    glMemoryBarrier(GL_UNIFORM_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
     inputScene.render(shader.getProgramId());
     std::vector<LogStruct> logs;
     ShaderLogger::getLogs(logList, 19, logs);

@@ -1,79 +1,85 @@
 #include "CascadedGrid.h"
 
 
-void CascadedGrid::updateVoxelMatrixBlock(glm::mat4 & worldToVoxelMat, glm::vec4 refPos, glm::vec3 change)
+void CascadedGrid::updateVoxelMatrixBlock(glm::mat4 & worldToVoxelMat, glm::vec4 refPos)
 {
     glm::vec3 newMin, newMax;
 
     //level 0
-    if (change.y < 0) {
-        newMin.y = glm::min(glm::max(refPos.y, 0.0f), 512.0f - 128.0f);
-        newMax.y = newMin.y + 128.0f;
-    }
-    else {
-        newMax.y = glm::max(glm::min(refPos.y, 512.0f), 128.0f);
+    if (refPos.y > 256.0f) {
+        newMax.y = glm::min(refPos.y + 64.0f, 512.0f);
         newMin.y = newMax.y - 128.0f;
     }
-    if (change.x < 0) {
-        newMin.x = glm::min(glm::max(refPos.x, 0.0f), 512.0f - 128.0f);
-        newMax.x = newMin.x + 128.0f;
-    }
     else {
-        newMax.x = glm::max(glm::min(refPos.x, 512.0f), 128.0f);
+        newMin.y = glm::max(refPos.y - 64.0f, 0.0f);
+        newMax.y = newMin.y + 128.0f;
+
+    }
+    if (refPos.x > 256.0f) {
+        newMax.x = glm::min(refPos.x + 64.0f, 512.0f);
         newMin.x = newMax.x - 128.0f;
     }
-    if (change.z < 0) {
-        newMin.z = glm::min(glm::max(refPos.z, 0.0f), 512.0f - 128.0f);
-        newMax.z = newMin.z + 128.0f;
+    else {
+        newMin.x = glm::max(refPos.x - 64.0f, 0.0f);
+        newMax.x = newMin.x + 128.0f;
+
+    }
+    if (refPos.z > 256.0f) {
+        newMax.z = glm::min(refPos.y + 64.0f, 512.0f);
+        newMin.z = newMax.z - 128.0f;
     }
     else {
-        newMax.z = glm::max(glm::min(refPos.z, 512.0f), 128.0f);
-        newMin.z = newMax.z - 128.0f;
+        newMin.z = glm::max(refPos.z - 64.0f, 0.0f);
+        newMax.z = newMin.z + 128.0f;
+
     }
     glm::vec3 translate = -newMin;
     voxelCascadedData.level0min = glm::vec4(newMin, 1.0f);
     voxelCascadedData.level0max = glm::vec4(newMax, 1.0f);
     voxelCascadedData.voxelToClipmapL0Mat = glm::translate(glm::mat4(1.0f), translate);
+    glm::vec3 voxelMin = voxelCascadedData.voxelToClipmapL0Mat * glm::vec4(newMin, 1.0); //should be 0
+    glm::vec3 voxelMax = voxelCascadedData.voxelToClipmapL0Mat * glm::vec4(newMax, 1.0); //should be 127
     glm::mat4 level0WorldToVoxelMat = voxelCascadedData.voxelToClipmapL0Mat * worldToVoxelMat;
-    glm::vec3 voxelMin = level0WorldToVoxelMat * glm::vec4(newMin, 1.0); //should be 0
-    glm::vec3 voxelMax = level0WorldToVoxelMat * glm::vec4(newMax, 1.0); //should be 127
 
     voxelMatrixData[0].worldToVoxelMat = level0WorldToVoxelMat;
     glNamedBufferSubData(voxelMatrixBlockIds[0], 0, sizeof(VoxelizeBlock), &voxelMatrixData[0]);
 
     //level 1
-    if (change.y < 0) {
-        newMin.y = glm::min(glm::max(refPos.y, 0.0f), 512.0f - 256.0f);
-        newMax.y = newMin.y + 256.0f;
-    }
-    else {
-        newMax.y = glm::max(glm::min(refPos.y, 512.0f), 256.0f);
+    if (refPos.y > 256.0f) {
+        newMax.y = glm::min(refPos.y + 128.0f, 512.0f);
         newMin.y = newMax.y - 256.0f;
     }
-    if (change.x < 0) {
-        newMin.x = glm::min(glm::max(refPos.x, 0.0f), 512.0f - 256.0f);
-        newMax.x = newMin.x + 256.0f;
-    }
     else {
-        newMax.x = glm::max(glm::min(refPos.x, 512.0f), 256.0f);
+        newMin.y = glm::max(refPos.y - 128.0f, 0.0f);
+        newMax.y = newMin.y + 256.0f;
+
+    }
+    if (refPos.x > 256.0f) {
+        newMax.x = glm::min(refPos.x + 128.0f, 512.0f);
         newMin.x = newMax.x - 256.0f;
     }
-    if (change.z < 0) {
-        newMin.z = glm::min(glm::max(refPos.z, 0.0f), 512.0f - 256.0f);
-        newMax.z = newMin.z + 256.0f;
+    else {
+        newMin.x = glm::max(refPos.x - 128.0f, 0.0f);
+        newMax.x = newMin.x + 256.0f;
+
+    }
+    if (refPos.z > 256.0f) {
+        newMax.z = glm::min(refPos.y + 128.0f, 512.0f);
+        newMin.z = newMax.z - 256.0f;
     }
     else {
-        newMax.z = glm::max(glm::min(refPos.z, 512.0f), 256.0f);
-        newMin.z = newMax.z - 256.0f;
+        newMin.z = glm::max(refPos.z - 128.0f, 0.0f);
+        newMax.z = newMin.z + 256.0f;
+
     }
     translate = -newMin;
     voxelCascadedData.level1min = glm::vec4(newMin, 1.0f);
     voxelCascadedData.level1max = glm::vec4(newMax, 1.0f);
     voxelCascadedData.voxelToClipmapL1Mat = glm::translate(glm::scale(glm::mat4(1.0f), glm::vec3(0.5f)), translate);
+    voxelMin = voxelCascadedData.voxelToClipmapL1Mat * glm::vec4(newMin, 1.0); //should be 0
+    voxelMax = voxelCascadedData.voxelToClipmapL1Mat * glm::vec4(newMax, 1.0); //should be 127
 
     glm::mat4 level1WorldToVoxelMat = voxelCascadedData.voxelToClipmapL1Mat * worldToVoxelMat;
-    voxelMin = level1WorldToVoxelMat * glm::vec4(newMin, 1.0); //should be 0
-    voxelMax = level1WorldToVoxelMat * glm::vec4(newMax, 1.0); //should be 127
 
     voxelMatrixData[1].worldToVoxelMat = level1WorldToVoxelMat;
     glNamedBufferSubData(voxelMatrixBlockIds[1], 0, sizeof(VoxelizeBlock), &voxelMatrixData[1]);
@@ -82,10 +88,10 @@ void CascadedGrid::updateVoxelMatrixBlock(glm::mat4 & worldToVoxelMat, glm::vec4
     voxelCascadedData.level2min = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
     voxelCascadedData.level2max = glm::vec4(512.0f, 512.0f, 512.0f, 1.0f);
     voxelCascadedData.voxelToClipmapL2Mat = glm::scale(glm::mat4(1.0f), glm::vec3(0.25f));
+    voxelMin = voxelCascadedData.voxelToClipmapL2Mat * glm::vec4(0.0f, 0.0f, 0.0f, 1.0); //should be 0
+    voxelMax = voxelCascadedData.voxelToClipmapL2Mat * glm::vec4(512.0f, 512.0f, 512.0f, 1.0); //should be 127
 
     glm::mat4 level2WorldToVoxelMat = voxelCascadedData.voxelToClipmapL2Mat * worldToVoxelMat;
-    voxelMin = level2WorldToVoxelMat * glm::vec4(0.0f, 0.0f, 0.0f, 1.0); //should be 0
-    voxelMax = level2WorldToVoxelMat * glm::vec4(512.0f, 512.0f, 512.0f, 1.0); //should be 127
 
     voxelMatrixData[2].worldToVoxelMat = level2WorldToVoxelMat;
     glNamedBufferSubData(voxelMatrixBlockIds[2], 0, sizeof(VoxelizeBlock), &voxelMatrixData[2]);
@@ -251,11 +257,11 @@ glm::mat4 CascadedGrid::getWorldToVoxelClipmapMatrixFromPos(glm::vec3 pos, GLuin
     return voxelMatrixData[0].worldToVoxelMat;
 }
 
-void CascadedGrid::setRefCamPosition(glm::vec4 refPos, glm::mat4 & worldToVoxelMat, glm::vec3 camForward)
+void CascadedGrid::setRefCamPosition(glm::vec4 refPos, glm::mat4 & worldToVoxelMat)
 {
     if (refPos != refCamPosCache) {
         refCamPosCache =refPos;
-        updateVoxelMatrixBlock(worldToVoxelMat, refPos, camForward);
+        updateVoxelMatrixBlock(worldToVoxelMat, refPos);
     }
 }
 
