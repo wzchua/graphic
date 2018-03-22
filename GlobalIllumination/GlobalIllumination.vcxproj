@@ -24,6 +24,7 @@
     <ClCompile Include="CascadedGrid.cpp" />
     <ClCompile Include="FilterOctree.cpp" />
     <ClCompile Include="Octree.cpp" />
+    <ClCompile Include="OpenGLQueryObject.cpp" />
     <ClCompile Include="RenderLightIntoCasGrid.cpp" />
     <ClCompile Include="RenderLightIntoOctree.cpp" />
     <ClCompile Include="RenderToCasGrid.cpp" />
@@ -45,6 +46,7 @@
     <ClCompile Include="tiny_obj_loader.cc" />
     <ClCompile Include="Voxelizer.cpp" />
     <ClCompile Include="VoxelVisualizer.cpp" />
+    <ClCompile Include="vsGLInfoLib.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AbstractModule.h" />
@@ -55,6 +57,7 @@
     <ClInclude Include="FilterOctree.h" />
     <ClInclude Include="GenericShaderCodeString.h" />
     <ClInclude Include="Octree.h" />
+    <ClInclude Include="OpenGLQueryObject.h" />
     <ClInclude Include="RenderLightIntoCasGrid.h" />
     <ClInclude Include="RenderLightIntoOctree.h" />
     <ClInclude Include="RenderToCasGrid.h" />
@@ -79,6 +82,7 @@
     <ClInclude Include="VoxelizeCascadedBlock.h" />
     <ClInclude Include="Voxelizer.h" />
     <ClInclude Include="VoxelVisualizer.h" />
+    <ClInclude Include="vsGLInfoLib.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

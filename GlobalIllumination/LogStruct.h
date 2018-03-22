@@ -21,13 +21,14 @@ static std::string logFunctionAndBufferShaderCodeString(GLuint level) {
     uint index2;
 };
 layout(binding = )" + std::to_string(level);
-    s = s + R"() coherent buffer LogBlock{
+    s = s + R"(,std430) coherent buffer LogBlock{
+    uint maxLogCount; uint padding[3];
     LogStruct logList[];
 };
 
 void logFragment(vec4 pos, vec4 color, uint nodeIndex, uint brickPtr, uint index1, uint index2) {
     uint index = atomicAdd(logCounter, 1);
-    if(index < maxNoOfLogs) {        
+    if(index < maxLogCount) {        
         logList[index].position = pos;
         logList[index].color = color;
         logList[index].nodeIndex = nodeIndex;
@@ -45,11 +46,18 @@ void logFragment(vec4 pos, vec4 color, uint nodeIndex, uint brickPtr, uint index
 class ShaderLogger {
 public:
     static void getLogs(GLBufferObject<LogStruct> & ssboLogList, int logCount, std::vector<LogStruct> & logs) {
-        LogStruct * ptr = ssboLogList.getPtr();
+        LogStruct * ptr = (LogStruct*)glMapNamedBufferRange(ssboLogList.getId(), sizeof(GLuint) * 4, sizeof(LogStruct) * logCount, GL_MAP_READ_BIT);
 
         for (int i = 0; i < logCount; i++) {
             logs.push_back(ptr[i]);
         }
         ssboLogList.unMapPtr();
+    }
+    static void initilizeLogBuffer(GLBufferObject<LogStruct> & ssboLogs, GLuint logLimit) {
+        ssboLogs.initialize(GL_SHADER_STORAGE_BUFFER, sizeof(GLuint)* 4 + sizeof(LogStruct) * logLimit, NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT);
+        auto id = ssboLogs.getId();
+        GLuint * ptr = (GLuint*)glMapNamedBufferRange(id, 0, sizeof(GLuint), GL_MAP_WRITE_BIT);
+        ptr[0] = logLimit;
+        glUnmapNamedBuffer(id);
     }
 };

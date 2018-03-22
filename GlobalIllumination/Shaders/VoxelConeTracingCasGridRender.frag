@@ -11,6 +11,13 @@ layout(binding = 9) uniform sampler3D normalBrickL2;
 layout(binding = 10) uniform sampler3D lightDirBrickL2;
 layout(binding = 11) uniform usampler3D lightEnergyBrickL2;
 
+layout(binding = 3) uniform CameraBlock {
+    vec4 camPosition;
+    vec4 camForward;
+    vec4 camUp;
+    int height;
+    int width;
+};
 layout (location = 0) out vec4 FragColor;
 
 #define PI           3.14159265358979323846
@@ -50,8 +57,17 @@ vec3 InnerProject(GaussianLobe g1, GaussianLobe g2) {
     return (2.0f * PI * g1.amplitude * g2.amplitude * eFactorized * factorized2) / uLength;
 }
 //inputPos in world space
-vec3 findPosAndLevel(vec3 inputPos, out int level) {    
+vec3 findPosAndLevel(vec3 inputPos, int size, out int level) {    
     vec3 pos;
+    mat4 voxelToReqClipmap;
+    if(size == 1) {
+        voxelToReqClipmap = voxelToClipmapL0Mat;
+    } else if (size == 2) {
+        voxelToReqClipmap = voxelToClipmapL1Mat;
+    } else {
+        voxelToReqClipmap = voxelToClipmapL2Mat;
+    }
+
     if(inputPos.x < level2min.x || inputPos.x > level2max.x
         || inputPos.y < level2min.y || inputPos.y > level2max.y
         || inputPos.z < level2min.z || inputPos.z > level2max.z) {
@@ -70,7 +86,7 @@ vec3 findPosAndLevel(vec3 inputPos, out int level) {
 
         pos = (voxelToClipmapL1Mat * WorldToVoxelMat * vec4(inputPos, 1.0f)).xyz;
         level = 1;
-    } else {        
+    } else {
         pos = (voxelToClipmapL0Mat * WorldToVoxelMat * vec4(inputPos, 1.0f)).xyz;
         level = 0;
     }
@@ -78,7 +94,7 @@ vec3 findPosAndLevel(vec3 inputPos, out int level) {
 }
 
 // origin & dir in world space
-vec4 diffuseConeTrace(vec3 origin, vec3 dir, float coneSize) {
+vec3 diffuseConeTrace(vec3 origin, vec3 dir, float coneSize) {
     float alpha = 0.0f;
     int level = 0;
     vec3 clipOrigin = findPosAndLevel(origin, level);
@@ -133,6 +149,7 @@ vec4 diffuseConeTrace(vec3 origin, vec3 dir, float coneSize) {
         adjustedDir = pow(2, level) * dir;
         rayWorldPos += adjustedDir;
     }
+    return color;
 }
 
 vec3 findOrthoVector(vec3 v) {
@@ -148,15 +165,19 @@ void main()
     vec3 pos = (WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz;
     uint energy = 0;
     // 4x 60 from normal + 1 at normal;
+    wcNormal = normalize(wcNormal);
     vec3 orthoX = findOrthoVector(wcNormal);
     vec3 orthoY = cross(wcNormal, orthoX); 
-    vec4 diffuseColor = diffuseConeTrace(pos, wcNormal, 2.0f);
+    vec3 diffuseColor = diffuseConeTrace(pos, wcNormal, 2.0f);
     diffuseColor += diffuseConeTrace(pos, mix(wcNormal, orthoX, 0.3), 2.0f);
     diffuseColor += diffuseConeTrace(pos, mix(wcNormal, -orthoX, 0.3), 2.0f);
     diffuseColor += diffuseConeTrace(pos, mix(wcNormal, orthoY, 0.3), 2.0f);
     diffuseColor += diffuseConeTrace(pos, mix(wcNormal, -orthoY, 0.3), 2.0f);
-    vec3 view  = normalize(wcPosition - eyePos);
-    vec4 specularColor = specularConeTrace(pos, reflect(view, wcNormal), 0.5f);
+    vec3 view  = normalize(pos - camPosition.xyz);    
+    vec3 specularColor = vec4(0.0f);
+    if(shininess > 0.0f) {
+        specularColor = specularConeTrace(pos, reflect(view, wcNormal), shininess);
+    }
 
-    FragColor = diffuseColor + specularColor;
+    FragColor = vec4(texture(texDiffuse, fTexCoord).rgb * (diffuseColor + specularColor), 1.0f);
 }
