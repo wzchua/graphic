@@ -1,5 +1,6 @@
 #pragma once
 #include <glad/glad.h>
+#include <string>
 
 struct CounterBlock {
     GLuint fragmentCounter;

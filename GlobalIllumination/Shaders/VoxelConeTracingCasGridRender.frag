@@ -11,13 +11,6 @@ layout(binding = 9) uniform sampler3D normalBrickL2;
 layout(binding = 10) uniform sampler3D lightDirBrickL2;
 layout(binding = 11) uniform usampler3D lightEnergyBrickL2;
 
-layout(binding = 3) uniform CameraBlock {
-    vec4 camPosition;
-    vec4 camForward;
-    vec4 camUp;
-    int height;
-    int width;
-};
 layout (location = 0) out vec4 FragColor;
 
 #define PI           3.14159265358979323846
@@ -99,7 +92,7 @@ vec3 diffuseConeTrace(vec3 origin, vec3 dir, float coneSize) {
     int level = 0;
     vec3 clipOrigin = findPosAndLevel(origin, level);
     if(level < 0) {
-        return vec4(0.0f);
+        return vec3(0.0f);
     }
     vec3 adjustedDir = pow(2, level) * dir; // lengthen dir when traversing through larger grid dim
     vec3 rayWorldPos = origin + adjustedDir;
@@ -112,7 +105,7 @@ vec3 diffuseConeTrace(vec3 origin, vec3 dir, float coneSize) {
     while(alpha < 1.0f) {
         clipOrigin = findPosAndLevel(rayWorldPos, level);
         if(level < 0) {
-            return vec4(0.0f);
+            return vec3(0.0f);
         } else if(level == 0) {
             colorClip = colorBrickL0;
             normalClip = normalBrickL0;
@@ -165,18 +158,18 @@ void main()
     vec3 pos = (WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz;
     uint energy = 0;
     // 4x 60 from normal + 1 at normal;
-    wcNormal = normalize(wcNormal);
-    vec3 orthoX = findOrthoVector(wcNormal);
-    vec3 orthoY = cross(wcNormal, orthoX); 
-    vec3 diffuseColor = diffuseConeTrace(pos, wcNormal, 2.0f);
-    diffuseColor += diffuseConeTrace(pos, mix(wcNormal, orthoX, 0.3), 2.0f);
-    diffuseColor += diffuseConeTrace(pos, mix(wcNormal, -orthoX, 0.3), 2.0f);
-    diffuseColor += diffuseConeTrace(pos, mix(wcNormal, orthoY, 0.3), 2.0f);
-    diffuseColor += diffuseConeTrace(pos, mix(wcNormal, -orthoY, 0.3), 2.0f);
+    vec3 normal = normalize(wcNormal);
+    vec3 orthoX = findOrthoVector(normal);
+    vec3 orthoY = cross(normal, orthoX); 
+    vec3 diffuseColor = diffuseConeTrace(pos, normal, 2.0f);
+    diffuseColor += diffuseConeTrace(pos, mix(normal, orthoX, 0.3), 2.0f);
+    diffuseColor += diffuseConeTrace(pos, mix(normal, -orthoX, 0.3), 2.0f);
+    diffuseColor += diffuseConeTrace(pos, mix(normal, orthoY, 0.3), 2.0f);
+    diffuseColor += diffuseConeTrace(pos, mix(normal, -orthoY, 0.3), 2.0f);
     vec3 view  = normalize(pos - camPosition.xyz);    
-    vec3 specularColor = vec4(0.0f);
+    vec3 specularColor = vec3(0.0f);
     if(shininess > 0.0f) {
-        specularColor = specularConeTrace(pos, reflect(view, wcNormal), shininess);
+        specularColor = specularConeTrace(pos, reflect(view, normal), shininess);
     }
 
     FragColor = vec4(texture(texDiffuse, fTexCoord).rgb * (diffuseColor + specularColor), 1.0f);

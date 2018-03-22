@@ -11,6 +11,7 @@
 #include "VoxelizeBlock.h"
 #include "VoxelizeCascadedBlock.h"
 #include "CascadedGrid.h"
+#include "OpenGLQueryObject.h"
 class RenderToCasGrid : public AbstractModule
 {
 public:

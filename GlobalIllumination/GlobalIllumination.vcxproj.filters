@@ -212,5 +212,8 @@
     <ClInclude Include="OpenGLQueryObject.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="CameraBlock.h">
+      <Filter>Header Files\DataStructure</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

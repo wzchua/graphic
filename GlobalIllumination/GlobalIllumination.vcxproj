@@ -52,6 +52,7 @@
     <ClInclude Include="AbstractModule.h" />
     <ClInclude Include="AddToOctree.h" />
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="CameraBlock.h" />
     <ClInclude Include="CascadedGrid.h" />
     <ClInclude Include="CounterBlock.h" />
     <ClInclude Include="FilterOctree.h" />

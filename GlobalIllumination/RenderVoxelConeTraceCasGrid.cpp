@@ -13,12 +13,20 @@ void RenderVoxelConeTraceCasGrid::initialize()
 
     std::stringstream fragShaderString;
     fragShaderString << GenericShaderCodeString::fragHeader;
-    fragShaderString << GenericShaderCodeString::materialUniformBlock(1) << GenericShaderCodeString::genericLimitsUniformBlock(7);
+    //uniform blocks
+    fragShaderString << GenericShaderCodeString::materialUniformBlock(1) << cameraUniformBlockShaderCodeString(3) << GenericShaderCodeString::genericLimitsUniformBlock(7);
+    //ssbo
     fragShaderString << counterBlockBufferShaderCodeString(1) << logFunctionAndBufferShaderCodeString(7);
     fragShaderString << voxelizeBlockString(3) << voxelizeCascadedBlockString(4);
 
     shader.generateShader(fragShaderString, "./Shaders/VoxelConeTracingCasGridRender.frag", ShaderProgram::FRAGMENT);
     shader.linkCompileValidate();
+
+
+    glGenBuffers(1, &camBlkBufferId);
+    glBindBuffer(GL_UNIFORM_BUFFER, camBlkBufferId);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(CameraBlock), NULL, GL_STREAM_DRAW);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
 void RenderVoxelConeTraceCasGrid::run(Scene & inputScene, GLBufferObject<CounterBlock>& ssboCounterSet, CascadedGrid & cascadedGrid)
@@ -30,6 +38,12 @@ void RenderVoxelConeTraceCasGrid::run(Scene & inputScene, GLBufferObject<Counter
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
+    camBlk.camPosition = glm::vec4(inputScene.cam.getPosition(), 1.0f);
+    camBlk.camForward = glm::vec4(inputScene.cam.getForward(), 1.0f);
+    camBlk.camUp = glm::vec4(inputScene.cam.getUp(), 1.0f);
+    camBlk.height = res.y;
+    camBlk.width = res.x;
+    glNamedBufferSubData(camBlkBufferId, 0, sizeof(CameraBlock), &camBlk);
     
     auto & colorCasGrid = cascadedGrid.getCasGridTextureIds(CascadedGrid::GridType::COLOR);
     auto & normalCasGrid = cascadedGrid.getCasGridTextureIds(CascadedGrid::GridType::NORMAL);
@@ -44,6 +58,7 @@ void RenderVoxelConeTraceCasGrid::run(Scene & inputScene, GLBufferObject<Counter
     }
 
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, inputScene.getMatrixBuffer()); //scene cam matrices
+    glBindBufferBase(GL_UNIFORM_BUFFER, 3, camBlkBufferId); //scene cam matrices
     ssboCounterSet.bind(1);
 
     inputScene.render(shader.getProgramId());

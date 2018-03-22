@@ -1,5 +1,4 @@
 ﻿#include "RenderToCasGrid.h"
-#include "OpenGLQueryObject.h"
 
 void RenderToCasGrid::initialize()
 {
