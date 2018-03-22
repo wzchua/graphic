@@ -85,7 +85,7 @@ vec3 diffuseConeTrace(vec3 origin, vec3 dir) {
     float angle = 60.0f;
     float alpha = 0.0f;
     vec3 adjustedDir = pow(2, findMinLevel(origin)) * dir; // lengthen dir when traversing through larger grid dim
-    vec3 rayWorldPos = origin + adjustedDir;
+    vec3 rayVoxelPos = origin + adjustedDir;
     float lod; vec3 clipPos;
 
     vec3 color = vec3(0.0f);
@@ -93,34 +93,41 @@ vec3 diffuseConeTrace(vec3 origin, vec3 dir) {
     sampler3D normalClip = normalBrickL0;
     sampler3D lightDirClip = lightDirBrickL0;
     usampler3D lightEnergyClip = lightEnergyBrickL0;
-    while(alpha < 1.0f && isWithinBoundary(rayWorldPos)) {
+    if(gl_FragCoord.x < 1.0f && gl_FragCoord.y < 1.0f) {
+        logFragment(vec4(rayVoxelPos, lod), vec4(adjustedDir, 1.0f), uint(findMinLevel(origin)), 1, 2, 3);
+    }
+    while(alpha < 1.0f && isWithinBoundary(rayVoxelPos)) {
         lod = evaluateLOD(30.0f, length(adjustedDir));
         if(lod < 1.0f) {
             colorClip = colorBrickL0;
             normalClip = normalBrickL0;
             lightDirClip = lightDirBrickL0;
             lightEnergyClip = lightEnergyBrickL0;
-            clipPos = (voxelToClipmapL0Mat * WorldToVoxelMat * vec4(rayWorldPos, 1.0f)).xyz;
+            clipPos = (voxelToClipmapL0Mat * vec4(rayVoxelPos, 1.0f)).xyz;
             lod = 0.0f;
         } else if(lod < 2.0f) {
             colorClip = colorBrickL1;
             normalClip = normalBrickL1;
             lightDirClip = lightDirBrickL1;
             lightEnergyClip = lightEnergyBrickL1;
-            clipPos = (voxelToClipmapL1Mat * WorldToVoxelMat * vec4(rayWorldPos, 1.0f)).xyz;
+            clipPos = (voxelToClipmapL1Mat * vec4(rayVoxelPos, 1.0f)).xyz;
             lod = 0.0f;
         } else {
             colorClip = colorBrickL2;
             normalClip = normalBrickL2;
             lightDirClip = lightDirBrickL2;
             lightEnergyClip = lightEnergyBrickL2;
-            clipPos = (voxelToClipmapL2Mat * WorldToVoxelMat * vec4(rayWorldPos, 1.0f)).xyz;
+            clipPos = (voxelToClipmapL2Mat * vec4(rayVoxelPos, 1.0f)).xyz;
             lod = lod - 2.0f;
         }
         vec4 c = textureLod(colorClip, clipPos, lod);
         vec4 n = 2 * textureLod(normalClip, clipPos, lod) - 1.0f;
-        uint lEnergy = textureLod(lightEnergyClip, clipPos, lod).a;
+        uint lEnergy = textureLod(lightEnergyClip, clipPos, lod).r;
         vec4 l = 2 * textureLod(lightDirClip, clipPos, lod) - 1.0f;
+        if(gl_FragCoord.x < 1.0f && gl_FragCoord.y < 1.0f) {
+            logFragment(c, n, lEnergy, 2, 2, 3);
+            logFragment(l, vec4(clipPos, 1.0f), lEnergy, 2, 2, 3);
+        }
 
         GaussianLobe normalLobe = generateSG(vec3(1.0f), n.xyz);
         GaussianLobe lightLobe = generateSG(vec3(lEnergy), -l.xyz);
@@ -136,7 +143,7 @@ vec3 diffuseConeTrace(vec3 origin, vec3 dir) {
         alpha = alpha + (1.0f - alpha) * c.a;
 
         //adjustedDir = pow(2, level) * dir;
-        rayWorldPos += adjustedDir;
+        rayVoxelPos += adjustedDir;
     }
     return color;
 }
@@ -152,6 +159,7 @@ vec3 findOrthoVector(vec3 v) {
 void main() 
 {    
     vec3 pos = (WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz;
+    
     uint energy = 0;
     // 4x 60 from normal + 1 at normal;
     vec3 normal = normalize(wcNormal);
@@ -167,6 +175,5 @@ void main()
     /*if(shininess > 0.0f) {
         specularColor = specularConeTrace(pos, reflect(view, normal), shininess);
     }*/
-
     FragColor = vec4(texture(texDiffuse, fTexCoord).rgb * (diffuseColor + specularColor), 1.0f);
 }

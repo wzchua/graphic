@@ -29,7 +29,7 @@ void RenderVoxelConeTraceCasGrid::initialize()
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
-void RenderVoxelConeTraceCasGrid::run(Scene & inputScene, GLuint voxelizeMatrixBlock, GLBufferObject<CounterBlock>& ssboCounterSet, CascadedGrid & cascadedGrid)
+void RenderVoxelConeTraceCasGrid::run(Scene & inputScene, GLuint voxelizeMatrixBlock, GLBufferObject<CounterBlock>& ssboCounterSet, CascadedGrid & cascadedGrid, GLBufferObject<LogStruct> & logList)
 {
     shader.use();
     inputScene.updateMatrixBuffer();
@@ -64,7 +64,11 @@ void RenderVoxelConeTraceCasGrid::run(Scene & inputScene, GLuint voxelizeMatrixB
     glBindBufferBase(GL_UNIFORM_BUFFER, 4, cascadedGrid.getVoxelizedCascadedBlockBufferId());
     glBindBufferBase(GL_UNIFORM_BUFFER, 5, camBlkBufferId); //scene cam matrices
     ssboCounterSet.bind(1);
+    logList.bind(7);
 
     glMemoryBarrier(GL_UNIFORM_BARRIER_BIT);
     inputScene.render(shader.getProgramId());
+    std::vector<LogStruct> logs;
+    ShaderLogger::getLogs(logList, 19, logs);
+    std::cout << "h\n";
 }

@@ -161,11 +161,12 @@ void Voxelizer::render(Scene& scene)
         OpenGLTimer::timeTillGPUIsFree("Before voxelization");
         mModuleRenderToCasGrid.run(scene, ssboCounterSet, voxelMatrixData.worldToVoxelMat, voxelLogUniformBuffer, ssboLogList, mCascadedGrid);
         OpenGLTimer::timeTillGPUIsFree("After voxelization");
-        mModuleRenderLightIntoCasGrid.run(scene, voxelMatrixUniformBuffer, mCascadedGrid);
+        mModuleVoxelVisualizer.rayCastVoxels(scene.cam, voxelMatrixData.worldToVoxelMat, ssboCounterSet, voxelLogUniformBuffer, mCascadedGrid, ssboLogList);
+        //mModuleRenderLightIntoCasGrid.run(scene, voxelMatrixUniformBuffer, mCascadedGrid);
         OpenGLTimer::timeTillGPUIsFree("After light injection");
-        mCascadedGrid.filter();
+        //mCascadedGrid.filter();
         OpenGLTimer::timeTillGPUIsFree("After filter");
-        mModuleRenderVoxelConeTraceCasGrid.run(scene, voxelMatrixUniformBuffer, ssboCounterSet, mCascadedGrid);
+        //mModuleRenderVoxelConeTraceCasGrid.run(scene, voxelMatrixUniformBuffer, ssboCounterSet, mCascadedGrid, ssboLogList);
         OpenGLTimer::timeTillGPUIsFree("After VCT render");
     }
     break;

@@ -54,6 +54,11 @@ void VoxelVisualizer::initialize()
     voxelRayCastOctreeShader.generateShader("./Shaders/VoxelOctreeRayCast.frag", ShaderProgram::FRAGMENT);
     voxelRayCastOctreeShader.linkCompileValidate();
 
+    voxelRayCastCasGridShader.generateShader("./Shaders/VoxelGridRayCast.vert", ShaderProgram::VERTEX);
+    voxelRayCastCasGridShader.generateShader("./Shaders/VoxelCasGridRayCast.frag", ShaderProgram::FRAGMENT);
+    voxelRayCastCasGridShader.linkCompileValidate();
+
+    
     glGenBuffers(1, &uniformBufferRaycastBlock);
     glBindBuffer(GL_UNIFORM_BUFFER, uniformBufferRaycastBlock);
     glBufferData(GL_UNIFORM_BUFFER, sizeof(RayCastBlock), NULL, GL_STREAM_DRAW);
@@ -99,11 +104,12 @@ void VoxelVisualizer::rayCastVoxels(Camera & cam, glm::mat4 & worldToVoxelMat, G
 
 void VoxelVisualizer::rayCastVoxels(Camera & cam, glm::mat4 & worldToVoxelMat, GLBufferObject<CounterBlock>& counterSet, GLuint logUniformBlock, CascadedGrid & cascadedGrid, GLBufferObject<LogStruct>& logList)
 {
-    //use shader here
+    voxelRayCastCasGridShader.use();
     auto& color = cascadedGrid.getCasGridTextureIds(CascadedGrid::COLOR);
     glBindImageTexture(0, color[0], 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
     glBindImageTexture(1, color[1], 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
     glBindImageTexture(2, color[2], 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 4, cascadedGrid.getVoxelizedCascadedBlockBufferId());
     rayCastVoxels(cam, worldToVoxelMat, counterSet, logUniformBlock, logList);
 }
 
@@ -135,12 +141,9 @@ void VoxelVisualizer::rayCastVoxels(Camera & cam, glm::mat4 & worldToVoxelMat, G
     int logCount = c->logCounter;
     c->logCounter = 0;
     counterSet.unMapPtr();
-    auto logPtr = logList.getPtr();
     std::vector<LogStruct> logs;
-    for (int i = 0; i < logCount; i++) {
-        logs.push_back(logPtr[i]);
-    }
-    logList.unMapPtr();
+    ShaderLogger::getLogs(logList, logCount, logs);
+    std::cout << "\n";
 }
 
 void VoxelVisualizer::rayCastVoxelsGrid(Camera & cam, glm::mat4 & worldToVoxelMat, GLBufferObject<CounterBlock>& counterSet, GLuint logUniformBlock, GLuint colorTextureId, GLBufferObject<LogStruct>& logList)

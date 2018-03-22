@@ -25,6 +25,7 @@ private:
 
     ShaderProgram voxelRayCastGridShader;
     ShaderProgram voxelRayCastOctreeShader;
+    ShaderProgram voxelRayCastCasGridShader;
     GLuint uniformBufferRaycastBlock;
 
     bool hasInitialized = false;
