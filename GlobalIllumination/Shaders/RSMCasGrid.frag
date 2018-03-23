@@ -69,18 +69,18 @@ void main()
     float distSq = dist * dist;
     //light energy & direction
     uint recievedEnergy = min( uint(float(rad) / (distSq * dot(lightDir, normalize(wcNormal)))), 1);
-
+    vec3 voxelPos = (WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz;
     pos = ivec3((voxelToClipmapL2Mat * WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz);      
     imageAtomicAdd(lightEnergyGridL2, pos, recievedEnergy);
     imageAtomicXYZWAvg(lightDirGridL2, pos, vec4(lightDir, 1.0f));
     
-    if(wcPosition.x < level1min.x || wcPosition.x > level1max.x //if outside L1
-        || wcPosition.y < level1min.y || wcPosition.y > level1max.y
-        || wcPosition.z < level1min.z || wcPosition.z > level1max.z) {
+    if(voxelPos.x < level1min.x || voxelPos.x > level1max.x //if outside L1
+        || voxelPos.y < level1min.y || voxelPos.y > level1max.y
+        || voxelPos.z < level1min.z || voxelPos.z > level1max.z) {
 
-    } else if(wcPosition.x < level0min.x || wcPosition.x > level0max.x //if outside L0 but inside L1
-        || wcPosition.y < level0min.y || wcPosition.y > level0max.y
-        || wcPosition.z < level0min.z || wcPosition.z > level0max.z) {
+    } else if(voxelPos.x < level0min.x || voxelPos.x > level0max.x //if outside L0 but inside L1
+        || voxelPos.y < level0min.y || voxelPos.y > level0max.y
+        || voxelPos.z < level0min.z || voxelPos.z > level0max.z) {
 
         pos = ivec3((voxelToClipmapL1Mat * WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz); 
         imageAtomicAdd(lightEnergyGridL1, pos, recievedEnergy);
