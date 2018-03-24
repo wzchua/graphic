@@ -102,10 +102,22 @@ void VoxelVisualizer::rayCastVoxels(Camera & cam, glm::mat4 & worldToVoxelMat, G
     rayCastVoxels(cam, worldToVoxelMat, counterSet, logUniformBlock, logList);
 }
 
-void VoxelVisualizer::rayCastVoxels(Camera & cam, glm::mat4 & worldToVoxelMat, GLBufferObject<CounterBlock>& counterSet, GLuint logUniformBlock, CascadedGrid & cascadedGrid, GLBufferObject<LogStruct>& logList)
+void VoxelVisualizer::rayCastVoxels(Camera & cam, glm::mat4 & worldToVoxelMat, GLBufferObject<CounterBlock>& counterSet, GLuint logUniformBlock, CascadedGrid & cascadedGrid, GLBufferObject<LogStruct>& logList, int gridType)
 {
     voxelRayCastCasGridShader.use();
-    auto& color = cascadedGrid.getCasGridTextureIds(CascadedGrid::COLOR);
+    CascadedGrid::GridType type;
+    switch (gridType) {
+    case 1:
+        type = CascadedGrid::COLOR;
+        break;
+    case 2:
+        type = CascadedGrid::NORMAL;
+        break;
+    case 3:
+        type = CascadedGrid::LIGHT_DIRECTION;
+        break;
+    }
+    auto& color = cascadedGrid.getCasGridTextureIds(type);
     glBindTextureUnit(0, color[0]);
     glBindTextureUnit(1, color[1]);
     glBindTextureUnit(2, color[2]);
@@ -133,7 +145,7 @@ void VoxelVisualizer::rayCastVoxels(Camera & cam, glm::mat4 & worldToVoxelMat, G
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     glEnable(GL_BLEND);
-
+    glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
     glBindVertexArray(quadVAOId);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);

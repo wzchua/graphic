@@ -46,8 +46,9 @@ public:
     void render(Scene& scene);
     void resetAllData();
     int projectionAxis = 0;
+    void onNumberPressed(int num);
 private:
-
+    int currentNumMode = 1;
     Type mType = CAS_GRID;
     unsigned int fragCount = 1024 * 1024 * 2;
     unsigned int nodeCount = 1024 * 1024 * 2;

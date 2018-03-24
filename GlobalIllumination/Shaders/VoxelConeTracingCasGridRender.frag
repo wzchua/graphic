@@ -78,8 +78,9 @@ float evaluateLOD(float degree, float len) {
     return log2(2 * len * tan(radians(degree)));
 }
 vec4 evaluateColor(in sampler3D colorClip, in sampler3D normalClip, in sampler3D lightDirClip, 
-    in usampler3D lightEnergyClip, float lod, vec3 clipPos) {
+    in usampler3D lightEnergyClip, float lod, vec3 clipPos, vec3 viewDir) {
         vec4 color;
+        float cosPhi = cos(radians(60));
         vec4 c = textureLod(colorClip, clipPos, lod);
         if(gl_FragCoord.x < 1.0f && gl_FragCoord.y < 1.0f) {
             logFragment(c, vec4(clipPos, lod), 0, 4, 2, 3);
@@ -96,14 +97,14 @@ vec4 evaluateColor(in sampler3D colorClip, in sampler3D normalClip, in sampler3D
             }
 
             GaussianLobe normalLobe = generateSG(vec3(1.0f), n.xyz);
-            GaussianLobe lightLobe = generateSG(vec3(lEnergy), -l.xyz);
-            /*
+            GaussianLobe lightLobe = generateSG(vec3(float(lEnergy)/800.0f), -l.xyz);
+            
             GaussianLobe viewLobe;
             viewLobe.amplitude = vec3(1.0f);
-            viewLobe.axis = dir;
-            viewLobe.sharpness = 1/(cosPhi * cosPhi);*/
+            viewLobe.axis = viewDir;
+            viewLobe.sharpness = 1/(cosPhi * cosPhi);
             vec3 brdf = c.rgb / PI;
-            vec3 convLightNormal = max(InnerProduct(normalLobe, lightLobe), 0.0f);
+            vec3 convLightNormal = max(InnerProduct(viewLobe, Product(normalLobe, lightLobe)), 0.0f);
 
             color.rgb += brdf * convLightNormal;
             color.a = c.a;
@@ -128,22 +129,22 @@ vec3 diffuseConeTrace(vec3 origin, vec3 dir) {
         if(gl_FragCoord.x < 1.0f && gl_FragCoord.y < 1.0f) {
             logFragment(vec4(adjustedDir, 1.0f), vec4(rayVoxelPos, lod), uint(findMinLevel(rayVoxelPos)), 1, 1, 3);
         }
-        adjustedDir = pow(2, int(lod)) * dir;
+        //adjustedDir = pow(2, int(lod)) * dir;
         if(lod < 1.0f) {
             clipPos = (voxelToClipmapL0Mat * vec4(rayVoxelPos, 1.0f));
             clipPos = clipPos/clipPos.w / 128.0f;
             lod = 0.0f;
-            c = evaluateColor(colorBrickL0, normalBrickL0, lightDirBrickL0, lightEnergyBrickL0, lod, clipPos.xyz);
+            c = evaluateColor(colorBrickL0, normalBrickL0, lightDirBrickL0, lightEnergyBrickL0, lod, clipPos.xyz, dir);
         } else if(lod < 2.0f) {
             clipPos = (voxelToClipmapL1Mat * vec4(rayVoxelPos, 1.0f));
             clipPos = clipPos/clipPos.w / 128.0f;
             lod = 0.0f;
-            c = evaluateColor(colorBrickL1, normalBrickL1, lightDirBrickL1, lightEnergyBrickL1, lod, clipPos.xyz);
+            c = evaluateColor(colorBrickL1, normalBrickL1, lightDirBrickL1, lightEnergyBrickL1, lod, clipPos.xyz, dir);
         } else {
             clipPos = (voxelToClipmapL2Mat * vec4(rayVoxelPos, 1.0f));
             clipPos = clipPos/clipPos.w / 128.0f;
             lod = lod - 2.0f;
-            c = evaluateColor(colorBrickL2, normalBrickL2, lightDirBrickL2, lightEnergyBrickL2, lod, clipPos.xyz);
+            c = evaluateColor(colorBrickL2, normalBrickL2, lightDirBrickL2, lightEnergyBrickL2, lod, clipPos.xyz, dir);
         }
         color += c.rgb;
         alpha = alpha + (1.0f - alpha) * c.a;

@@ -161,12 +161,12 @@ void Voxelizer::render(Scene& scene)
         OpenGLTimer::timeTillGPUIsFree("Before voxelization");
         mModuleRenderToCasGrid.run(scene, ssboCounterSet, voxelMatrixData.worldToVoxelMat, voxelLogUniformBuffer, ssboLogList, mCascadedGrid);
         OpenGLTimer::timeTillGPUIsFree("After voxelization");
-        //mModuleVoxelVisualizer.rayCastVoxels(scene.cam, voxelMatrixData.worldToVoxelMat, ssboCounterSet, voxelLogUniformBuffer, mCascadedGrid, ssboLogList);
         mModuleRenderLightIntoCasGrid.run(scene, voxelMatrixUniformBuffer, mCascadedGrid);
+        mModuleVoxelVisualizer.rayCastVoxels(scene.cam, voxelMatrixData.worldToVoxelMat, ssboCounterSet, voxelLogUniformBuffer, mCascadedGrid, ssboLogList, currentNumMode);
         OpenGLTimer::timeTillGPUIsFree("After light injection");
-        mCascadedGrid.filter();
+        //mCascadedGrid.filter();
         OpenGLTimer::timeTillGPUIsFree("After filter");
-        mModuleRenderVoxelConeTraceCasGrid.run(scene, voxelMatrixUniformBuffer, ssboCounterSet, mCascadedGrid, ssboLogList);
+        //mModuleRenderVoxelConeTraceCasGrid.run(scene, voxelMatrixUniformBuffer, ssboCounterSet, mCascadedGrid, ssboLogList);
         OpenGLTimer::timeTillGPUIsFree("After VCT render");
     }
     break;
@@ -218,6 +218,11 @@ void Voxelizer::resetAllData()
     cPtr[0] = mZeroedCounterBlock;
     ssboCounterSet.unMapPtr();
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_UPDATE_BARRIER_BIT);
+}
+
+void Voxelizer::onNumberPressed(int num)
+{
+    currentNumMode = num;
 }
 
 void Voxelizer::initialize3DTextures(GLuint & textureId, GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height, GLsizei depth)
