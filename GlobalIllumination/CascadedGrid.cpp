@@ -128,8 +128,7 @@ void CascadedGrid::initializeGrids(GLuint cascadeNumber)
     voxelMatrixData.resize(cascadeNumber);
 
     for (int i = 0; i < cascadeNumber; i++) {
-        GLuint mipLevel = (cascadeNumber - 1 == i) ? 10 - cascadeNumber : 1;
-        
+        GLuint mipLevel = (cascadeNumber - 1 == i) ? 10 - cascadeNumber : 2;        
         GLuint textureId = 0;
 
         glCreateTextures(GL_TEXTURE_3D, 1, &textureId);
@@ -190,11 +189,13 @@ void CascadedGrid::initializeGrids(GLuint cascadeNumber)
 void CascadedGrid::filter()
 {
     GLuint highestLevel = mCascadeNumber - 1;
-    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-    glGenerateTextureMipmap(texture3DColorCasGrid[highestLevel]);
-    glGenerateTextureMipmap(texture3DNormalCasGrid[highestLevel]);
-    glGenerateTextureMipmap(texture3DLightDirCasGrid[highestLevel]);
-    glGenerateTextureMipmap(texture3DLightEnergyCasGrid[highestLevel]);
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_UPDATE_BARRIER_BIT);
+    for (int i = 0; i < mCascadeNumber; ++i) {
+        glGenerateTextureMipmap(texture3DColorCasGrid[i]);
+        glGenerateTextureMipmap(texture3DNormalCasGrid[i]);
+        glGenerateTextureMipmap(texture3DLightDirCasGrid[i]);
+        glGenerateTextureMipmap(texture3DLightEnergyCasGrid[i]);
+    }
 }
 
 void CascadedGrid::resetData()

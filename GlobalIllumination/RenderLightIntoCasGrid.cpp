@@ -18,7 +18,7 @@ void RenderLightIntoCasGrid::run(Scene & inputScene, GLuint voxelizeMatrixBlock,
     auto& textureLightEnergies = cascadedGrid.getCasGridTextureIds(CascadedGrid::GridType::LIGHT_ENERGY);
 
     glViewport(0, 0, 1024, 1024); // light render is done at 1024x1024
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0); 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
@@ -37,6 +37,7 @@ void RenderLightIntoCasGrid::run(Scene & inputScene, GLuint voxelizeMatrixBlock,
     glBindImageTexture(4, textureLightDirections[2], 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
     glBindImageTexture(5, textureLightEnergies[2], 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
 
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     inputScene.render(shader.getProgramId());
 
 

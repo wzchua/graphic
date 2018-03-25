@@ -133,12 +133,11 @@ vec3 diffuseConeTrace(vec3 origin, vec3 dir) {
         if(lod < 1.0f) {
             clipPos = (voxelToClipmapL0Mat * vec4(rayVoxelPos, 1.0f));
             clipPos = clipPos/clipPos.w / 128.0f;
-            lod = 0.0f;
             c = evaluateColor(colorBrickL0, normalBrickL0, lightDirBrickL0, lightEnergyBrickL0, lod, clipPos.xyz, dir);
         } else if(lod < 2.0f) {
             clipPos = (voxelToClipmapL1Mat * vec4(rayVoxelPos, 1.0f));
             clipPos = clipPos/clipPos.w / 128.0f;
-            lod = 0.0f;
+            lod = lod - 1.0f;
             c = evaluateColor(colorBrickL1, normalBrickL1, lightDirBrickL1, lightEnergyBrickL1, lod, clipPos.xyz, dir);
         } else {
             clipPos = (voxelToClipmapL2Mat * vec4(rayVoxelPos, 1.0f));

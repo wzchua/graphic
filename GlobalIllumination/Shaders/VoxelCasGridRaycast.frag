@@ -137,7 +137,7 @@ void main() {
     vec3 rayPosition = rOrigin;
     bool hasHit = false;
     bool isRayInCube = true;
-    vec4 color; int level = 1;
+    vec4 color; int level = 2;
     if(gl_FragCoord.x < 1 && gl_FragCoord.y < 1) {        
         logFragment(vec4(rayPosition, 1.0f), level0min, 0, 0, height, width);
         logFragment(vec4(rayPosition, 1.0f), level0max, 0, 0, height, width);

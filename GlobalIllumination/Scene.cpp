@@ -60,7 +60,7 @@ GLuint Scene::getLightBuffer()
 void Scene::updateLightMatrixBuffer(GLuint index, glm::vec3 forward, glm::vec3 up)
 {
     glm::vec3 pos = glm::vec3(light.position.x, light.position.y, light.position.z);
-    lightCam.set(pos, forward, up, 160, 1.0f);
+    lightCam.set(pos, forward, up, 90, 1.0f);
 
     matrixLightBlock.modelViewMatrix = lightCam.getViewMatrix() * modelMat;
     matrixLightBlock.modelViewProjMatrix = lightCam.getProjMatrix() * matrixLightBlock.modelViewMatrix;

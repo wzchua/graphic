@@ -1,6 +1,6 @@
 #version 450
 #extension GL_ARB_bindless_texture : require
-
+layout(early_fragment_tests) in;
 in vec3 wcPosition;   // Fragment's 3D position in world space.
 in vec3 wcNormal;
 

@@ -88,29 +88,60 @@ void Renderer::onKey(GLFWwindow* window, int key, int scancode, int action, int 
 
         glm::vec3 camMove;
         if (key == GLFW_KEY_W) {
-            camMove.z += 1.0f;
+            camMove.z += 5.0f;
         }
         if (key == GLFW_KEY_S) {
-            camMove.z -= 1.0f;
+            camMove.z -= 5.0f;
         }
         if (key == GLFW_KEY_A) {
-            camMove.x += 1.0f;
+            camMove.x += 5.0f;
         }
         if (key == GLFW_KEY_D) {
-            camMove.x -= 1.0f;
+            camMove.x -= 5.0f;
         }
         // doesn't register stimulateous presses
         if (camMove.z != 0.0f || camMove.x != 0.0f) {
             scene.cam.move(camMove);
         }
-        if (key == GLFW_KEY_1) {
-            voxelizer.onNumberPressed(1);
+        if (key == GLFW_KEY_F1) {
+            setToPhongShader();
         }
-        if (key == GLFW_KEY_2) {
-            voxelizer.onNumberPressed(2);
+        if (key == GLFW_KEY_F2){
+            setToVoxelizeShader();
         }
-        if (key == GLFW_KEY_3) {
-            voxelizer.onNumberPressed(3);
+        if (type == Renderer::VOXELIZE) {
+            if (key == GLFW_KEY_1) {
+                voxelizer.onNumberPressed(1);
+            }
+            if (key == GLFW_KEY_2) {
+                voxelizer.onNumberPressed(2);
+            }
+            if (key == GLFW_KEY_3) {
+                voxelizer.onNumberPressed(3);
+            }
         }
+        else if (type == Renderer::PHONG) {
+            if (key == GLFW_KEY_1) {
+                mModuleRenderPhong.onNumberPressed(1);
+            }
+            if (key == GLFW_KEY_2) {
+                mModuleRenderPhong.onNumberPressed(2);
+            }
+            if (key == GLFW_KEY_3) {
+                mModuleRenderPhong.onNumberPressed(3);
+            }
+            if (key == GLFW_KEY_4) {
+                mModuleRenderPhong.onNumberPressed(4);
+            }
+            if (key == GLFW_KEY_5) {
+                mModuleRenderPhong.onNumberPressed(5);
+            }
+            if (key == GLFW_KEY_6) {
+                mModuleRenderPhong.onNumberPressed(6);
+            }
+
+
+        }
+
     }
 }

@@ -116,6 +116,7 @@ void Voxelizer::initializeWithScene(glm::vec3 min, glm::vec3 max)
 
 void Voxelizer::render(Scene& scene)
 {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     std::vector<LogStruct> logs;
     using Clock = std::chrono::high_resolution_clock;
     auto timeStart = Clock::now();
@@ -162,8 +163,8 @@ void Voxelizer::render(Scene& scene)
         mModuleRenderToCasGrid.run(scene, ssboCounterSet, voxelMatrixData.worldToVoxelMat, voxelLogUniformBuffer, ssboLogList, mCascadedGrid);
         OpenGLTimer::timeTillGPUIsFree("After voxelization");
         mModuleRenderLightIntoCasGrid.run(scene, voxelMatrixUniformBuffer, mCascadedGrid);
-        mModuleVoxelVisualizer.rayCastVoxels(scene.cam, voxelMatrixData.worldToVoxelMat, ssboCounterSet, voxelLogUniformBuffer, mCascadedGrid, ssboLogList, currentNumMode);
         OpenGLTimer::timeTillGPUIsFree("After light injection");
+        mModuleVoxelVisualizer.rayCastVoxels(scene.cam, voxelMatrixData.worldToVoxelMat, ssboCounterSet, voxelLogUniformBuffer, mCascadedGrid, ssboLogList, currentNumMode);
         //mCascadedGrid.filter();
         OpenGLTimer::timeTillGPUIsFree("After filter");
         //mModuleRenderVoxelConeTraceCasGrid.run(scene, voxelMatrixUniformBuffer, ssboCounterSet, mCascadedGrid, ssboLogList);
