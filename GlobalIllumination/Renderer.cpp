@@ -122,8 +122,14 @@ void Renderer::onKey(GLFWwindow* window, int key, int scancode, int action, int 
             if (key == GLFW_KEY_3) {
                 voxelizer.onNumberPressed(3);
             }
+            if (key == GLFW_KEY_4) {
+                voxelizer.onNumberPressed(4);
+            }
         }
         else if (type == Renderer::PHONG) {
+            if (key == GLFW_KEY_0) {
+                mModuleRenderPhong.onNumberPressed(0);
+            }
             if (key == GLFW_KEY_1) {
                 mModuleRenderPhong.onNumberPressed(1);
             }

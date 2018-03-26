@@ -24,7 +24,7 @@ private:
         glm::mat4 modelViewProjMatrix;
         glm::mat4 normalMatrix;
     };
-    LightBlock light{ { 10.0f, 100.0f, 10.0f, 1.0f }, { 0.1f, 0.1f, 0.1f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f }, 40000000 };
+    LightBlock light{ { 10.0f, 100.0f, 10.0f, 1.0f }, { 0.1f, 0.1f, 0.1f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f }, 400000000 };
     MatrixBlock matrixBlock;
     MatrixBlock matrixLightBlock;
     Camera lightCam = Camera(glm::vec3(light.position.x, light.position.y, light.position.z));

@@ -110,7 +110,7 @@ void main()
     float distSq = dist * dist;
     //light energy & direction
     uint recievedEnergy = uint(float(rad) / (distSq * dot(lightDir, normalize(wcNormal))));
-    logFragment(vec4(lightDir, dot(lightDir, normalize(wcNormal))), vec4(wcNormal, distSq), rad, recievedEnergy, uint(gl_FragCoord.x), uint(gl_FragCoord.y));
+    //logFragment(vec4(lightDir, dot(lightDir, normalize(wcNormal))), vec4(wcNormal, distSq), rad, recievedEnergy, uint(gl_FragCoord.x), uint(gl_FragCoord.y));
     vec3 voxelPos = (WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz;
     pos = ivec3((voxelToClipmapL2Mat * WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz);      
     imageAtomicAdd(lightEnergyGridL2, pos, recievedEnergy);
@@ -128,11 +128,12 @@ void main()
         imageAtomicAdd(lightEnergyGridL1, pos, recievedEnergy/8);
         imageAtomicXYZWAvg(lightDirGridL1, pos, vec4(lightDir, 1.0f));
     } else {        
-        recievedEnergy = recievedEnergy/64;
+        recievedEnergy = recievedEnergy/8;
         pos = ivec3((voxelToClipmapL1Mat * WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz); 
         imageAtomicAdd(lightEnergyGridL1, pos, recievedEnergy);
         imageAtomicXYZWAvg(lightDirGridL1, pos, vec4(lightDir, 1.0f));
         pos = ivec3((voxelToClipmapL0Mat * WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz);
+        recievedEnergy = recievedEnergy/8;
         imageAtomicAdd(lightEnergyGridL0, pos, recievedEnergy);
         imageAtomicXYZWAvg(lightDirGridL0, pos, vec4(lightDir, 1.0f));
     }

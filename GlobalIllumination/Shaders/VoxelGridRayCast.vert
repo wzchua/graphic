@@ -8,6 +8,7 @@ layout(binding = 0) uniform RayCastBlock {
     vec4 camUp;
     int height;
     int width;
+    int isEnergy;
 };
 
 out vec3 wcPosition;   // Vertex position in voxel world space.

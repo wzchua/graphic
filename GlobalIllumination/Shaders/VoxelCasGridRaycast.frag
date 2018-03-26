@@ -11,6 +11,7 @@ layout(binding = 0) uniform RayCastBlock {
     vec4 camUp;
     int height;
     int width;
+    int isEnergy;
 };
 
 layout(binding = 7, std140) uniform LimitsUniformBlock {
@@ -42,6 +43,9 @@ layout(binding = 1) coherent buffer CounterBlock{
 layout(binding = 0) uniform sampler3D colorGridL0;
 layout(binding = 1) uniform sampler3D colorGridL1;
 layout(binding = 2) uniform sampler3D colorGridL2;
+layout(binding = 4) uniform usampler3D energyGridL0;
+layout(binding = 5) uniform usampler3D energyGridL1;
+layout(binding = 6) uniform usampler3D energyGridL2;
 
 struct LogStruct {
     vec4 position;
@@ -105,12 +109,21 @@ vec4 loadColor(vec3 pos, int level) {
     vec4 clipPos;
     if(level == 0) {
         clipPos = (voxelToClipmapL0Mat * vec4(pos, 1.0f));
+        if(isEnergy == 1) {
+            return vec4(texelFetch(energyGridL0, ivec3(clipPos.xyz), 0).r) / 65535.0f;
+        }
         return texelFetch(colorGridL0, ivec3(clipPos.xyz), 0);
     } else if(level == 1) {
         clipPos = (voxelToClipmapL1Mat * vec4(pos, 1.0f));
+        if(isEnergy == 1) {
+            return vec4(texelFetch(energyGridL1, ivec3(clipPos.xyz), 0).r) / 65535.0f;
+        }
         return texelFetch(colorGridL1, ivec3(clipPos.xyz), 0);
     } else {
         clipPos = (voxelToClipmapL2Mat * vec4(pos, 1.0f));
+        if(isEnergy == 1) {
+            return vec4(texelFetch(energyGridL2, ivec3(clipPos.xyz), 0).r) / 65535.0f;
+        }
         return texelFetch(colorGridL2, ivec3(clipPos.xyz), 0);
     }
 }

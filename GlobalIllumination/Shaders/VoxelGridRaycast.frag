@@ -11,6 +11,7 @@ layout(binding = 0) uniform RayCastBlock {
     vec4 camUp;
     int height;
     int width;
+    int isEnergy;
 };
 
 layout(binding = 7, std140) uniform LimitsUniformBlock {
