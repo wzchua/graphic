@@ -110,6 +110,9 @@ void Renderer::onKey(GLFWwindow* window, int key, int scancode, int action, int 
             setToVoxelizeShader();
         }
         if (type == Renderer::VOXELIZE) {
+            if (key == GLFW_KEY_0) {
+                voxelizer.onNumberPressed(0);
+            }
             if (key == GLFW_KEY_1) {
                 voxelizer.onNumberPressed(1);
             }

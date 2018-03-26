@@ -48,7 +48,7 @@ public:
     int projectionAxis = 0;
     void onNumberPressed(int num);
 private:
-    int currentNumMode = 1;
+    int currentNumMode = 0;
     Type mType = CAS_GRID;
     unsigned int fragCount = 1024 * 1024 * 2;
     unsigned int nodeCount = 1024 * 1024 * 2;

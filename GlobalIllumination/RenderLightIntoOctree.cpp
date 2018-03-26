@@ -8,7 +8,7 @@ void RenderLightIntoOctree::initialize()
         return;
     }
     injectLightOctreeShader.generateShader("./Shaders/RSM.vert", ShaderProgram::VERTEX);
-    injectLightOctreeShader.generateShader("./Shaders/RSM.frag", ShaderProgram::FRAGMENT);
+    injectLightOctreeShader.generateShader("./Shaders/RSMOctree.frag", ShaderProgram::FRAGMENT);
     injectLightOctreeShader.linkCompileValidate();
 }
 

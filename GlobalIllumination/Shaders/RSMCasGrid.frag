@@ -68,7 +68,7 @@ void main()
     float dist = length(lightDisplacement);
     float distSq = dist * dist;
     //light energy & direction
-    uint recievedEnergy = min( uint(float(rad) / (distSq * dot(lightDir, normalize(wcNormal)))), 1);
+    uint recievedEnergy = uint(float(rad) / (distSq * dot(lightDir, normalize(wcNormal))));
     vec3 voxelPos = (WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz;
     pos = ivec3((voxelToClipmapL2Mat * WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz);      
     imageAtomicAdd(lightEnergyGridL2, pos, recievedEnergy);
@@ -83,9 +83,10 @@ void main()
         || voxelPos.z < level0min.z || voxelPos.z > level0max.z) {
 
         pos = ivec3((voxelToClipmapL1Mat * WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz); 
-        imageAtomicAdd(lightEnergyGridL1, pos, recievedEnergy);
+        imageAtomicAdd(lightEnergyGridL1, pos, recievedEnergy/8);
         imageAtomicXYZWAvg(lightDirGridL1, pos, vec4(lightDir, 1.0f));
     } else {        
+        recievedEnergy = recievedEnergy/64;
         pos = ivec3((voxelToClipmapL1Mat * WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz); 
         imageAtomicAdd(lightEnergyGridL1, pos, recievedEnergy);
         imageAtomicXYZWAvg(lightDirGridL1, pos, vec4(lightDir, 1.0f));

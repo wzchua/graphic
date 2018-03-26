@@ -11,7 +11,7 @@ void RenderLightIntoCasGrid::initialize()
     shader.generateShader("./Shaders/RSMCasGrid.frag", ShaderProgram::FRAGMENT);
     shader.linkCompileValidate();
 
-    glGenRenderbuffers(1, &rboId);
+    glCreateRenderbuffers(1, &rboId);
     glNamedRenderbufferStorage(rboId, GL_DEPTH_COMPONENT, rsmRes.x, rsmRes.y);
 
     glGenFramebuffers(1, &fboId); 
@@ -28,6 +28,7 @@ void RenderLightIntoCasGrid::run(Scene & inputScene, GLuint voxelizeMatrixBlock,
     auto& textureLightEnergies = cascadedGrid.getCasGridTextureIds(CascadedGrid::GridType::LIGHT_ENERGY);
 
     glBindFramebuffer(GL_FRAMEBUFFER, fboId);
+    glViewport(0, 0, 128, 128);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0); 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);

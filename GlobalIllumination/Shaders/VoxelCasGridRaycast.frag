@@ -105,13 +105,13 @@ vec4 loadColor(vec3 pos, int level) {
     vec4 clipPos;
     if(level == 0) {
         clipPos = (voxelToClipmapL0Mat * vec4(pos, 1.0f));
-        return texture(colorGridL0, clipPos.xyz/128.0f);
+        return texelFetch(colorGridL0, ivec3(clipPos.xyz), 0);
     } else if(level == 1) {
         clipPos = (voxelToClipmapL1Mat * vec4(pos, 1.0f));
-        return texture(colorGridL1, clipPos.xyz/128.0f);
+        return texelFetch(colorGridL1, ivec3(clipPos.xyz), 0);
     } else {
         clipPos = (voxelToClipmapL2Mat * vec4(pos, 1.0f));
-        return texture(colorGridL2, clipPos.xyz/128.0f);
+        return texelFetch(colorGridL2, ivec3(clipPos.xyz), 0);
     }
 }
 

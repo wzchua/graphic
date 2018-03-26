@@ -79,7 +79,7 @@ float evaluateLOD(float degree, float len) {
 }
 vec4 evaluateColor(in sampler3D colorClip, in sampler3D normalClip, in sampler3D lightDirClip, 
     in usampler3D lightEnergyClip, float lod, vec3 clipPos, vec3 viewDir) {
-        vec4 color;
+        vec4 color = vec4(0.0f);
         float cosPhi = cos(radians(60));
         vec4 c = textureLod(colorClip, clipPos, lod);
         if(gl_FragCoord.x < 1.0f && gl_FragCoord.y < 1.0f) {
@@ -87,7 +87,7 @@ vec4 evaluateColor(in sampler3D colorClip, in sampler3D normalClip, in sampler3D
             //logFragment(voxelToClipmapL0Mat[0], voxelToClipmapL0Mat[1], 0, 0, 0, 0);
             //logFragment(voxelToClipmapL0Mat[2], voxelToClipmapL0Mat[3], 0, 0, 0, 0);
         }
-        if(c.a > 0.0f) {                
+        //if(c.a > 0.0f) {                
             vec4 n = 2 * textureLod(normalClip, clipPos, lod) - 1.0f;
             uint lEnergy = textureLod(lightEnergyClip, clipPos, lod).r;
             vec4 l = 2 * textureLod(lightDirClip, clipPos, lod) - 1.0f;
@@ -97,18 +97,18 @@ vec4 evaluateColor(in sampler3D colorClip, in sampler3D normalClip, in sampler3D
             }
 
             GaussianLobe normalLobe = generateSG(vec3(1.0f), n.xyz);
-            GaussianLobe lightLobe = generateSG(vec3(float(lEnergy)/800.0f), -l.xyz);
+            GaussianLobe lightLobe = generateSG(vec3(1.0f), l.xyz);
             
             GaussianLobe viewLobe;
             viewLobe.amplitude = vec3(1.0f);
             viewLobe.axis = viewDir;
-            viewLobe.sharpness = 1/(cosPhi * cosPhi);
+            viewLobe.sharpness = 1.0f/(cosPhi * cosPhi);
             vec3 brdf = c.rgb / PI;
-            vec3 convLightNormal = max(InnerProduct(viewLobe, Product(normalLobe, lightLobe)), 0.0f);
+            vec3 convLightNormal = max(InnerProduct(normalLobe, lightLobe), 0.0f);
 
-            color.rgb += brdf * convLightNormal;
+            color.rgb = brdf * float(lEnergy)/400000000.0f * convLightNormal;
             color.a = c.a;
-        }
+        //}
         return color;
     }
 // origin & dir in world space
@@ -129,7 +129,7 @@ vec3 diffuseConeTrace(vec3 origin, vec3 dir) {
         if(gl_FragCoord.x < 1.0f && gl_FragCoord.y < 1.0f) {
             logFragment(vec4(adjustedDir, 1.0f), vec4(rayVoxelPos, lod), uint(findMinLevel(rayVoxelPos)), 1, 1, 3);
         }
-        //adjustedDir = pow(2, int(lod)) * dir;
+        adjustedDir = pow(2, int(lod)) * dir;
         if(lod < 1.0f) {
             clipPos = (voxelToClipmapL0Mat * vec4(rayVoxelPos, 1.0f));
             clipPos = clipPos/clipPos.w / 128.0f;
@@ -163,17 +163,16 @@ vec3 findOrthoVector(vec3 v) {
 void main() 
 {    
     vec3 pos = (WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz;
-    
     uint energy = 0;
     // 4x 60 from normal + 1 at normal;
     vec3 normal = normalize(wcNormal);
     vec3 orthoX = findOrthoVector(normal);
     vec3 orthoY = cross(normal, orthoX); 
     vec3 diffuseColor = diffuseConeTrace(pos, normal);
-    diffuseColor += diffuseConeTrace(pos, mix(normal, orthoX, 0.6));
-    diffuseColor += diffuseConeTrace(pos, mix(normal, -orthoX, 0.6));
-    diffuseColor += diffuseConeTrace(pos, mix(normal, orthoY, 0.6));
-    diffuseColor += diffuseConeTrace(pos, mix(normal, -orthoY, 0.6));
+    diffuseColor += diffuseConeTrace(pos, mix(normal, orthoX, 0.4));
+    diffuseColor += diffuseConeTrace(pos, mix(normal, -orthoX, 0.4));
+    diffuseColor += diffuseConeTrace(pos, mix(normal, orthoY, 0.4));
+    diffuseColor += diffuseConeTrace(pos, mix(normal, -orthoY, 0.4));
     vec3 view  = normalize(pos - camPosition.xyz);    
     vec3 specularColor = vec3(0.0f);
     /*if(shininess > 0.0f) {
