@@ -29,6 +29,7 @@
     <ClCompile Include="OpenGLTimer.cpp" />
     <ClCompile Include="RenderLightIntoCasGrid.cpp" />
     <ClCompile Include="RenderLightIntoOctree.cpp" />
+    <ClCompile Include="RenderLightTextures.cpp" />
     <ClCompile Include="RenderToCasGrid.cpp" />
     <ClCompile Include="RenderToGrid.cpp" />
     <ClCompile Include="main.cpp" />
@@ -63,6 +64,7 @@
     <ClInclude Include="OpenGLTimer.h" />
     <ClInclude Include="RenderLightIntoCasGrid.h" />
     <ClInclude Include="RenderLightIntoOctree.h" />
+    <ClInclude Include="RenderLightTextures.h" />
     <ClInclude Include="RenderToCasGrid.h" />
     <ClInclude Include="RenderToGrid.h" />
     <ClInclude Include="FragStruct.h" />

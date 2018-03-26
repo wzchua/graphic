@@ -10,12 +10,8 @@ void RenderLightTextures::initialize()
     shader.generateShader("./Shaders/RSM.frag", ShaderProgram::FRAGMENT);
     shader.linkCompileValidate();
 
-    glCreateRenderbuffers(1, &rboId);
-    glNamedRenderbufferStorage(rboId, GL_DEPTH_COMPONENT, rsmRes.x, rsmRes.y);
-
     glGenFramebuffers(1, &fboId);
     glBindFramebuffer(GL_FRAMEBUFFER, fboId);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboId);
     glFramebufferParameteri(GL_FRAMEBUFFER, GL_FRAMEBUFFER_DEFAULT_WIDTH, rsmRes.x);
     glFramebufferParameteri(GL_FRAMEBUFFER, GL_FRAMEBUFFER_DEFAULT_HEIGHT, rsmRes.y);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -29,8 +25,8 @@ void RenderLightTextures::run(Scene & inputScene, glm::ivec2 res, std::vector<GL
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, inputScene.getLightMatrixBuffer()); // light as camera
     for (int i = 0; i < depthMap.size(); i++) {
-        glBindBufferBase(GL_UNIFORM_BUFFER, 0, inputScene.getLightMatrixBuffer()); // light as camera
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap[0], 0);
 
         glBindImageTexture(0, positionMap[i], 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA);
@@ -43,11 +39,3 @@ void RenderLightTextures::run(Scene & inputScene, glm::ivec2 res, std::vector<GL
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-RenderLightTextures::RenderLightTextures()
-{
-}
-
-
-RenderLightTextures::~RenderLightTextures()
-{
-}

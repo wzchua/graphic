@@ -27,6 +27,47 @@ layout(binding = 4, std140) uniform VoxelizeCascadedBlock {
     vec4 level2max;
 };
 
+layout(binding = 1) coherent buffer CounterBlock{
+    uint fragmentCounter;
+    uint nodeCounter;
+    uint brickCounter;
+    uint leafCounter;
+    uint logCounter;
+    uint noOfFragments;
+};
+
+layout(binding = 7, std140) uniform LimitsUniformBlock {
+    uint maxNoOfFragments;
+    uint maxNoOfNodes;
+    uint maxNoOfBricks;
+    uint maxNoOfLogs;
+};
+struct LogStruct {
+    vec4 position;
+    vec4 color;
+    uint nodeIndex;
+    uint brickPtr;
+    uint index1;
+    uint index2;
+};
+layout(binding = 7,std430) coherent buffer LogBlock{
+    uint maxLogCount; uint padding[3];
+    LogStruct logList[];
+};
+
+void logFragment(vec4 pos, vec4 color, uint nodeIndex, uint brickPtr, uint index1, uint index2) {
+    uint index = atomicAdd(logCounter, 1);
+    if(index < maxLogCount) {        
+        logList[index].position = pos;
+        logList[index].color = color;
+        logList[index].nodeIndex = nodeIndex;
+        logList[index].brickPtr = brickPtr;
+        logList[index].index1 = index1;
+        logList[index].index2 = index2;
+    } else {
+        atomicAdd(logCounter, uint(-1));
+    }
+}
 layout(binding = 0, r32ui) uniform coherent volatile uimage3D lightDirGridL0;
 layout(binding = 1, r32ui) uniform coherent volatile uimage3D lightEnergyGridL0;
 layout(binding = 2, r32ui) uniform coherent volatile uimage3D lightDirGridL1;
@@ -63,12 +104,13 @@ void imageAtomicXYZWAvg( layout ( r32ui ) coherent volatile uimage3D imgUI , ive
 void main()
 {
     ivec3 pos;
-    vec3 lightDisplacement = wcPosition - LightPosition.xyz;
+    vec3 lightDisplacement = LightPosition.xyz - wcPosition;
     vec3 lightDir = normalize(lightDisplacement);
     float dist = length(lightDisplacement);
     float distSq = dist * dist;
     //light energy & direction
     uint recievedEnergy = uint(float(rad) / (distSq * dot(lightDir, normalize(wcNormal))));
+    logFragment(vec4(lightDir, dot(lightDir, normalize(wcNormal))), vec4(wcNormal, distSq), rad, recievedEnergy, uint(gl_FragCoord.x), uint(gl_FragCoord.y));
     vec3 voxelPos = (WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz;
     pos = ivec3((voxelToClipmapL2Mat * WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz);      
     imageAtomicAdd(lightEnergyGridL2, pos, recievedEnergy);

@@ -22,7 +22,7 @@ void RenderLightIntoCasGrid::initialize()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void RenderLightIntoCasGrid::run(Scene & inputScene, GLuint voxelizeMatrixBlock, CascadedGrid & cascadedGrid)
+void RenderLightIntoCasGrid::run(Scene & inputScene,  GLuint voxelizeMatrixBlock, GLBufferObject<CounterBlock> & ssboCounterSet, CascadedGrid & cascadedGrid, GLBufferObject<LogStruct> & logList)
 {
     auto& textureLightDirections = cascadedGrid.getCasGridTextureIds(CascadedGrid::GridType::LIGHT_DIRECTION);
     auto& textureLightEnergies = cascadedGrid.getCasGridTextureIds(CascadedGrid::GridType::LIGHT_ENERGY);
@@ -36,6 +36,8 @@ void RenderLightIntoCasGrid::run(Scene & inputScene, GLuint voxelizeMatrixBlock,
 
     shader.use();
     inputScene.updateLightMatrixBuffer(0, glm::vec3(1, 0, 0), glm::vec3(0, 1, 0));
+    ssboCounterSet.bind(1);
+    logList.bind(7);
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, inputScene.getLightMatrixBuffer()); // light as camera
     glBindBufferBase(GL_UNIFORM_BUFFER, 2, inputScene.getLightBuffer());
     glBindBufferBase(GL_UNIFORM_BUFFER, 3, voxelizeMatrixBlock);
@@ -50,6 +52,13 @@ void RenderLightIntoCasGrid::run(Scene & inputScene, GLuint voxelizeMatrixBlock,
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     inputScene.render(shader.getProgramId());
+    auto c = ssboCounterSet.getPtr();
+    int logCount = c->logCounter;
+    c->logCounter = 0;
+    ssboCounterSet.unMapPtr();
+    std::vector<LogStruct> logs;
+    ShaderLogger::getLogs(logList, logCount, logs);
+    std::cout << "h\n";
 
     inputScene.updateLightMatrixBuffer(0, glm::vec3(-1, 0, 0), glm::vec3(0, 1, 0));
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

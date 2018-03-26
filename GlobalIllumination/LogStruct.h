@@ -1,5 +1,6 @@
 #pragma once
 #include "glm\glm.hpp"
+#include "GLBufferObject.h"
 #include <string>
 #include <vector>
 

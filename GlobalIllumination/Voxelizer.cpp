@@ -162,7 +162,7 @@ void Voxelizer::render(Scene& scene)
         OpenGLTimer::timeTillGPUIsFree("Before voxelization");
         mModuleRenderToCasGrid.run(scene, ssboCounterSet, voxelMatrixData.worldToVoxelMat, voxelLogUniformBuffer, ssboLogList, mCascadedGrid);
         OpenGLTimer::timeTillGPUIsFree("After voxelization");
-        mModuleRenderLightIntoCasGrid.run(scene, voxelMatrixUniformBuffer, mCascadedGrid);
+        mModuleRenderLightIntoCasGrid.run(scene, voxelMatrixUniformBuffer, ssboCounterSet, mCascadedGrid, ssboLogList);
         OpenGLTimer::timeTillGPUIsFree("After light injection");
         mCascadedGrid.filter();
         OpenGLTimer::timeTillGPUIsFree("After filter");

@@ -111,6 +111,9 @@
     <ClCompile Include="OpenGLTimer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="RenderLightTextures.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Shape.h">
@@ -219,6 +222,9 @@
       <Filter>Header Files\DataStructure</Filter>
     </ClInclude>
     <ClInclude Include="OpenGLTimer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderLightTextures.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
