@@ -10,6 +10,16 @@ void RenderLightIntoCasGrid::initialize()
     shader.generateShader("./Shaders/RSM.vert", ShaderProgram::VERTEX);
     shader.generateShader("./Shaders/RSMCasGrid.frag", ShaderProgram::FRAGMENT);
     shader.linkCompileValidate();
+
+    glGenRenderbuffers(1, &rboId);
+    glNamedRenderbufferStorage(rboId, GL_DEPTH_COMPONENT, rsmRes.x, rsmRes.y);
+
+    glGenFramebuffers(1, &fboId); 
+    glBindFramebuffer(GL_FRAMEBUFFER, fboId);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboId); 
+    glFramebufferParameteri(GL_FRAMEBUFFER, GL_FRAMEBUFFER_DEFAULT_WIDTH, rsmRes.x);
+    glFramebufferParameteri(GL_FRAMEBUFFER, GL_FRAMEBUFFER_DEFAULT_HEIGHT, rsmRes.y);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void RenderLightIntoCasGrid::run(Scene & inputScene, GLuint voxelizeMatrixBlock, CascadedGrid & cascadedGrid)
@@ -17,7 +27,7 @@ void RenderLightIntoCasGrid::run(Scene & inputScene, GLuint voxelizeMatrixBlock,
     auto& textureLightDirections = cascadedGrid.getCasGridTextureIds(CascadedGrid::GridType::LIGHT_DIRECTION);
     auto& textureLightEnergies = cascadedGrid.getCasGridTextureIds(CascadedGrid::GridType::LIGHT_ENERGY);
 
-    glViewport(0, 0, 1024, 1024); // light render is done at 1024x1024
+    glBindFramebuffer(GL_FRAMEBUFFER, fboId);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0); 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
@@ -40,16 +50,21 @@ void RenderLightIntoCasGrid::run(Scene & inputScene, GLuint voxelizeMatrixBlock,
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     inputScene.render(shader.getProgramId());
 
-
     inputScene.updateLightMatrixBuffer(0, glm::vec3(-1, 0, 0), glm::vec3(0, 1, 0));
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     inputScene.render(shader.getProgramId());
     inputScene.updateLightMatrixBuffer(0, glm::vec3(0, 0, 1), glm::vec3(0, 1, 0));
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     inputScene.render(shader.getProgramId());
     inputScene.updateLightMatrixBuffer(0, glm::vec3(0, 0, -1), glm::vec3(0, 1, 0));
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     inputScene.render(shader.getProgramId());
     inputScene.updateLightMatrixBuffer(0, glm::vec3(0, 1, 0), glm::vec3(1, 0, 0));
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     inputScene.render(shader.getProgramId());
     inputScene.updateLightMatrixBuffer(0, glm::vec3(0, -1, 0), glm::vec3(1, 0, 0));
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     inputScene.render(shader.getProgramId());
 
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

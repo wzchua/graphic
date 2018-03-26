@@ -27,28 +27,35 @@ void RenderPhong::setup(Scene & scene, GLuint viewWidth, GLuint viewHeight)
 void RenderPhong::run(Scene & scene)
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    //scene.updateMatrixBuffer();
-    switch (num) {
-    case 1:
-        scene.updateLightMatrixBuffer(0, glm::vec3(1, 0, 0), glm::vec3(0, 1, 0));
-        break;
-    case 2:
-        scene.updateLightMatrixBuffer(0, glm::vec3(-1, 0, 0), glm::vec3(0, 1, 0));
-        break;
-    case 3:
-        scene.updateLightMatrixBuffer(0, glm::vec3(0, 0, 1), glm::vec3(0, 1, 0));
-        break;
-    case 4:
-        scene.updateLightMatrixBuffer(0, glm::vec3(0, 0, -1), glm::vec3(0, 1, 0));
-        break;
-    case 5:
-        scene.updateLightMatrixBuffer(0, glm::vec3(0, 1, 0), glm::vec3(1, 0, 0));
-        break;
-    case 6:
-        scene.updateLightMatrixBuffer(0, glm::vec3(0, -1, 0), glm::vec3(1, 0, 0));
-        break;
+    if (num == 0) {
+        glViewport(0, 0, 800, 600);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene.getMatrixBuffer());
+        scene.updateMatrixBuffer();
     }
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene.getLightMatrixBuffer()); // light as camera
+    else {
+        glViewport(0, 0, 1024, 1024);
+        switch (num) {
+        case 1:
+            scene.updateLightMatrixBuffer(0, glm::vec3(1, 0, 0), glm::vec3(0, 1, 0));
+            break;
+        case 2:
+            scene.updateLightMatrixBuffer(0, glm::vec3(-1, 0, 0), glm::vec3(0, 1, 0));
+            break;
+        case 3:
+            scene.updateLightMatrixBuffer(0, glm::vec3(0, 0, 1), glm::vec3(0, 1, 0));
+            break;
+        case 4:
+            scene.updateLightMatrixBuffer(0, glm::vec3(0, 0, -1), glm::vec3(0, 1, 0));
+            break;
+        case 5:
+            scene.updateLightMatrixBuffer(0, glm::vec3(0, 1, 0), glm::vec3(1, 0, 0));
+            break;
+        case 6:
+            scene.updateLightMatrixBuffer(0, glm::vec3(0, -1, 0), glm::vec3(1, 0, 0));
+            break;
+        }
+        glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene.getLightMatrixBuffer()); // light as camera
+    }
     scene.render(phongShader.getProgramId());
 }
 

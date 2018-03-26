@@ -2,7 +2,6 @@
 
 Camera::Camera(glm::vec3 position) : position(position)
 {
-
 }
 
 Camera::~Camera()
@@ -40,13 +39,14 @@ void Camera::viewMove(int mouseXDelta, int mouseYDelta)
 
 }
 
-void Camera::set(glm::vec3 position, glm::vec3 forward, glm::vec3 up, float degree, float aspect)
+void Camera::set(glm::vec3 position, glm::vec3 forward, glm::vec3 up, float degree, glm::ivec2 res)
 {
     isViewMatrixUpdated = false;
     isProjMatrixUpdated = false;
 
     fovDegree = degree;
-    this->aspect = aspect;
+    mResolution = res;
+    this->aspect = res.x / res.y;
     this->position = position;
     this->forward = forward;
     this->up = up;
