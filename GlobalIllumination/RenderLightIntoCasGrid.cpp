@@ -28,7 +28,7 @@ void RenderLightIntoCasGrid::run(Scene & inputScene,  GLuint voxelizeMatrixBlock
     auto& textureLightEnergies = cascadedGrid.getCasGridTextureIds(CascadedGrid::GridType::LIGHT_ENERGY);
 
     glBindFramebuffer(GL_FRAMEBUFFER, fboId);
-    glViewport(0, 0, 128, 128);
+    glViewport(0, 0, 1024, 1024);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0); 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);

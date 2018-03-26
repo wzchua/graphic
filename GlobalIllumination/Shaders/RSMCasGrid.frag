@@ -81,6 +81,9 @@ vec4 convXYZWToVec4( uint val) {
     xyz = xyz - 128.0f;
     return vec4 (  xyz, float (( val &0xFF000000) >>24U) );
 }
+vec4 convRGBA8ToVec4( uint val) {
+    return vec4 ( float (( val &0x000000FF)) , float (( val &0x0000FF00) >>8U) , float (( val &0x00FF0000) >>16U) , float (( val &0xFF000000) >>24U) );
+}
 uint convVec4ToXYZW( vec4 val) {
     val.xyz = (val.xyz + 128.0f);
     return ( uint ( val.w) &0x000000FF) <<24U | ( uint( val.z) &0x000000FF) <<16U | ( uint( val.y ) &0x000000FF) <<8U | ( uint( val.x) &0x000000FF);
@@ -93,9 +96,15 @@ void imageAtomicXYZWAvg( layout ( r32ui ) coherent volatile uimage3D imgUI , ive
     while ( ( curStoredVal = imageAtomicCompSwap( imgUI , coords , prevStoredVal , newVal )) != prevStoredVal) {
         prevStoredVal = curStoredVal;
         vec4 rval = convXYZWToVec4( curStoredVal);
+        if(rval.w >= 255.0f) {            
+            break;
+        }
         rval.xyz =( rval.xyz * rval.w) ; // Denormalize
-        vec4 curValF = rval + val; // Add new value
+        vec4 curValF = rval + val; // Add new value        
         curValF.xyz /=( curValF.w); // Renormalize
+        if(rval.w == 1.0f) {
+            logFragment(vec4(length(curValF.xyz), length(val.xyz), length(rval.xyz / rval.w), length(2 * unpackUnorm4x8(curStoredVal) - 1.0f)), 2 * unpackUnorm4x8(curStoredVal) - 1.0f, uint(gl_FragCoord.x), uint(gl_FragCoord.y), 0, 0);
+        }
         newVal = convVec4ToXYZW( curValF );
     }
 }
@@ -104,14 +113,15 @@ void imageAtomicXYZWAvg( layout ( r32ui ) coherent volatile uimage3D imgUI , ive
 void main()
 {
     ivec3 pos;
-    vec3 lightDisplacement = LightPosition.xyz - wcPosition;
+    vec3 voxelPos = (WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz;
+    vec3 voxelLightPos = (WorldToVoxelMat * vec4(LightPosition.xyz, 1.0f)).xyz;
+    vec3 lightDisplacement = voxelLightPos - voxelPos;
     vec3 lightDir = normalize(lightDisplacement);
     float dist = length(lightDisplacement);
     float distSq = dist * dist;
     //light energy & direction
     uint recievedEnergy = uint(float(rad) / (distSq * dot(lightDir, normalize(wcNormal))));
     //logFragment(vec4(lightDir, dot(lightDir, normalize(wcNormal))), vec4(wcNormal, distSq), rad, recievedEnergy, uint(gl_FragCoord.x), uint(gl_FragCoord.y));
-    vec3 voxelPos = (WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz;
     pos = ivec3((voxelToClipmapL2Mat * WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz);      
     imageAtomicAdd(lightEnergyGridL2, pos, recievedEnergy);
     imageAtomicXYZWAvg(lightDirGridL2, pos, vec4(lightDir, 1.0f));
