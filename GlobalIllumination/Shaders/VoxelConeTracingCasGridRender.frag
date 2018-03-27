@@ -16,39 +16,28 @@ layout (location = 0) out vec4 FragColor;
 #define PI           3.14159265358979323846
 
 struct GaussianLobe {
-    vec3 amplitude;
     vec3 axis;
-    float sharpness;
+    float sigma;
 };
-//https://mynameismjp.wordpress.com/2016/10/09/sg-series-part-2-spherical-gaussians-101/
-//http://www.jp.square-enix.com/tech/library/pdf/Fast%20Indirect%20illumination%20Using%20Two%20Virtual%20Spherical%20Gaussian%20Lights%20(Supplemental%20Material).pdf
-GaussianLobe generateSG(vec3 amplitude, vec3 mean) {
+GaussianLobe generateGaussianLobe(vec3 mean) {
     GaussianLobe g;
-    g.amplitude = amplitude;
     g.axis = normalize(mean);
-    float len = min(length(mean), 0.9999f);
-    g.sharpness = len / (1.0f - len); //Toksvig's filtering
+    float len = min(length(mean), 1.0f);
+    g.sigma = sqrt((1.0f - len) / len); //Toksvig's filtering
     return g;
 }
-
-GaussianLobe Product(GaussianLobe g1, GaussianLobe g2) {
+GaussianLobe ConvolveGaussian(GaussianLobe g1, GaussianLobe g2) {
     GaussianLobe g;
-    float l = g1.sharpness + g2.sharpness;
-    vec3 u = (g1.sharpness * g1.axis + g2.sharpness * g2.axis) / (l);
-    float uLength = length(u);
-
-    g.axis = u * (1.0f / uLength);
-    g.sharpness = l * uLength;
-    g.amplitude = g1.amplitude * g2.amplitude * exp(l * (uLength - 1.0f));
+    g.axis = g1.axis + g2.axis;
+    g.sigma = sqrt(g1.sigma * g1.sigma + g2.sigma * g2.sigma);
     return g;
 }
-
-vec3 InnerProduct(GaussianLobe g1, GaussianLobe g2) {
-    float uLength = length(g1.sharpness * g1.axis + g2.sharpness * g2.axis);
-    float eFactorized = exp(uLength - g1.sharpness - g2.sharpness);
-    float factorized2 = 1.0f - exp(-2.0f * uLength);
-    return (2.0f * PI * g1.amplitude * g2.amplitude * eFactorized * factorized2) / uLength;
+float SolveGaussianLobe(GaussianLobe g, vec3 dir) {
+    float len = dot(g.axis, dir) - 1.0f;
+    float e = exp(len / (2.0f * g.sigma * g.sigma));
+    return e;
 }
+
 //inputPos in world space
 int findMinLevel(vec3 inputPos) {    
     int level;
@@ -80,33 +69,31 @@ float evaluateLOD(float degree, float len) {
 vec4 evaluateColor(in sampler3D colorClip, in sampler3D normalClip, in sampler3D lightDirClip, 
     in usampler3D lightEnergyClip, float lod, vec3 clipPos, vec3 viewDir) {
         vec4 color = vec4(0.0f);
-        float cosPhi = cos(radians(60));
+        float cosPhi = cos(radians(70));
         vec4 c = textureLod(colorClip, clipPos, lod);
-        if(gl_FragCoord.x < 1.0f && gl_FragCoord.y < 1.0f) {
-            logFragment(c, vec4(clipPos, lod), 0, 4, 2, 3);
-            //logFragment(voxelToClipmapL0Mat[0], voxelToClipmapL0Mat[1], 0, 0, 0, 0);
-            //logFragment(voxelToClipmapL0Mat[2], voxelToClipmapL0Mat[3], 0, 0, 0, 0);
-        }
         //if(c.a > 0.0f) {                
             vec4 n = 2 * textureLod(normalClip, clipPos, lod) - 1.0f;
             uint lEnergy = textureLod(lightEnergyClip, clipPos, lod).r;
             vec4 l = 2 * textureLod(lightDirClip, clipPos, lod) - 1.0f;
-            if(gl_FragCoord.x < 1.0f && gl_FragCoord.y < 1.0f) {
-                logFragment(c, n, lEnergy, 2, 2, 3);
-                logFragment(l, vec4(clipPos, 1.0f), lEnergy, 2, 2, 3);
-            }
+            // if(gl_FragCoord.x < 1.0f && gl_FragCoord.y < 1.0f) {
+            //     logFragment(c, n, lEnergy, 2, 2, 3);
+            //     logFragment(l, vec4(clipPos, 1.0f), lEnergy, 2, 2, 3);
+            // }
 
-            GaussianLobe normalLobe = generateSG(vec3(1.0f), n.xyz);
-            GaussianLobe lightLobe = generateSG(vec3(1.0f), l.xyz);
+            GaussianLobe normalLobe = generateGaussianLobe(n.xyz);
+            GaussianLobe lightLobe = generateGaussianLobe(l.xyz);
             
             GaussianLobe viewLobe;
-            viewLobe.amplitude = vec3(1.0f);
-            viewLobe.axis = viewDir;
-            viewLobe.sharpness = 1.0f/(cosPhi * cosPhi);
+            viewLobe.axis = -viewDir;
+            viewLobe.sigma = cosPhi;
             vec3 brdf = c.rgb / PI;
-            vec3 convLightNormal = max(InnerProduct(viewLobe, Product(normalLobe, lightLobe)), 0.0f);
-
-            color.rgb = brdf * float(lEnergy)/40000.0f * convLightNormal;
+            float convLightNormal = SolveGaussianLobe(ConvolveGaussian(ConvolveGaussian(lightLobe, normalLobe), viewLobe), -viewDir);
+            
+            if(lEnergy > 0 && gl_FragCoord.x > 400.0f && gl_FragCoord.y > 500.0f) {
+                logFragment(vec4(viewLobe.axis, (1.0f - length(l.xyz)) / length(l.xyz)), vec4(normalLobe.axis, (1.0f - length(n.xyz)) / length(n.xyz)), lEnergy, 2, 2, 3);
+                logFragment(l, vec4(clipPos, convLightNormal), lEnergy, 2, 2, 4);
+            }
+            color.rgb = brdf * float(lEnergy)/20000.0f * convLightNormal;
             color.a = c.a;
         //}
         return color;
@@ -127,11 +114,11 @@ vec3 diffuseConeTrace(vec3 origin, vec3 dir) {
     vec4 c;
     while(alpha < 1.0f && isWithinBoundary(rayVoxelPos)) {
         float len = length(rayVoxelPos - origin);
-        lod = evaluateLOD(30.0f, len);
-        if(gl_FragCoord.x < 1.0f && gl_FragCoord.y < 1.0f) {
-            logFragment(vec4(adjustedDir, 1.0f), vec4(rayVoxelPos, lod), uint(findMinLevel(rayVoxelPos)), 1, 1, 3);
-        }
-        adjustedDir = pow(2, int(lod)) * dir;
+        lod = evaluateLOD(35.0f, len);
+        //if(gl_FragCoord.x < 1.0f && gl_FragCoord.y < 1.0f) {
+            //logFragment(vec4(adjustedDir, 1.0f), vec4(rayVoxelPos, lod), uint(findMinLevel(rayVoxelPos)), 1, 1, 3);
+        //}
+        //adjustedDir = pow(2, int(lod)) * dir;
         if(lod < 1.0f) {
             clipPos = (voxelToClipmapL0Mat * vec4(rayVoxelPos, 1.0f));
             clipPos = clipPos/clipPos.w / 128.0f;
@@ -148,7 +135,7 @@ vec3 diffuseConeTrace(vec3 origin, vec3 dir) {
             c = evaluateColor(colorBrickL2, normalBrickL2, lightDirBrickL2, lightEnergyBrickL2, lod, clipPos.xyz, dir);
         }
         color += (1.0f - alpha) * c.rgb / (len * len);
-        alpha = alpha + (1.0f - alpha) * c.a;        
+        alpha += (1.0f - alpha) * c.a;
         rayVoxelPos += adjustedDir;
         adjustedDir *= 2.0f;
     }
