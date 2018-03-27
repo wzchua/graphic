@@ -26,7 +26,7 @@ GaussianLobe generateSG(vec3 amplitude, vec3 mean) {
     GaussianLobe g;
     g.amplitude = amplitude;
     g.axis = normalize(mean);
-    float len = length(mean);
+    float len = min(length(mean), 0.9999f);
     g.sharpness = len / (1.0f - len); //Toksvig's filtering
     return g;
 }
@@ -104,9 +104,9 @@ vec4 evaluateColor(in sampler3D colorClip, in sampler3D normalClip, in sampler3D
             viewLobe.axis = viewDir;
             viewLobe.sharpness = 1.0f/(cosPhi * cosPhi);
             vec3 brdf = c.rgb / PI;
-            vec3 convLightNormal = max(InnerProduct(normalLobe, lightLobe), 0.0f);
+            vec3 convLightNormal = max(InnerProduct(viewLobe, Product(normalLobe, lightLobe)), 0.0f);
 
-            color.rgb = brdf * float(lEnergy)/400000000.0f * convLightNormal;
+            color.rgb = brdf * float(lEnergy)/40000.0f * convLightNormal;
             color.a = c.a;
         //}
         return color;
@@ -118,14 +118,16 @@ vec3 diffuseConeTrace(vec3 origin, vec3 dir) {
     }
     float angle = 60.0f;
     float alpha = 0.0f;
-    vec3 adjustedDir = pow(2, findMinLevel(origin)) * dir; // lengthen dir when traversing through larger grid dim
+    int level = findMinLevel(origin);
+    vec3 adjustedDir = pow(2, level) * dir; // lengthen dir when traversing through larger grid dim
     vec3 rayVoxelPos = origin + adjustedDir;
     float lod; vec4 clipPos;
 
     vec3 color = vec3(0.0f);
     vec4 c;
     while(alpha < 1.0f && isWithinBoundary(rayVoxelPos)) {
-        lod = evaluateLOD(30.0f, length(rayVoxelPos - origin));
+        float len = length(rayVoxelPos - origin);
+        lod = evaluateLOD(30.0f, len);
         if(gl_FragCoord.x < 1.0f && gl_FragCoord.y < 1.0f) {
             logFragment(vec4(adjustedDir, 1.0f), vec4(rayVoxelPos, lod), uint(findMinLevel(rayVoxelPos)), 1, 1, 3);
         }
@@ -145,9 +147,10 @@ vec3 diffuseConeTrace(vec3 origin, vec3 dir) {
             lod = lod - 2.0f;
             c = evaluateColor(colorBrickL2, normalBrickL2, lightDirBrickL2, lightEnergyBrickL2, lod, clipPos.xyz, dir);
         }
-        color += c.rgb;
-        alpha = alpha + (1.0f - alpha) * c.a;
+        color += (1.0f - alpha) * c.rgb / (len * len);
+        alpha = alpha + (1.0f - alpha) * c.a;        
         rayVoxelPos += adjustedDir;
+        adjustedDir *= 2.0f;
     }
     return color;
 }
@@ -168,11 +171,11 @@ void main()
     vec3 normal = normalize(wcNormal);
     vec3 orthoX = findOrthoVector(normal);
     vec3 orthoY = cross(normal, orthoX); 
-    vec3 diffuseColor = diffuseConeTrace(pos, normal);
-    diffuseColor += diffuseConeTrace(pos, mix(normal, orthoX, 0.4));
-    diffuseColor += diffuseConeTrace(pos, mix(normal, -orthoX, 0.4));
-    diffuseColor += diffuseConeTrace(pos, mix(normal, orthoY, 0.4));
-    diffuseColor += diffuseConeTrace(pos, mix(normal, -orthoY, 0.4));
+    vec3 diffuseColor = 0.2f * diffuseConeTrace(pos, normal);
+    diffuseColor += 0.2f * diffuseConeTrace(pos, mix(normal, orthoX, 0.6));
+    diffuseColor += 0.2f * diffuseConeTrace(pos, mix(normal, -orthoX, 0.6));
+    diffuseColor += 0.2f * diffuseConeTrace(pos, mix(normal, orthoY, 0.6));
+    diffuseColor += 0.2f * diffuseConeTrace(pos, mix(normal, -orthoY, 0.6));
     vec3 view  = normalize(pos - camPosition.xyz);    
     vec3 specularColor = vec3(0.0f);
     /*if(shininess > 0.0f) {
