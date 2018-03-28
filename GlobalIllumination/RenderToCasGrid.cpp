@@ -25,7 +25,7 @@ void RenderToCasGrid::initialize()
     shader.linkCompileValidate();
     OpenGLQueryObject::getShaderBuffersInfo(shader.getProgramId());
 }
-
+// Suggestion: Generate the cascaded grid based on cam world position map
 void RenderToCasGrid::run(Scene & inputScene, GLBufferObject<CounterBlock>& ssboCounterSet, glm::mat4 & worldToVoxelMat, GLuint logUniformBlock, GLBufferObject<LogStruct>& ssboLogList, CascadedGrid & casGrid)
 {
     auto & cam = inputScene.cam;

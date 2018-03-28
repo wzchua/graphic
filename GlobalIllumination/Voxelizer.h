@@ -27,6 +27,9 @@
 #include "RenderLightIntoCasGrid.h"
 #include "RenderVoxelConeTraceCasGrid.h"
 
+#include "GBuffer.h"
+#include "GBufferGenerator.h"
+
 
 class Voxelizer
 {
@@ -56,6 +59,9 @@ private:
     int texWdith = 512;
     int texHeight = 512;
     unsigned int maxLogCount = 500;
+
+    GBuffer mGBuffer;
+    GBufferGenerator mModuleGBufferGen;
 
     VoxelizeBlock voxelMatrixData;
     LimitsBlock voxelLogCountData = { fragCount, nodeCount, nodeCount, maxLogCount };

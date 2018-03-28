@@ -57,7 +57,7 @@ Voxelizer::Voxelizer()
     mModuleVoxelVisualizer.initialize();
     ssboCounterSet.initialize(GL_SHADER_STORAGE_BUFFER, sizeof(CounterBlock), &mCounterBlock, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, 0);
     ShaderLogger::initilizeLogBuffer(ssboLogList, maxLogCount);
-
+    mModuleGBufferGen.initialize();
     switch(mType) {
     case OCTREE:
         mOctree.initialize();
@@ -116,8 +116,10 @@ void Voxelizer::initializeWithScene(glm::vec3 min, glm::vec3 max)
 
 void Voxelizer::render(Scene& scene)
 {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    mModuleGBufferGen.run(scene, mGBuffer, voxelMatrixUniformBuffer);
+    //mGBuffer.dumpBuffersAsImages();
     std::vector<LogStruct> logs;
+
     using Clock = std::chrono::high_resolution_clock;
     auto timeStart = Clock::now();
 

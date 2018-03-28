@@ -17,5 +17,5 @@ void main()
     vec4 voxelPos = WorldToVoxelMat * vec4(wcPosition, 1.0f);
     voxelPos.xyz /= voxelDim;
     imageStore(voxelPositionMap, xy, voxelPos);
-    imageStore(worldNormalMap, xy, vec4(normalize(wcNormal), 1.0f));
+    imageStore(worldNormalMap, xy, vec4(normalize(wcNormal), 1.0f) * 0.5f + 0.5f);
 }

@@ -105,24 +105,40 @@ int findMinLevel(vec3 inputPos) {
     }
     return level;
 }
+vec4 transformEnergyToColor(uint energy) {
+    if(energy == 0) {
+        return vec4(0.0f);
+    } else if(energy <= 65535) {
+        return vec4(0.0f, 0.0f, float(energy) / 65535.0f, 1.0f);
+    } else if(energy <= 131071) {
+        return vec4(0.0f, float(energy) / 131071.0f, 0.0f, 1.0f);
+    } else if(energy <= 262143) {
+        return vec4(float(energy) / 262143.0f, 0.0f, 0.0f, 1.0f);
+    } else {
+        return vec4(vec3(float(energy) / 524288.0f), 1.0f);
+    }
+}
 vec4 loadColor(vec3 pos, int level) {
-    vec4 clipPos;
+    vec4 clipPos; uint energy;
     if(level == 0) {
         clipPos = (voxelToClipmapL0Mat * vec4(pos, 1.0f));
         if(isEnergy == 1) {
-            return vec4(texelFetch(energyGridL0, ivec3(clipPos.xyz), 0).r) / 65535.0f;
+            energy = texelFetch(energyGridL0, ivec3(clipPos.xyz), 0).r;
+            return transformEnergyToColor(energy);
         }
         return texelFetch(colorGridL0, ivec3(clipPos.xyz), 0);
     } else if(level == 1) {
         clipPos = (voxelToClipmapL1Mat * vec4(pos, 1.0f));
         if(isEnergy == 1) {
-            return vec4(texelFetch(energyGridL1, ivec3(clipPos.xyz), 0).r) / 65535.0f;
+            energy = texelFetch(energyGridL1, ivec3(clipPos.xyz), 0).r;
+            return transformEnergyToColor(energy);
         }
         return texelFetch(colorGridL1, ivec3(clipPos.xyz), 0);
     } else {
         clipPos = (voxelToClipmapL2Mat * vec4(pos, 1.0f));
         if(isEnergy == 1) {
-            return vec4(texelFetch(energyGridL2, ivec3(clipPos.xyz), 0).r) / 65535.0f;
+            energy = texelFetch(energyGridL2, ivec3(clipPos.xyz), 0).r;
+            return transformEnergyToColor(energy);
         }
         return texelFetch(colorGridL2, ivec3(clipPos.xyz), 0);
     }
@@ -150,7 +166,7 @@ void main() {
     vec3 rayPosition = rOrigin;
     bool hasHit = false;
     bool isRayInCube = true;
-    vec4 color; int level = 2;
+    vec4 color; int level = 0;
     if(gl_FragCoord.x < 1 && gl_FragCoord.y < 1) {        
         logFragment(vec4(rayPosition, 1.0f), level0min, 0, 0, height, width);
         logFragment(vec4(rayPosition, 1.0f), level0max, 0, 0, height, width);

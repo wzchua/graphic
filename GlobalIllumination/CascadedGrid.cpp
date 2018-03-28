@@ -210,19 +210,6 @@ void CascadedGrid::resetData()
         glInvalidateTexImage(texture3DLightEnergyCasGrid[i], 0);
         glClearTexImage(texture3DLightEnergyCasGrid[i], 0, GL_RED_INTEGER, GL_UNSIGNED_INT, NULL);
     }
-/*
-    GLuint highestLevel = mCascadeNumber - 1;
-    for (int i = 1; i < 10 - mCascadeNumber; i++) {
-        glInvalidateTexImage(texture3DColorCasGrid[highestLevel], i);
-        glClearTexImage(texture3DColorCasGrid[highestLevel], i, GL_RGBA, GL_FLOAT, NULL);
-        glInvalidateTexImage(texture3DNormalCasGrid[highestLevel], i);
-        glClearTexImage(texture3DNormalCasGrid[highestLevel], i, GL_RGBA, GL_FLOAT, NULL);
-        glInvalidateTexImage(texture3DLightDirCasGrid[highestLevel], i);
-        glClearTexImage(texture3DLightDirCasGrid[highestLevel], i, GL_RGBA, GL_FLOAT, NULL);
-        glInvalidateTexImage(texture3DLightEnergyCasGrid[highestLevel], i);
-        glClearTexImage(texture3DLightEnergyCasGrid[highestLevel], i, GL_RGBA, GL_FLOAT, NULL);
-
-    }*/
 }
 
 GLuint CascadedGrid::getClipDimensions()

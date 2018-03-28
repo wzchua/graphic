@@ -19,5 +19,6 @@ void main()
 {    
     wcPosition = vPosition;
     wcNormal = vNormal;
+    fTexCoord = texCoord;
     gl_Position = ModelViewProjMatrix * vec4(vPosition, 1.0);
 }
