@@ -20,6 +20,14 @@ Scene::Scene()
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
     pointLightMap.resize(pointLights.size() * 6);
+    for (int i = 0; i < pointLights.size(); i++) {
+        GLuint uboId;
+        glGenBuffers(1, &uboId);
+        glBindBuffer(GL_UNIFORM_BUFFER, uboId);
+        glBufferData(GL_UNIFORM_BUFFER, sizeof(Light), &pointLights[i], GL_DYNAMIC_DRAW);
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+        pointLightBuffers.push_back(uboId);
+    }
 }
 
 
@@ -59,6 +67,11 @@ RSM & Scene::getPointLightRSM(int lightIndex, int face)
     return pointLightMap[lightIndex * 6 + face];
 }
 
+GLuint Scene::getPointLightBufferId(int lightIndex)
+{
+    return pointLightBuffers[lightIndex];
+}
+
 GLuint Scene::getLightBuffer()
 {
     return lightBuffer;
@@ -94,4 +107,15 @@ void Scene::updateMatrixBuffer()
 
 GLuint Scene::getMatrixBuffer() {
     return matrixBuffer;
+}
+
+std::string Scene::getLightUBOCode(int lightBinding)
+{
+    std::string s = R"*(layout(binding = )*" + std::to_string(lightBinding)
+        + R"*(, std140) uniform LightBlock{ 
+    vec4 LightPosition; // Given in world space. Can be directional.
+    vec4 LightPower;
+};
+)*";
+    return s;
 }

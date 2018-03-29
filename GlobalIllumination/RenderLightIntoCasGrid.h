@@ -5,14 +5,14 @@
 #include "CounterBlock.h"
 #include "LogStruct.h"
 #include "GLBufferObject.h"
+#include "VoxelizeCascadedBlock.h"
+#include "VoxelizeBlock.h"
 class RenderLightIntoCasGrid : public AbstractModule
 {
 private:
-    GLuint rboId;
-    GLuint fboId;
-    const glm::ivec2 rsmRes{ 1024, 1024 };
+    const glm::ivec3 mWorkGroupSize{ 32, 32, 1 };
 public:
     void initialize();
-    void run(Scene & inputScene, GLuint voxelizeMatrixBlock, GLBufferObject<CounterBlock> & ssboCounterSet, CascadedGrid & cascadedGrid, GLBufferObject<LogStruct> & logList);
+    void run(Scene & inputScene, GLuint voxelizeMatrixBlock, CascadedGrid & cascadedGrid);
 };
 

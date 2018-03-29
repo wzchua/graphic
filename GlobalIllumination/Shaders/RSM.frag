@@ -25,5 +25,5 @@ void main()
     vec4 voxelPos = WorldToVoxelMat * vec4(wcPosition, 1.0f);
     voxelPos.xyz /= voxelDim;
     voxelPosition = voxelPos;
-    worldNormal = vec4(normalize(nwcNormal), 1.0f) * 0.5f + 0.5f;
+    worldNormal = vec4(normalize(nwcNormal) * 0.5f + 0.5f, 1.0f);
 }

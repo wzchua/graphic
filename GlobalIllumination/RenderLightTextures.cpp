@@ -49,6 +49,9 @@ void RenderLightTextures::run(Scene & inputScene)
             inputScene.updateLightMatrixBuffer(0, forward[j], up[j]);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             inputScene.render(shader.getProgramId());
+            glMemoryBarrier(GL_FRAMEBUFFER_BARRIER_BIT | GL_TEXTURE_UPDATE_BARRIER_BIT);
+            glGenerateTextureMipmap(rsm.getVoxelPositionMap());
+            glGenerateTextureMipmap(rsm.getNormalMap());
             //rsm.dumpAsImage(std::to_string(i) + "_(" + std::to_string(j) + ")");
         }
     }

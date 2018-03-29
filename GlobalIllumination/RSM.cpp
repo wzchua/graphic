@@ -23,7 +23,7 @@ void RSM::initialize(glm::ivec2 res)
 
     glCreateTextures(GL_TEXTURE_2D, 1, &mVoxelPositionMap);
     glBindTexture(GL_TEXTURE_2D, mVoxelPositionMap);
-    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB10_A2, res.x, res.y);
+    glTexStorage2D(GL_TEXTURE_2D, 3, GL_RGB10_A2, res.x, res.y);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
@@ -32,7 +32,7 @@ void RSM::initialize(glm::ivec2 res)
 
     glCreateTextures(GL_TEXTURE_2D, 1, &mNormalMap);
     glBindTexture(GL_TEXTURE_2D, mNormalMap);
-    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB10_A2, res.x, res.y);
+    glTexStorage2D(GL_TEXTURE_2D, 3, GL_RGB10_A2, res.x, res.y);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);

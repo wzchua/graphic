@@ -60,6 +60,11 @@ in vec2 fTexCoord;
 )";
 }
 
+std::string GlobalShaderComponents::getComputeShaderInputLayout(GLuint x, GLuint y, GLuint z)
+{
+    return "layout (local_size_x = " + std::to_string(x) + ", local_size_y = " + std::to_string(y) + ", local_size_z = "+ std::to_string(z) +") in;\n";
+}
+
 std::string GlobalShaderComponents::getCamMatrixUBOCode()
 {
     std::string s = R"*(layout(binding = )*" + std::to_string(CAMERA_MATRIX_UBO_BINDING)

@@ -9,11 +9,12 @@ public:
     static const GLuint MATERIAL_UBO_BINDING = 1;
     static const GLuint VOXELIZATION_MATRIX_UBO_BINDING = 2;
     static const GLuint GLOBAL_VARIABLES_UBO_BINDING = 3;
-    static const GLuint CASGRID_VOXELIZATION_MATRIX_UBO_BINDING = 4;
+    static const GLuint CASGRID_VOXELIZATION_INFO_UBO_BINDING = 4;
     static const GLuint LIGHT_UBO_BINDING = 5;
     static const GLuint CAMERA_UBO_BINDING = 6;
     static const GLuint LIGHT_CAMERA_MATRIX_UBO_BINDING = 7;
     static const GLuint CAS_VOXELIZATION_MATRIX_UBO_BINDING = 8;
+    static const GLuint RAYCAST_UBO_BINDING = 9;
     
     static const GLuint COUNTER_SSBO_BINDING = 0;
     static const GLuint LOG_SSBO_BINDING = 1;
@@ -42,6 +43,8 @@ public:
     static std::string getGeomToFragTripleOutput();
     static std::string getFragTripleInput();
 
+    static std::string getComputeShaderInputLayout(GLuint x, GLuint y = 1, GLuint z = 1);
+
     static std::string getCamMatrixUBOCode();
     static std::string getLightCamMatrixUBOCode();
     static std::string getGlobalVariablesUBOCode();
@@ -51,7 +54,7 @@ public:
         MATERIAL = 1,
         VOXELIZATION_MATRIX = 2,
         GLOBAL_VARIABLES = 3,
-        CASGRID_VOXELIZATION_MATRIX = 4,
+        CASGRID_VOXELIZATION_INFO = 4,
         LIGHT = 5,
         CAMERA = 6,
         LIGHT_CAMERA = 7

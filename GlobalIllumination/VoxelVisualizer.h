@@ -8,6 +8,7 @@
 #include "CounterBlock.h"
 #include "Octree.h"
 #include "CascadedGrid.h"
+#include "GlobalShaderComponents.h"
 class VoxelVisualizer
 {
 private:
@@ -34,16 +35,16 @@ private:
     GLuint quadVAOId;
     GLuint quadVBOId;
     GLuint quadEBOId;
-    void rayCastVoxels(Camera& cam, glm::mat4 & worldToVoxelMat, GLBufferObject<CounterBlock> & counterSet, GLuint logUniformBlock, GLBufferObject<LogStruct> & logList, int gridType);
+    void rayCastVoxels(Camera& cam, glm::mat4 & worldToVoxelMat, int gridType);
 public:
     enum Type {
         GRID, OCTREE
     };
     void initialize();
     void rasterizeVoxels(Camera& cam, glm::mat4 & worldToVoxelMat, GLBufferObject<glm::vec4>& inputssboVoxelList, GLuint noOfVoxels, GLuint colorTextureId);
-    void rayCastVoxels(Camera& cam, glm::mat4 & worldToVoxelMat, GLBufferObject<CounterBlock> & counterSet, GLuint logUniformBlock, Octree & octree, GLBufferObject<LogStruct> & logList, int gridType);
-    void rayCastVoxels(Camera& cam, glm::mat4 & worldToVoxelMat, GLBufferObject<CounterBlock> & counterSet, GLuint logUniformBlock, CascadedGrid & cascadedGrid, GLBufferObject<LogStruct> & logList, int gridType);
-    void rayCastVoxelsGrid(Camera& cam, glm::mat4 & worldToVoxelMat, GLBufferObject<CounterBlock> & counterSet, GLuint logUniformBlock, GLuint colorTextureId, GLBufferObject<LogStruct> & logList, int gridType);
+    void rayCastVoxels(Camera& cam, glm::mat4 & worldToVoxelMat, Octree & octree, int gridType);
+    void rayCastVoxels(Camera& cam, glm::mat4 & worldToVoxelMat, CascadedGrid & cascadedGrid, int gridType);
+    void rayCastVoxelsGrid(Camera& cam, glm::mat4 & worldToVoxelMat, GLuint colorTextureId, int gridType);
     VoxelVisualizer();
     ~VoxelVisualizer();
 };

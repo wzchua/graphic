@@ -66,7 +66,7 @@ Voxelizer::Voxelizer()
     case CAS_GRID:
         mCascadedGrid.initializeGrids(3);
         mModuleRenderToCasGrid.initialize();
-        //mModuleRenderLightIntoCasGrid.initialize();
+        mModuleRenderLightIntoCasGrid.initialize();
         mModuleRenderVoxelConeTraceCasGrid.initialize();
         break;
     case GRID:
@@ -117,87 +117,95 @@ void Voxelizer::initializeWithScene(glm::vec3 min, glm::vec3 max)
 
 void Voxelizer::render(Scene& scene)
 {
+    OpenGLTimer::timeTillGPUIsFree("At start");
     glBindBufferBase(GL_UNIFORM_BUFFER, GlobalCom::CAMERA_MATRIX_UBO_BINDING, scene.getMatrixBuffer());
     mModuleGBufferGen.run(scene, mGBuffer);
+    OpenGLTimer::timeTillGPUIsFree("After gBuffer render");
     //mGBuffer.dumpBuffersAsImages();
 
     mModuleLightRenderer.run(scene);
+    OpenGLTimer::timeTillGPUIsFree("After rsm generation");
     std::vector<LogStruct> logs;
 
-    //using Clock = std::chrono::high_resolution_clock;
-    //auto timeStart = Clock::now();
+    using Clock = std::chrono::high_resolution_clock;
+    auto timeStart = Clock::now();
 
-    //switch (mType) {
-    //case OCTREE:
-    //{
-    //    mModuleRenderToOctree.run(scene, ssboCounterSet, voxelMatrixUBOId, globalVariablesUBOId, mOctree, ssboFragmentList, ssboLogList);
-    //    auto syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
-    //    GLenum waitReturn = GL_UNSIGNALED;
-    //    while (waitReturn != GL_ALREADY_SIGNALED && waitReturn != GL_CONDITION_SATISFIED)
-    //    {
-    //        waitReturn = glClientWaitSync(syncObj, GL_SYNC_FLUSH_COMMANDS_BIT, 2);
-    //    }
-    //    glDeleteSync(syncObj);
-    //    auto timeAfterRender = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - timeStart).count();
-    //    auto cPtr = ssboCounterSet.getPtr();
-    //    auto c2 = *cPtr;
-    //    ssboCounterSet.unMapPtr();
-    //    auto node = mOctree.getNodeList().getPtr();
-    //    std::vector<Octree::NodeStruct> nodeList;
-    //    for (int i = 0; i < c2.nodeCounter; i++) {
-    //        nodeList.push_back(node[i]);
-    //    }
-    //    mOctree.getNodeList().unMapPtr();
-    //    //mModuleAddToOctree.run(ssboNodeList, ssboFragmentList, ssboCounterSet, ssboLeafIndexList, voxelLogUniformBuffer, texture3DColorList, texture3DNormalList, ssboLogList);
-    //    mModuleVoxelVisualizer.rayCastVoxels(scene.cam, voxelMatrixData.worldToVoxelMat, ssboCounterSet, globalVariablesUBOId, mOctree, ssboLogList, currentNumMode);
-    //    auto timeAfterAddingToOctree = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - timeStart).count();
-    //    std::cout << " ms. time after render: " << timeAfterRender << " ms. time after add to octree: " << timeAfterAddingToOctree << " ms" << std::endl;
+    switch (mType) {
+    case OCTREE:
+    {
+        mModuleRenderToOctree.run(scene, ssboCounterSet, voxelMatrixUBOId, globalVariablesUBOId, mOctree, ssboFragmentList, ssboLogList);
+        auto syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+        GLenum waitReturn = GL_UNSIGNALED;
+        while (waitReturn != GL_ALREADY_SIGNALED && waitReturn != GL_CONDITION_SATISFIED)
+        {
+            waitReturn = glClientWaitSync(syncObj, GL_SYNC_FLUSH_COMMANDS_BIT, 2);
+        }
+        glDeleteSync(syncObj);
+        auto timeAfterRender = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - timeStart).count();
+        auto cPtr = ssboCounterSet.getPtr();
+        auto c2 = *cPtr;
+        ssboCounterSet.unMapPtr();
+        auto node = mOctree.getNodeList().getPtr();
+        std::vector<Octree::NodeStruct> nodeList;
+        for (int i = 0; i < c2.nodeCounter; i++) {
+            nodeList.push_back(node[i]);
+        }
+        mOctree.getNodeList().unMapPtr();
+        //mModuleAddToOctree.run(ssboNodeList, ssboFragmentList, ssboCounterSet, ssboLeafIndexList, voxelLogUniformBuffer, texture3DColorList, texture3DNormalList, ssboLogList);
+        mModuleVoxelVisualizer.rayCastVoxels(scene.cam, voxelMatrixData.worldToVoxelMat, mOctree, currentNumMode);
+        auto timeAfterAddingToOctree = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - timeStart).count();
+        std::cout << " ms. time after render: " << timeAfterRender << " ms. time after add to octree: " << timeAfterAddingToOctree << " ms" << std::endl;
 
-    //    // inject light
-    //    //mModuleRenderLightIntoOctree.run(scene, ssboNodeList, texture3DLightEnergyList, texture3DLightDirList, voxelMatrixUniformBuffer);
+        // inject light
+        //mModuleRenderLightIntoOctree.run(scene, ssboNodeList, texture3DLightEnergyList, texture3DLightDirList, voxelMatrixUniformBuffer);
 
-    //    // filter octree geometry / light
-    //    //mModuleFilterOctree.run(ssboCounterSet, ssboNodeList, ssboLeafIndexList, texture3DColorList, texture3DNormalGrid, texture3DLightEnergyList, texture3DLightDirList);
+        // filter octree geometry / light
+        //mModuleFilterOctree.run(ssboCounterSet, ssboNodeList, ssboLeafIndexList, texture3DColorList, texture3DNormalGrid, texture3DLightEnergyList, texture3DLightDirList);
 
-    //    // render cam RSM and draw shading using VCT
-    //    //mModuleRenderVCT.run(scene, ssboCounterSet, ssboNodeList, texture3DColorList, texture3DNormalGrid, texture3DLightEnergyList, texture3DLightDirList);
-    //}
-    //break;
-    //case CAS_GRID:
-    //{
-    //    OpenGLTimer::timeTillGPUIsFree("Before voxelization");
-    //    mModuleRenderToCasGrid.run(scene, voxelMatrixData.worldToVoxelMat, mCascadedGrid);
-    //    OpenGLTimer::timeTillGPUIsFree("After voxelization");
-    //    mModuleRenderLightIntoCasGrid.run(scene, voxelMatrixUBOId, ssboCounterSet, mCascadedGrid, ssboLogList);
-    //    OpenGLTimer::timeTillGPUIsFree("After light injection");
-    //    mCascadedGrid.filter();
-    //    OpenGLTimer::timeTillGPUIsFree("After filter");
-    //    if (currentNumMode == 0) {
-    //        mModuleRenderVoxelConeTraceCasGrid.run(scene, voxelMatrixUBOId, ssboCounterSet, mCascadedGrid, ssboLogList);
-    //    }
-    //    else {
-    //        mModuleVoxelVisualizer.rayCastVoxels(scene.cam, voxelMatrixData.worldToVoxelMat, ssboCounterSet, globalVariablesUBOId, mCascadedGrid, ssboLogList, currentNumMode);
-    //    }       
-    //    OpenGLTimer::timeTillGPUIsFree("After VCT render");
-    //}
-    //break;
-    //case GRID:
-    //{
-    //    mModuleRenderToGrid.run(scene, ssboCounterSet, voxelMatrixUBOId, globalVariablesUBOId, ssboLogList, texture3DColorGrid, texture3DNormalGrid, ssboVoxelList);
-    //    mModuleVoxelVisualizer.rayCastVoxelsGrid(scene.cam, voxelMatrixData.worldToVoxelMat, ssboCounterSet, globalVariablesUBOId, texture3DColorGrid, ssboLogList, currentNumMode);
-    //}
-    //break;
-    //default:
-    //    break;
-    //}
+        // render cam RSM and draw shading using VCT
+        //mModuleRenderVCT.run(scene, ssboCounterSet, ssboNodeList, texture3DColorList, texture3DNormalGrid, texture3DLightEnergyList, texture3DLightDirList);
+    }
+    break;
+    case CAS_GRID:
+    {
+        mModuleRenderToCasGrid.run(scene, voxelMatrixData.worldToVoxelMat, mCascadedGrid);
+        OpenGLTimer::timeTillGPUIsFree("After voxelization");
+        mModuleRenderLightIntoCasGrid.run(scene, voxelMatrixUBOId, mCascadedGrid);
+        /*auto c = ssboCounterSet.getPtr();
+        int logCount = c->logCounter;
+        c->logCounter = 0;
+        ssboCounterSet.unMapPtr();
+        std::vector<LogStruct> logs;
+        ShaderLogger::getLogs(ssboLogList, logCount, logs);*/
+        OpenGLTimer::timeTillGPUIsFree("After light injection");
+        mCascadedGrid.filter();
+        OpenGLTimer::timeTillGPUIsFree("After filter");
+        if (currentNumMode == 0) {
+            mModuleRenderVoxelConeTraceCasGrid.run(scene, voxelMatrixUBOId, ssboCounterSet, mCascadedGrid, ssboLogList);
+        }
+        else {
+            mModuleVoxelVisualizer.rayCastVoxels(scene.cam, voxelMatrixData.worldToVoxelMat, mCascadedGrid, currentNumMode);
+        }       
+        OpenGLTimer::timeTillGPUIsFree("After VCT render");
+    }
+    break;
+    case GRID:
+    {
+        mModuleRenderToGrid.run(scene, ssboCounterSet, voxelMatrixUBOId, globalVariablesUBOId, ssboLogList, texture3DColorGrid, texture3DNormalGrid, ssboVoxelList);
+        mModuleVoxelVisualizer.rayCastVoxelsGrid(scene.cam, voxelMatrixData.worldToVoxelMat, texture3DColorGrid, currentNumMode);
+    }
+    break;
+    default:
+        break;
+    }
 
 
-    ////ShaderLogger::getLogs(ssboLogList, logCount, logs);
+    //ShaderLogger::getLogs(ssboLogList, logCount, logs);
 
 
-    //resetAllData();
-    //auto timeEnd = Clock::now();
-    //std::cout << "time end: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeEnd - timeStart).count() << "ms" << std::endl;
+    resetAllData();
+    auto timeEnd = Clock::now();
+    std::cout << "time end: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeEnd - timeStart).count() << "ms" << std::endl;
 }
 
 void Voxelizer::resetAllData()

@@ -106,7 +106,7 @@ vec4 evaluateColor(in sampler3D colorClip, in sampler3D normalClip, in sampler3D
             vec3 brdf = c.rgb / PI;
             vec3 convLightNormal = max(InnerProduct(normalLobe, viewLobe), 0.0f);
 
-            color.rgb = brdf * float(lEnergy)/40000.0f * convLightNormal;
+            color.rgb = brdf * float(lEnergy)/536870911.0f * convLightNormal;
             color.a = c.a;
         }
         return color;

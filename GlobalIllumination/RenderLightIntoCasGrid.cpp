@@ -7,41 +7,22 @@ void RenderLightIntoCasGrid::initialize()
     if (hasInitialized) {
         return;
     }
-    shader.generateShader("./Shaders/RSM.vert", ShaderProgram::VERTEX);
-    shader.generateShader("./Shaders/RSMCasGrid.frag", ShaderProgram::FRAGMENT);
+    std::stringstream compShaderString;
+    compShaderString << GlobalShaderComponents::getHeader() << GlobalShaderComponents::getComputeShaderInputLayout(mWorkGroupSize.x, mWorkGroupSize.y);
+    compShaderString << voxelizeBlockString(GlobalShaderComponents::VOXELIZATION_MATRIX_UBO_BINDING) << voxelizeCascadedBlockString(GlobalShaderComponents::CASGRID_VOXELIZATION_INFO_UBO_BINDING) << Scene::getLightUBOCode(GlobalShaderComponents::LIGHT_UBO_BINDING);
+    compShaderString << counterBlockBufferShaderCodeString(GlobalShaderComponents::COUNTER_SSBO_BINDING) << logFunctionAndBufferShaderCodeString(GlobalShaderComponents::LOG_SSBO_BINDING);
+    shader.generateShader(compShaderString, "./Shaders/LightInjectionIntoCasGrid.comp", ShaderProgram::COMPUTE);
     shader.linkCompileValidate();
-
-    glCreateRenderbuffers(1, &rboId);
-    glNamedRenderbufferStorage(rboId, GL_DEPTH_COMPONENT, rsmRes.x, rsmRes.y);
-
-    glGenFramebuffers(1, &fboId); 
-    glBindFramebuffer(GL_FRAMEBUFFER, fboId);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboId); 
-    glFramebufferParameteri(GL_FRAMEBUFFER, GL_FRAMEBUFFER_DEFAULT_WIDTH, rsmRes.x);
-    glFramebufferParameteri(GL_FRAMEBUFFER, GL_FRAMEBUFFER_DEFAULT_HEIGHT, rsmRes.y);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void RenderLightIntoCasGrid::run(Scene & inputScene,  GLuint voxelizeMatrixBlock, GLBufferObject<CounterBlock> & ssboCounterSet, CascadedGrid & cascadedGrid, GLBufferObject<LogStruct> & logList)
+void RenderLightIntoCasGrid::run(Scene & inputScene,  GLuint voxelizeMatrixBlock, CascadedGrid & cascadedGrid)
 {
     auto& textureLightDirections = cascadedGrid.getCasGridTextureIds(CascadedGrid::GridType::LIGHT_DIRECTION);
     auto& textureLightEnergies = cascadedGrid.getCasGridTextureIds(CascadedGrid::GridType::LIGHT_ENERGY);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, fboId);
-    glViewport(0, 0, 1024, 1024);
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0); 
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
-
     shader.use();
-    inputScene.updateLightMatrixBuffer(0, glm::vec3(1, 0, 0), glm::vec3(0, 1, 0));
-    ssboCounterSet.bind(1);
-    logList.bind(7);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, inputScene.getLightMatrixBuffer()); // light as camera
-    glBindBufferBase(GL_UNIFORM_BUFFER, 2, inputScene.getLightBuffer());
-    glBindBufferBase(GL_UNIFORM_BUFFER, 3, voxelizeMatrixBlock);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 4, cascadedGrid.getVoxelizedCascadedBlockBufferId());
+
+    glBindBufferBase(GL_UNIFORM_BUFFER, GlobalShaderComponents::CASGRID_VOXELIZATION_INFO_UBO_BINDING, cascadedGrid.getVoxelizedCascadedBlockBufferId());
 
     glBindImageTexture(0, textureLightDirections[0], 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
     glBindImageTexture(1, textureLightEnergies[0], 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
@@ -50,31 +31,16 @@ void RenderLightIntoCasGrid::run(Scene & inputScene,  GLuint voxelizeMatrixBlock
     glBindImageTexture(4, textureLightDirections[2], 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
     glBindImageTexture(5, textureLightEnergies[2], 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
 
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    inputScene.render(shader.getProgramId());
-    /*auto c = ssboCounterSet.getPtr();
-    int logCount = c->logCounter;
-    c->logCounter = 0;
-    ssboCounterSet.unMapPtr();
-    std::vector<LogStruct> logs;
-    ShaderLogger::getLogs(logList, logCount, logs);
-    std::cout << "h\n";*/
+    int numOfPointLight = inputScene.getTotalPointLights();
 
-    inputScene.updateLightMatrixBuffer(0, glm::vec3(-1, 0, 0), glm::vec3(0, 1, 0));
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    inputScene.render(shader.getProgramId());
-    inputScene.updateLightMatrixBuffer(0, glm::vec3(0, 0, 1), glm::vec3(0, 1, 0));
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    inputScene.render(shader.getProgramId());
-    inputScene.updateLightMatrixBuffer(0, glm::vec3(0, 0, -1), glm::vec3(0, 1, 0));
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    inputScene.render(shader.getProgramId());
-    inputScene.updateLightMatrixBuffer(0, glm::vec3(0, 1, 0), glm::vec3(1, 0, 0));
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    inputScene.render(shader.getProgramId());
-    inputScene.updateLightMatrixBuffer(0, glm::vec3(0, -1, 0), glm::vec3(1, 0, 0));
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    inputScene.render(shader.getProgramId());
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    for (int i = 0; i < numOfPointLight; i++) {
+        glBindBufferBase(GL_UNIFORM_BUFFER, GlobalShaderComponents::LIGHT_UBO_BINDING, inputScene.getPointLightBufferId(i));
+        for (int j = 0; j < 6; j++) {
+            RSM& rsm = inputScene.getPointLightRSM(i, j);
+            auto res = rsm.getResolution();
+            glBindTextureUnit(0, rsm.getVoxelPositionMap());
+            glBindTextureUnit(1, rsm.getNormalMap());
+            glDispatchCompute(res.x / mWorkGroupSize.x, res.y / mWorkGroupSize.y, 1);
+        }
+    }
 }

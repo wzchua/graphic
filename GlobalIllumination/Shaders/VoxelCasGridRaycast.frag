@@ -4,7 +4,7 @@
 
 in vec3 wcPosition;   // Vertex position in scaled world space.
 
-layout(binding = 0) uniform RayCastBlock {
+layout(binding = 9) uniform RayCastBlock {
     mat4 ViewToVoxelMat;
     vec4 camPosition;
     vec4 camForward;
@@ -14,7 +14,7 @@ layout(binding = 0) uniform RayCastBlock {
     int isEnergy;
 };
 
-layout(binding = 7, std140) uniform LimitsUniformBlock {
+layout(binding = 3, std140) uniform LimitsUniformBlock {
     uint maxNoOfFragments;
     uint maxNoOfNodes;
     uint maxNoOfBricks;
@@ -31,7 +31,7 @@ layout(binding = 4, std140) uniform VoxelizeCascadedBlock{
     vec4 level2min;
     vec4 level2max;
 };
-layout(binding = 1) coherent buffer CounterBlock{
+layout(binding = 0) coherent buffer CounterBlock{
     uint fragmentCounter;
     uint nodeCounter;
     uint brickCounter;
@@ -115,7 +115,7 @@ vec4 transformEnergyToColor(uint energy) {
     } else if(energy <= 262143) {
         return vec4(float(energy) / 262143.0f, 0.0f, 0.0f, 1.0f);
     } else {
-        return vec4(vec3(float(energy) / 524288.0f), 1.0f);
+        return vec4(vec3(float(energy) / 536870911.0f), 1.0f);
     }
 }
 vec4 loadColor(vec3 pos, int level) {
@@ -167,14 +167,15 @@ void main() {
     bool hasHit = false;
     bool isRayInCube = true;
     vec4 color; int level = 0;
-    if(gl_FragCoord.x < 1 && gl_FragCoord.y < 1) {        
-        logFragment(vec4(rayPosition, 1.0f), level0min, 0, 0, height, width);
-        logFragment(vec4(rayPosition, 1.0f), level0max, 0, 0, height, width);
-        logFragment(vec4(rayPosition, 1.0f), level1min, 0, 0, height, width);
-        logFragment(vec4(rayPosition, 1.0f), level1max, 0, 0, height, width);
-        logFragment(vec4(rayPosition, 1.0f), level2min, 0, 0, height, width);
-        logFragment(vec4(rayPosition, 1.0f), level2max, 0, 0, height, width);
-    }
+
+    // if(gl_FragCoord.x < 1 && gl_FragCoord.y < 1) {        
+    //     logFragment(vec4(rayPosition, 1.0f), level0min, 0, 0, height, width);
+    //     logFragment(vec4(rayPosition, 1.0f), level0max, 0, 0, height, width);
+    //     logFragment(vec4(rayPosition, 1.0f), level1min, 0, 0, height, width);
+    //     logFragment(vec4(rayPosition, 1.0f), level1max, 0, 0, height, width);
+    //     logFragment(vec4(rayPosition, 1.0f), level2min, 0, 0, height, width);
+    //     logFragment(vec4(rayPosition, 1.0f), level2max, 0, 0, height, width);
+    // }
     //ray march
     do {
         rayPosition += dir;
@@ -183,14 +184,13 @@ void main() {
         }
         color = loadColor(rayPosition, level);
         hasHit = color.a != 0.0f;
-        if(gl_FragCoord.x < 1 && gl_FragCoord.y < 1) {        
-            logFragment(vec4(rayPosition, 1.0f), color, uint(hasHit), 0, height, width);
-        }
+        // if(gl_FragCoord.x < 1 && gl_FragCoord.y < 1) {        
+        //     logFragment(vec4(rayPosition, 1.0f), color, uint(hasHit), 0, height, width);
+        // }
     } while(!hasHit);
 
     if(isRayInCube) {
         FragColor = color; 
-        //FragColor = vec4(1.0f, 0.0f, 0.0f, 1.0f);
         
     } else {
         discard;

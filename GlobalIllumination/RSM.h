@@ -20,6 +20,7 @@ public:
     GLuint getDepthMap() { return mDepthMap; }
     GLuint getVoxelPositionMap() { return mVoxelPositionMap; }
     GLuint getNormalMap() { return mNormalMap; }
+    glm::ivec2 getResolution() { return mRes; };
     void destroyTextures();
     RSM();
     ~RSM();

@@ -34,6 +34,7 @@ private:
     std::vector<Light> directionalLights;
     std::vector<RSM> pointLightMap;
     std::vector<RSM> directionalLightMap;
+    std::vector<GLuint> pointLightBuffers;
 
     MatrixBlock matrixBlock;
     MatrixBlock matrixLightBlock;
@@ -58,6 +59,7 @@ public:
     void render(int programId);
     glm::mat4 getSceneModelMat();
     RSM& getPointLightRSM(int lightIndex, int face);
+    GLuint getPointLightBufferId(int lightIndex);
     int getTotalPointLights() { return pointLights.size(); }
     GLuint getLightBuffer();
     void updateLightMatrixBuffer(GLuint index, glm::vec3 forward, glm::vec3 up);
@@ -66,5 +68,6 @@ public:
     GLuint getMatrixBuffer();
     glm::vec3 getSceneMinCoords() { return sceneMin; }
     glm::vec3 getSceneMaxCoords() { return sceneMax; }
+    static std::string getLightUBOCode(int lightBinding);
 };
 

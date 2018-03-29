@@ -4,7 +4,7 @@
 
 in vec3 wcPosition;   // Vertex position in scaled world space.
 
-layout(binding = 0) uniform RayCastBlock {
+layout(binding = 9) uniform RayCastBlock {
     mat4 ViewToVoxelMat;
     vec4 camPosition;
     vec4 camForward;
