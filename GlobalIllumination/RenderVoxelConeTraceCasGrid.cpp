@@ -74,5 +74,5 @@ void RenderVoxelConeTraceCasGrid::run(Scene & inputScene, GLuint voxelizeMatrixB
     ssboCounterSet.unMapPtr();
     std::vector<LogStruct> logs;
     ShaderLogger::getLogs(logList, logCount, logs);
-    //std::cout << "h\n";
+    std::cout << "h\n";
 }

@@ -8,6 +8,7 @@
 #include "SceneMaterialManager.h"
 #include "Shape.h"
 #include "Camera.h"
+#include "RSM.h"
 
 class Scene
 {
@@ -25,6 +26,15 @@ private:
         glm::mat4 normalMatrix;
     };
     LightBlock light{ { 10.0f, 150.0f, 100.0f, 1.0f }, { 0.1f, 0.1f, 0.1f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f }, 40000000 };
+    struct Light {
+        glm::vec4 position;
+        glm::vec4 power;
+    };
+    std::vector<Light> pointLights ={ { {20.0f, 120.0f, 20.0f, 1.0f}, {0.7f, 0.7f, 0.7f, 1.0f} } };
+    std::vector<Light> directionalLights;
+    std::vector<RSM> pointLightMap;
+    std::vector<RSM> directionalLightMap;
+
     MatrixBlock matrixBlock;
     MatrixBlock matrixLightBlock;
     Camera lightCam = Camera(glm::vec3(light.position.x, light.position.y, light.position.z));
@@ -47,6 +57,8 @@ public:
     bool LoadObjScene(std::string filename);
     void render(int programId);
     glm::mat4 getSceneModelMat();
+    RSM& getPointLightRSM(int lightIndex, int face);
+    int getTotalPointLights() { return pointLights.size(); }
     GLuint getLightBuffer();
     void updateLightMatrixBuffer(GLuint index, glm::vec3 forward, glm::vec3 up);
     GLuint getLightMatrixBuffer();

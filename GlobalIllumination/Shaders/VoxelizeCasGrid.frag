@@ -1,18 +1,3 @@
-layout(binding = 1) uniform MatBlock {
-    sampler2D texAmbient;
-    sampler2D texDiffuse;
-    sampler2D texAlpha;
-    sampler2D texHeight;
-    vec4 ambient;
-    vec4 diffuse;
-    vec4 specular;
-    int useBumpMap;
-    float shininess;
-};
-
-layout(binding = 4, r32ui) uniform coherent volatile uimage3D colorBrick;
-layout(binding = 5, r32ui) uniform coherent volatile uimage3D normalBrick;
-
 const vec2 size = vec2(2.0,0.0);
 const ivec3 off = ivec3(-1,0,1);
 

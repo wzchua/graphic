@@ -3,6 +3,25 @@
 layout(early_fragment_tests) in;
 in vec3 wcPosition;   // Fragment's 3D position in world space.
 in vec3 wcNormal;
+in vec2 fTexCoord;
+
+layout(binding = 0, std140) uniform MatrixBlock {
+    mat4 ModelViewMatrix;     // ModelView matrix.
+    mat4 ModelViewProjMatrix; // ModelView matrix * Projection matrix.
+    mat3 NormalMatrix;        // For transforming object-space direction 
+};                                    //   vector to eye space.
+
+layout(binding = 1) uniform MatBlock {
+    sampler2D texAmbient;
+    sampler2D texDiffuse;
+    sampler2D texAlpha;
+    sampler2D texHeight;
+    vec4 ambient;
+    vec4 diffuse;
+    vec4 specular;
+    int useBumpMap;
+    float shininess;
+};
 
 layout(binding = 2) uniform LightBlock {                            
     vec4 LightPosition; // Given in world space. Can be directional.
@@ -102,16 +121,32 @@ void imageAtomicXYZWAvg( layout ( r32ui ) coherent volatile uimage3D imgUI , ive
         rval.xyz =( rval.xyz * rval.w) ; // Denormalize
         vec4 curValF = rval + val; // Add new value        
         curValF.xyz /=( curValF.w); // Renormalize
-        if(rval.w == 1.0f) {
-            logFragment(vec4(length(curValF.xyz), length(val.xyz), length(rval.xyz / rval.w), length(2 * unpackUnorm4x8(curStoredVal) - 1.0f)), 2 * unpackUnorm4x8(curStoredVal) - 1.0f, uint(gl_FragCoord.x), uint(gl_FragCoord.y), 0, 0);
-        }
+        // if(rval.w == 1.0f) {
+        //     logFragment(vec4(length(curValF.xyz), length(val.xyz), length(rval.xyz / rval.w), length(2 * unpackUnorm4x8(curStoredVal) - 1.0f)), 2 * unpackUnorm4x8(curStoredVal) - 1.0f, uint(gl_FragCoord.x), uint(gl_FragCoord.y), 0, 0);
+        // }
         newVal = convVec4ToXYZW( curValF );
     }
 }
 
+const vec2 size = vec2(2.0,0.0);
+const ivec3 off = ivec3(-1,0,1);
 
 void main()
 {
+    vec3 nwcNormal = normalize(wcNormal);
+    // if(useBumpMap == 1) {            
+    //     float h11 = texture(texHeight, fTexCoord).r;
+    //     float h01 = textureOffset(texHeight, fTexCoord, off.xy).r;
+    //     float h21 = textureOffset(texHeight, fTexCoord, off.zy).r;
+    //     float h10 = textureOffset(texHeight, fTexCoord, off.yx).r;
+    //     float h12 = textureOffset(texHeight, fTexCoord, off.yz).r;
+
+    //     vec3 va = normalize(vec3(size.xy,h21-h01));
+    //     vec3 vb = normalize(vec3(size.yx,h12-h10));
+
+    //     nwcNormal = normalize(nwcNormal + cross(va, vb));
+    // }
+
     ivec3 pos;
     vec3 voxelPos = (WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz;
     vec3 voxelLightPos = (WorldToVoxelMat * vec4(LightPosition.xyz, 1.0f)).xyz;
@@ -120,10 +155,10 @@ void main()
     float dist = length(lightDisplacement);
     float distSq = dist * dist;
     //light energy & direction
-    uint recievedEnergy = uint(float(rad) / (distSq * dot(lightDir, normalize(wcNormal))));
+    uint recievedEnergy = uint(float(rad) / distSq);
     //logFragment(vec4(lightDir, dot(lightDir, normalize(wcNormal))), vec4(wcNormal, distSq), rad, recievedEnergy, uint(gl_FragCoord.x), uint(gl_FragCoord.y));
     pos = ivec3((voxelToClipmapL2Mat * WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz);      
-    imageAtomicAdd(lightEnergyGridL2, pos, recievedEnergy);
+    imageAtomicAdd(lightEnergyGridL2, pos, recievedEnergy/64);
     imageAtomicXYZWAvg(lightDirGridL2, pos, vec4(lightDir, 1.0f));
     
     if(voxelPos.x < level1min.x || voxelPos.x > level1max.x //if outside L1
@@ -138,12 +173,10 @@ void main()
         imageAtomicAdd(lightEnergyGridL1, pos, recievedEnergy/8);
         imageAtomicXYZWAvg(lightDirGridL1, pos, vec4(lightDir, 1.0f));
     } else {        
-        recievedEnergy = recievedEnergy/8;
         pos = ivec3((voxelToClipmapL1Mat * WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz); 
-        imageAtomicAdd(lightEnergyGridL1, pos, recievedEnergy);
+        imageAtomicAdd(lightEnergyGridL1, pos, recievedEnergy/8);
         imageAtomicXYZWAvg(lightDirGridL1, pos, vec4(lightDir, 1.0f));
         pos = ivec3((voxelToClipmapL0Mat * WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz);
-        recievedEnergy = recievedEnergy/8;
         imageAtomicAdd(lightEnergyGridL0, pos, recievedEnergy);
         imageAtomicXYZWAvg(lightDirGridL0, pos, vec4(lightDir, 1.0f));
     }

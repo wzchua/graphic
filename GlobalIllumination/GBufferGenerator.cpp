@@ -7,13 +7,21 @@ void GBufferGenerator::initialize()
     if (hasInitialized) {
         return;
     }
+    std::stringstream vertShaderString;
+    vertShaderString << GlobalCom::getHeader() << GlobalCom::getVertTripleInputs() << GlobalCom::getVertToFragTripleOutput();
+    vertShaderString << GlobalCom::getCamMatrixUBOCode();
+    shader.generateShader(vertShaderString, "./Shaders/DeferredPhongDiffuse.vert", ShaderProgram::VERTEX);
 
-    shader.generateShader("./Shaders/DeferredPhongDiffuse.vert", ShaderProgram::VERTEX);
-    shader.generateShader("./Shaders/DeferredPhongDiffuse.frag", ShaderProgram::FRAGMENT);
+    std::stringstream fragShaderString;
+    fragShaderString << GlobalCom::getHeader() << GlobalCom::getFragTripleInput();
+    fragShaderString << GlobalCom::getMaterialUBOCode();
+    fragShaderString << voxelizeBlockString(GlobalCom::VOXELIZATION_MATRIX_UBO_BINDING);
+    shader.generateShader(fragShaderString, "./Shaders/DeferredPhongDiffuse.frag", ShaderProgram::FRAGMENT);
+
     shader.linkCompileValidate();
 }
 
-void GBufferGenerator::run(Scene & inputScene, GBuffer & gBuffer, GLuint voxelMatrixUniformBuffer)
+void GBufferGenerator::run(Scene & inputScene, GBuffer & gBuffer)
 {
     auto res = inputScene.cam.getResolution();
     gBuffer.initialize(res.x, res.y);
@@ -26,8 +34,6 @@ void GBufferGenerator::run(Scene & inputScene, GBuffer & gBuffer, GLuint voxelMa
     glCullFace(GL_BACK);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     shader.use();
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, inputScene.getMatrixBuffer());
-    glBindBufferBase(GL_UNIFORM_BUFFER, 3, voxelMatrixUniformBuffer);
     inputScene.render(shader.getProgramId());
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

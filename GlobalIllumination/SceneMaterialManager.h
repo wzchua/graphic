@@ -4,6 +4,7 @@
 #include <tiny_obj_loader.h>
 
 #include "ShapeGroup.h"
+#include "GlobalShaderComponents.h"
 class SceneMaterialManager
 {
 private:

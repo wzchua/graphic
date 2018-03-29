@@ -1,25 +1,3 @@
-#version 450
-#extension GL_ARB_bindless_texture : require
-in vec3 wcPosition;   // Fragment's 3D position in eye space.
-in vec3 wcNormal;     // Fragment's normal vector in eye space.
-in vec2 fTexCoord;
-
-layout(binding = 1) uniform MatBlock {
-    sampler2D texAmbient;
-    sampler2D texDiffuse;
-    sampler2D texAlpha;
-    sampler2D texHeight;
-    vec4 ambient;
-    vec4 diffuse;
-    vec4 specular;
-    int useBumpMap;
-    float shininess;
-};
-
-layout(binding = 3, std140) uniform VoxelizeMatrixBlock {
-    mat4 WorldToVoxelMat;
-    mat4 ViewProjMatrixXY; 
-};
 const vec2 size = vec2(2.0,0.0);
 const ivec3 off = ivec3(-1,0,1);
 

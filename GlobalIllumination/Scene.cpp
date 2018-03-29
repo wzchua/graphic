@@ -18,6 +18,8 @@ Scene::Scene()
     glBindBuffer(GL_UNIFORM_BUFFER, matrixLightBuffer);
     glBufferData(GL_UNIFORM_BUFFER, sizeof(MatrixBlock), &matrixLightBlock, GL_DYNAMIC_DRAW);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+    pointLightMap.resize(pointLights.size() * 6);
 }
 
 
@@ -52,14 +54,20 @@ glm::mat4 Scene::getSceneModelMat()
     return modelMat;
 }
 
+RSM & Scene::getPointLightRSM(int lightIndex, int face)
+{
+    return pointLightMap[lightIndex * 6 + face];
+}
+
 GLuint Scene::getLightBuffer()
 {
     return lightBuffer;
 }
 
 void Scene::updateLightMatrixBuffer(GLuint index, glm::vec3 forward, glm::vec3 up)
-{
-    glm::vec3 pos = glm::vec3(light.position.x, light.position.y, light.position.z);
+{    
+    Light& selected = pointLights[index];
+    glm::vec3 pos = glm::vec3(selected.position.x, selected.position.y, selected.position.z);
     lightCam.set(pos, forward, up, 90.0f, glm::ivec2(1024, 1024));
 
     matrixLightBlock.modelViewMatrix = lightCam.getViewMatrix() * modelMat;

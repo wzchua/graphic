@@ -6,8 +6,16 @@ void RenderLightTextures::initialize()
     if (hasInitialized) {
         return;
     }
-    shader.generateShader("./Shaders/RSM.vert", ShaderProgram::VERTEX);
-    shader.generateShader("./Shaders/RSM.frag", ShaderProgram::FRAGMENT);
+    std::stringstream vertShaderString;
+    vertShaderString << GlobalShaderComponents::getHeader() << GlobalShaderComponents::getVertTripleInputs() << GlobalShaderComponents::getVertToFragTripleOutput();
+    vertShaderString << GlobalShaderComponents::getLightCamMatrixUBOCode();
+    shader.generateShader(vertShaderString, "./Shaders/RSM.vert", ShaderProgram::VERTEX);
+
+    std::stringstream fragShaderString;
+    fragShaderString << GlobalShaderComponents::getHeader() << GlobalShaderComponents::getFragTripleInput();
+    fragShaderString << GlobalShaderComponents::getMaterialUBOCode();
+    fragShaderString << voxelizeBlockString(GlobalShaderComponents::VOXELIZATION_MATRIX_UBO_BINDING);
+    shader.generateShader(fragShaderString, "./Shaders/RSM.frag", ShaderProgram::FRAGMENT);
     shader.linkCompileValidate();
 
     glGenFramebuffers(1, &fboId);
@@ -17,24 +25,32 @@ void RenderLightTextures::initialize()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void RenderLightTextures::run(Scene & inputScene, glm::ivec2 res, std::vector<GLuint>& depthMap, std::vector<GLuint>& positionMap, std::vector<GLuint>& normalMap)
+void RenderLightTextures::run(Scene & inputScene)
 {
+    shader.use();
     glBindFramebuffer(GL_FRAMEBUFFER, fboId);
-    glViewport(0, 0, res.x, res.y);
+    glViewport(0, 0, rsmRes.x, rsmRes.y);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, inputScene.getLightMatrixBuffer()); // light as camera
-    for (int i = 0; i < depthMap.size(); i++) {
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap[0], 0);
+    glDrawBuffers(2, attachments);
+    glBindBufferBase(GL_UNIFORM_BUFFER, GlobalShaderComponents::LIGHT_CAMERA_MATRIX_UBO_BINDING, inputScene.getLightMatrixBuffer()); // light as camera
+    int numOfPointLight = inputScene.getTotalPointLights();
 
-        glBindImageTexture(0, positionMap[i], 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA);
-        glBindImageTexture(1, normalMap[i], 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA);
+    for (int i = 0; i < numOfPointLight; i++) {
+        for (int j = 0; j < 6; j++) {
+            RSM& rsm = inputScene.getPointLightRSM(i, j);
+            rsm.initialize(rsmRes);
+            glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, rsm.getDepthMap(), 0);
+            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, rsm.getVoxelPositionMap(), 0);
+            glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, rsm.getNormalMap(), 0);
 
-        inputScene.updateLightMatrixBuffer(0, forward[i], up[i]);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        inputScene.render(shader.getProgramId());
+            inputScene.updateLightMatrixBuffer(0, forward[j], up[j]);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            inputScene.render(shader.getProgramId());
+            //rsm.dumpAsImage(std::to_string(i) + "_(" + std::to_string(j) + ")");
+        }
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

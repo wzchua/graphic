@@ -53,7 +53,7 @@ void SceneMaterialManager::generateGPUBuffers()
 void SceneMaterialManager::render(GLuint programId)
 {
     for (int i = 0; i < mGroupList.size(); i++) {
-        glBindBufferBase(GL_UNIFORM_BUFFER, 1, mMatBufferList[i]);
+        glBindBufferBase(GL_UNIFORM_BUFFER, GlobalShaderComponents::MATERIAL_UBO_BINDING, mMatBufferList[i]);
         mGroupList[i].render();
     }
 }

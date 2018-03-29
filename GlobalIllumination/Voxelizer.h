@@ -29,17 +29,13 @@
 
 #include "GBuffer.h"
 #include "GBufferGenerator.h"
+#include "GlobalShaderComponents.h"
+#include "RenderLightTextures.h"
 
-
+typedef GlobalShaderComponents::GlobalsBlock GlobalsBlock;
 class Voxelizer
 {
 public:
-    struct LimitsBlock {
-        GLuint maxNoOfFragments;
-        GLuint maxNoOfNodes;
-        GLuint maxNoOfBricks;
-        GLuint maxNoOfLogs;
-    };
     enum Type {
         GRID, OCTREE, CAS_GRID
     };
@@ -63,13 +59,15 @@ private:
     GBuffer mGBuffer;
     GBufferGenerator mModuleGBufferGen;
 
+    RenderLightTextures mModuleLightRenderer;
+
     VoxelizeBlock voxelMatrixData;
-    LimitsBlock voxelLogCountData = { fragCount, nodeCount, nodeCount, maxLogCount };
+    GlobalsBlock globalVariablesData = { fragCount, nodeCount, nodeCount, maxLogCount };
     const CounterBlock mZeroedCounterBlock = { 0, 1, 0, 0, 0, 0 };
     CounterBlock mCounterBlock = mZeroedCounterBlock;
 
-    GLuint voxelMatrixUniformBuffer;
-    GLuint voxelLogUniformBuffer;
+    GLuint voxelMatrixUBOId;
+    GLuint globalVariablesUBOId;
 
     VoxelVisualizer mModuleVoxelVisualizer;
 

@@ -52,13 +52,13 @@ void RenderLightIntoCasGrid::run(Scene & inputScene,  GLuint voxelizeMatrixBlock
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     inputScene.render(shader.getProgramId());
-    auto c = ssboCounterSet.getPtr();
+    /*auto c = ssboCounterSet.getPtr();
     int logCount = c->logCounter;
     c->logCounter = 0;
     ssboCounterSet.unMapPtr();
     std::vector<LogStruct> logs;
     ShaderLogger::getLogs(logList, logCount, logs);
-    std::cout << "h\n";
+    std::cout << "h\n";*/
 
     inputScene.updateLightMatrixBuffer(0, glm::vec3(-1, 0, 0), glm::vec3(0, 1, 0));
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

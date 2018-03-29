@@ -87,7 +87,7 @@ vec4 evaluateColor(in sampler3D colorClip, in sampler3D normalClip, in sampler3D
             //logFragment(voxelToClipmapL0Mat[0], voxelToClipmapL0Mat[1], 0, 0, 0, 0);
             //logFragment(voxelToClipmapL0Mat[2], voxelToClipmapL0Mat[3], 0, 0, 0, 0);
         }
-        //if(c.a > 0.0f) {                
+        if(c.a > 0.0f) {                
             vec4 n = 2 * textureLod(normalClip, clipPos, lod) - 1.0f;
             uint lEnergy = textureLod(lightEnergyClip, clipPos, lod).r;
             vec4 l = 2 * textureLod(lightDirClip, clipPos, lod) - 1.0f;
@@ -104,11 +104,11 @@ vec4 evaluateColor(in sampler3D colorClip, in sampler3D normalClip, in sampler3D
             viewLobe.axis = viewDir;
             viewLobe.sharpness = 1.0f/(cosPhi * cosPhi);
             vec3 brdf = c.rgb / PI;
-            vec3 convLightNormal = max(InnerProduct(viewLobe, Product(normalLobe, lightLobe)), 0.0f);
+            vec3 convLightNormal = max(InnerProduct(normalLobe, viewLobe), 0.0f);
 
             color.rgb = brdf * float(lEnergy)/40000.0f * convLightNormal;
             color.a = c.a;
-        //}
+        }
         return color;
     }
 // origin & dir in world space
@@ -147,7 +147,7 @@ vec3 diffuseConeTrace(vec3 origin, vec3 dir) {
             lod = lod - 2.0f;
             c = evaluateColor(colorBrickL2, normalBrickL2, lightDirBrickL2, lightEnergyBrickL2, lod, clipPos.xyz, dir);
         }
-        color += (1.0f - alpha) * c.rgb / (len * len);
+        color += (1.0f - alpha) * c.rgb ;/// (len * len);
         alpha = alpha + (1.0f - alpha) * c.a;        
         rayVoxelPos += adjustedDir;
         adjustedDir *= 2.0f;

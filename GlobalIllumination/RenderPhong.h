@@ -8,7 +8,7 @@ class RenderPhong
 {
 private:
     ShaderProgram phongShader;
-    int num = 1;
+    int num = 0;
 public:
     void initialize();
     void setup(Scene & scene, GLuint viewWidth, GLuint viewHeight);

@@ -120,10 +120,13 @@
     <ClCompile Include="RSM.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="GBufferGenerator.cpp">
+    <ClCompile Include="GBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="GBuffer.cpp">
+    <ClCompile Include="GBufferGenerator.cpp">
+      <Filter>Source Files\Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="GlobalShaderComponents.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -245,10 +248,13 @@
     <ClInclude Include="RSM.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GBufferGenerator.h">
+    <ClInclude Include="GBuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GBuffer.h">
+    <ClInclude Include="GBufferGenerator.h">
+      <Filter>Header Files\Modules</Filter>
+    </ClInclude>
+    <ClInclude Include="GlobalShaderComponents.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

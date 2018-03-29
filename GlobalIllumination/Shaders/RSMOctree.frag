@@ -2,7 +2,26 @@
 #extension GL_ARB_bindless_texture : require
 
 in vec3 wcPosition;   // Fragment's 3D position in world space.
-in vec3 wcNormal;
+in vec3 ecNormal;
+in vec2 fTexCoord;
+
+layout(binding = 0, std140) uniform MatrixBlock {
+    mat4 ModelViewMatrix;     // ModelView matrix.
+    mat4 ModelViewProjMatrix; // ModelView matrix * Projection matrix.
+    mat3 NormalMatrix;        // For transforming object-space direction 
+};                                    //   vector to eye space.
+
+layout(binding = 1) uniform MatBlock {
+    sampler2D texAmbient;
+    sampler2D texDiffuse;
+    sampler2D texAlpha;
+    sampler2D texHeight;
+    vec4 ambient;
+    vec4 diffuse;
+    vec4 specular;
+    int useBumpMap;
+    float shininess;
+};
 
 layout(binding = 2) uniform LightBlock {                            
     vec4 LightPosition; // Given in world space. Can be directional.
@@ -79,8 +98,25 @@ uint checkRoot() {
     return 0;
 }
 const int leafLevel = 8;
+const vec2 size = vec2(2.0,0.0);
+const ivec3 off = ivec3(-1,0,1);
 void main()
 {
+    vec3 nwcNormal = wcNormal;
+    if(useBumpMap == 1) {            
+        float h11 = texture(texHeight, fTexCoord).r;
+        float h01 = textureOffset(texHeight, fTexCoord, off.xy).r;
+        float h21 = textureOffset(texHeight, fTexCoord, off.zy).r;
+        float h10 = textureOffset(texHeight, fTexCoord, off.yx).r;
+        float h12 = textureOffset(texHeight, fTexCoord, off.yz).r;
+
+        vec3 va = normalize(vec3(size.xy,h21-h01));
+        vec3 vb = normalize(vec3(size.yx,h12-h10));
+
+        nwcNormal = nwcNormal + cross(va, vb);
+    }
+    nwcNormal = normalize(nwcNormal);
+
     vec3 pos = (WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz;
     uint nodeId = 0;
     vec3 prevSamplePos;
@@ -105,7 +141,7 @@ void main()
     float dist = length(lightDisplacement);
     float distSq = dist * dist;
     //light energy & direction
-    uint recievedEnergy = min( uint(float(rad) / (distSq * dot(lightDir, normalize(wcNormal)))), 1);
+    uint recievedEnergy = min( uint(float(rad) / (distSq * dot(lightDir, normalize(nwcNormal)))), 1);
     imageAtomicAdd(lightEnergyBrick, brickPos, recievedEnergy);
     imageAtomicXYZWAvg(lightDirBrick, brickPos, vec4(lightDir, 1.0f));
 }
