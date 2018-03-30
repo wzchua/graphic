@@ -46,7 +46,7 @@ void RenderLightTextures::run(Scene & inputScene)
             glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, rsm.getVoxelPositionMap(), 0);
             glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, rsm.getNormalMap(), 0);
 
-            inputScene.updateLightMatrixBuffer(0, forward[j], up[j]);
+            inputScene.updateLightMatrixBufferForPointLight(i, forward[j], up[j]);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             inputScene.render(shader.getProgramId());
             glMemoryBarrier(GL_FRAMEBUFFER_BARRIER_BIT | GL_TEXTURE_UPDATE_BARRIER_BIT);
@@ -55,6 +55,23 @@ void RenderLightTextures::run(Scene & inputScene)
             //rsm.dumpAsImage(std::to_string(i) + "_(" + std::to_string(j) + ")");
         }
     }
+    int numOfDirectionalLight = inputScene.getTotalDirectionalLights();
+    for (int i = 0; i < numOfDirectionalLight; i++) {
+        RSM& rsm = inputScene.getDirectionalLightRSM(i);
+        rsm.initialize(rsmRes);
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, rsm.getDepthMap(), 0);
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, rsm.getVoxelPositionMap(), 0);
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, rsm.getNormalMap(), 0);
+        
+        inputScene.updateLightMatrixBufferForDirectionalLight(i);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        inputScene.render(shader.getProgramId());
+        glMemoryBarrier(GL_FRAMEBUFFER_BARRIER_BIT | GL_TEXTURE_UPDATE_BARRIER_BIT);
+        glGenerateTextureMipmap(rsm.getVoxelPositionMap());
+        glGenerateTextureMipmap(rsm.getNormalMap());
+        rsm.dumpAsImage(std::to_string(i));
+    }
+
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 

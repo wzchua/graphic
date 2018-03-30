@@ -30,11 +30,12 @@ private:
         glm::vec4 position;
         glm::vec4 power;
     };
-    std::vector<Light> pointLights ={ { {20.0f, 120.0f, 20.0f, 1.0f}, {0.7f, 0.7f, 0.7f, 1.0f} } };
-    std::vector<Light> directionalLights;
+    std::vector<Light> pointLights;
+    std::vector<Light> directionalLights = { { { 0.0f, -1.0f, 1.0f, 0.0f },{ 0.7f, 0.7f, 0.7f, 1.0f } } };
     std::vector<RSM> pointLightMap;
     std::vector<RSM> directionalLightMap;
     std::vector<GLuint> pointLightBuffers;
+    std::vector<GLuint> directionalLightBuffers;
 
     MatrixBlock matrixBlock;
     MatrixBlock matrixLightBlock;
@@ -58,11 +59,18 @@ public:
     bool LoadObjScene(std::string filename);
     void render(int programId);
     glm::mat4 getSceneModelMat();
+
     RSM& getPointLightRSM(int lightIndex, int face);
+    RSM& getDirectionalLightRSM(int lightIndex);
     GLuint getPointLightBufferId(int lightIndex);
+    GLuint getDirectionalLightBufferId(int lightIndex);
     int getTotalPointLights() { return pointLights.size(); }
+    int getTotalDirectionalLights() { return directionalLights.size(); }
+
+
     GLuint getLightBuffer();
-    void updateLightMatrixBuffer(GLuint index, glm::vec3 forward, glm::vec3 up);
+    void updateLightMatrixBufferForPointLight(GLuint index, glm::vec3 forward, glm::vec3 up);
+    void updateLightMatrixBufferForDirectionalLight(GLuint index);
     GLuint getLightMatrixBuffer();
     void updateMatrixBuffer();
     GLuint getMatrixBuffer();

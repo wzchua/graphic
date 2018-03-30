@@ -117,14 +117,11 @@ void Voxelizer::initializeWithScene(glm::vec3 min, glm::vec3 max)
 
 void Voxelizer::render(Scene& scene)
 {
-    OpenGLTimer::timeTillGPUIsFree("At start");
     glBindBufferBase(GL_UNIFORM_BUFFER, GlobalCom::CAMERA_MATRIX_UBO_BINDING, scene.getMatrixBuffer());
     mModuleGBufferGen.run(scene, mGBuffer);
-    OpenGLTimer::timeTillGPUIsFree("After gBuffer render");
     //mGBuffer.dumpBuffersAsImages();
 
     mModuleLightRenderer.run(scene);
-    OpenGLTimer::timeTillGPUIsFree("After rsm generation");
     std::vector<LogStruct> logs;
 
     using Clock = std::chrono::high_resolution_clock;
@@ -169,17 +166,25 @@ void Voxelizer::render(Scene& scene)
     case CAS_GRID:
     {
         mModuleRenderToCasGrid.run(scene, voxelMatrixData.worldToVoxelMat, mCascadedGrid);
-        OpenGLTimer::timeTillGPUIsFree("After voxelization");
+
+        GLuint query;
+        GLuint64 elapsed_time;
+        int done = 0;
+
+        glGenQueries(1, &query);
+        glBeginQuery(GL_TIME_ELAPSED, query);
         mModuleRenderLightIntoCasGrid.run(scene, voxelMatrixUBOId, mCascadedGrid);
-        /*auto c = ssboCounterSet.getPtr();
-        int logCount = c->logCounter;
-        c->logCounter = 0;
-        ssboCounterSet.unMapPtr();
-        std::vector<LogStruct> logs;
-        ShaderLogger::getLogs(ssboLogList, logCount, logs);*/
-        OpenGLTimer::timeTillGPUIsFree("After light injection");
+        glEndQuery(GL_TIME_ELAPSED);
+        while (!done) {
+            glGetQueryObjectiv(query,
+                GL_QUERY_RESULT_AVAILABLE,
+                &done);
+        }
+
+        // get the query result
+        glGetQueryObjectui64v(query, GL_QUERY_RESULT, &elapsed_time);
+        printf("Time Elapsed: %f ms\n", elapsed_time / 1000000.0);
         mCascadedGrid.filter();
-        OpenGLTimer::timeTillGPUIsFree("After filter");
         if (currentNumMode == 0) {
             mModuleRenderVoxelConeTraceCasGrid.run(scene, voxelMatrixUBOId, ssboCounterSet, mCascadedGrid, ssboLogList);
         }
@@ -204,6 +209,7 @@ void Voxelizer::render(Scene& scene)
 
 
     resetAllData();
+    OpenGLTimer::timeTillGPUIsFree("After Reset");
     auto timeEnd = Clock::now();
     std::cout << "time end: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeEnd - timeStart).count() << "ms" << std::endl;
 }

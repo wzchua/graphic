@@ -157,7 +157,7 @@ vec3 diffuseConeTrace(vec3 origin, vec3 dir) {
 
 vec3 findOrthoVector(vec3 v) {
     vec3 u = cross(v, vec3(1, 0, 0));
-    if(dot(u, v) == 1.0f) {
+    if(abs(dot(u, v)) == 1.0f) {
         u = cross(v, vec3(0, 1, 0));
     }
     return u;

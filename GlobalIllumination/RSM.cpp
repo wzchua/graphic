@@ -54,11 +54,11 @@ void RSM::dumpAsImage(std::string label)
         image.resize(size);
 
         glGetTextureImage(mVoxelPositionMap, 0, GL_RGBA, GL_UNSIGNED_BYTE, size, image.data());
-        std::string filepath = baseDir + "VoxPosRSM_" + label + ".png";
+        std::string filepath = baseDir + "RSMVoxPos_" + label + ".png";
         stbi_write_png(filepath.c_str(), mRes.x, mRes.y, 4, image.data(), 0);
 
         glGetTextureImage(mNormalMap, 0, GL_RGBA, GL_UNSIGNED_BYTE, size, image.data());
-        filepath = baseDir + "NormalRSM_" + label + ".png";
+        filepath = baseDir + "RSMNormal_" + label + ".png";
         stbi_write_png(filepath.c_str(), mRes.x, mRes.y, 4, image.data(), 0);
 
         std::vector<float> imageDepth;
@@ -67,7 +67,7 @@ void RSM::dumpAsImage(std::string label)
         for (int i = 0; i < image.size(); i++) {
             image[i] = (unsigned char)(imageDepth[i] * 255.0f);
         }
-        filepath = baseDir + "DepthRSM_" + label + ".png";
+        filepath = baseDir + "RSMDepth_" + label + ".png";
         stbi_write_png(filepath.c_str(), mRes.x, mRes.y, 1, image.data(), 4);
     }
 }

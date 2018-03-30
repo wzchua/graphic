@@ -29,7 +29,7 @@ public:
     void move(glm::vec3 translation);
     glm::ivec2 getResolution() { return mResolution; }
     void viewMove(int mouseXDelta, int mouseYDelta);
-    void set(glm::vec3 position, glm::vec3 forward, glm::vec3 up, float degree, glm::ivec2 res);
+    void set(glm::vec3 position, glm::vec3 forward, glm::vec3 up, float degree, glm::ivec2 res, float newFarPlane = 2000.0f);
     glm::vec3 getPosition();
     glm::vec3 getForward();
     glm::vec3 getUp();

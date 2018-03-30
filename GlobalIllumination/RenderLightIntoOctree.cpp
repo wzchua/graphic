@@ -21,7 +21,7 @@ void RenderLightIntoOctree::run(Scene & inputScene, Octree & octree, GLuint voxe
     glCullFace(GL_BACK);
 
     injectLightOctreeShader.use();
-    inputScene.updateLightMatrixBuffer(0, glm::vec3(1, 0, 0), glm::vec3(0, 1, 0));
+    inputScene.updateLightMatrixBufferForPointLight(0, glm::vec3(1, 0, 0), glm::vec3(0, 1, 0));
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, inputScene.getLightMatrixBuffer()); // light as camera
     glBindBufferBase(GL_UNIFORM_BUFFER, 2, inputScene.getLightBuffer());
     glBindBufferBase(GL_UNIFORM_BUFFER, 3, voxelizeMatrixBlock);
@@ -35,15 +35,15 @@ void RenderLightIntoOctree::run(Scene & inputScene, Octree & octree, GLuint voxe
     inputScene.render(injectLightOctreeShader.getProgramId());
 
 
-    inputScene.updateLightMatrixBuffer(0, glm::vec3(-1, 0, 0), glm::vec3(0, 1, 0));
+    inputScene.updateLightMatrixBufferForPointLight(0, glm::vec3(-1, 0, 0), glm::vec3(0, 1, 0));
     inputScene.render(injectLightOctreeShader.getProgramId());
-    inputScene.updateLightMatrixBuffer(0, glm::vec3(0, 0, 1), glm::vec3(0, 1, 0));
+    inputScene.updateLightMatrixBufferForPointLight(0, glm::vec3(0, 0, 1), glm::vec3(0, 1, 0));
     inputScene.render(injectLightOctreeShader.getProgramId());
-    inputScene.updateLightMatrixBuffer(0, glm::vec3(0, 0, -1), glm::vec3(0, 1, 0));
+    inputScene.updateLightMatrixBufferForPointLight(0, glm::vec3(0, 0, -1), glm::vec3(0, 1, 0));
     inputScene.render(injectLightOctreeShader.getProgramId());
-    inputScene.updateLightMatrixBuffer(0, glm::vec3(0, 1, 0), glm::vec3(1, 0, 0));
+    inputScene.updateLightMatrixBufferForPointLight(0, glm::vec3(0, 1, 0), glm::vec3(1, 0, 0));
     inputScene.render(injectLightOctreeShader.getProgramId());
-    inputScene.updateLightMatrixBuffer(0, glm::vec3(0, -1, 0), glm::vec3(1, 0, 0));
+    inputScene.updateLightMatrixBufferForPointLight(0, glm::vec3(0, -1, 0), glm::vec3(1, 0, 0));
     inputScene.render(injectLightOctreeShader.getProgramId());
 
 

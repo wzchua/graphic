@@ -70,8 +70,9 @@ void main() {
         computeLightValues(voxelPos, voxelLightPos, wcNormal, lightDir, recievedEnergy);
 
         clipPos = voxelToClipmapL0Mat * vec4(voxelPos, 1.0f);
-        imageAtomicXYZWAvg(lightDirGridL0, ivec3(clipPos.xyz), vec4(lightDir, 1.0f));
-        imageAtomicAddFloat(lightEnergyGridL0, ivec3(clipPos.xyz), recievedEnergy.r);
+        if(imageAtomicXYZWAvg(lightDirGridL0, ivec3(clipPos.xyz), vec4(lightDir, 1.0f))) {
+            imageAtomicAddFloat(lightEnergyGridL0, ivec3(clipPos.xyz), recievedEnergy.r);
+        }
 
         ivec2 upperLevelxy = xy/2;
         if(xy - 2 * upperLevelxy == ivec2(0)) {
@@ -80,8 +81,9 @@ void main() {
             computeLightValues(voxelPos, voxelLightPos, wcNormal, lightDir, recievedEnergy);
 
             clipPos = voxelToClipmapL1Mat * vec4(voxelPos, 1.0f);
-            imageAtomicXYZWAvg(lightDirGridL1, ivec3(clipPos.xyz), vec4(lightDir, 1.0f));
-            imageAtomicAddFloat(lightEnergyGridL1, ivec3(clipPos.xyz), recievedEnergy.r);
+            if(imageAtomicXYZWAvg(lightDirGridL1, ivec3(clipPos.xyz), vec4(lightDir, 1.0f))) {
+                imageAtomicAddFloat(lightEnergyGridL1, ivec3(clipPos.xyz), recievedEnergy.r);
+            }
         }
         upperLevelxy = xy/4;
         if(xy - 4 * upperLevelxy == ivec2(0)) {
@@ -90,8 +92,9 @@ void main() {
             computeLightValues(voxelPos, voxelLightPos, wcNormal, lightDir, recievedEnergy);
 
             clipPos = voxelToClipmapL2Mat * vec4(voxelPos, 1.0f);
-            imageAtomicXYZWAvg(lightDirGridL2, ivec3(clipPos.xyz), vec4(lightDir, 1.0f));
-            imageAtomicAddFloat(lightEnergyGridL2, ivec3(clipPos.xyz), recievedEnergy.r);
+            if(imageAtomicXYZWAvg(lightDirGridL2, ivec3(clipPos.xyz), vec4(lightDir, 1.0f))) {
+                imageAtomicAddFloat(lightEnergyGridL2, ivec3(clipPos.xyz), recievedEnergy.r);
+            }
         }
     }
 }

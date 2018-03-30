@@ -39,7 +39,7 @@ void Camera::viewMove(int mouseXDelta, int mouseYDelta)
 
 }
 
-void Camera::set(glm::vec3 position, glm::vec3 forward, glm::vec3 up, float degree, glm::ivec2 res)
+void Camera::set(glm::vec3 position, glm::vec3 forward, glm::vec3 up, float degree, glm::ivec2 res, float newFarPlane)
 {
     isViewMatrixUpdated = false;
     isProjMatrixUpdated = false;
@@ -50,6 +50,7 @@ void Camera::set(glm::vec3 position, glm::vec3 forward, glm::vec3 up, float degr
     this->position = position;
     this->forward = forward;
     this->up = up;
+    farPlane = newFarPlane;
     right = glm::cross(forward, up);
 }
 

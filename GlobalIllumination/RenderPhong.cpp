@@ -36,22 +36,22 @@ void RenderPhong::run(Scene & scene)
         glViewport(0, 0, 1024, 1024);
         switch (num) {
         case 1:
-            scene.updateLightMatrixBuffer(0, glm::vec3(1, 0, 0), glm::vec3(0, 1, 0));
+            scene.updateLightMatrixBufferForPointLight(0, glm::vec3(1, 0, 0), glm::vec3(0, 1, 0));
             break;
         case 2:
-            scene.updateLightMatrixBuffer(0, glm::vec3(-1, 0, 0), glm::vec3(0, 1, 0));
+            scene.updateLightMatrixBufferForPointLight(0, glm::vec3(-1, 0, 0), glm::vec3(0, 1, 0));
             break;
         case 3:
-            scene.updateLightMatrixBuffer(0, glm::vec3(0, 0, 1), glm::vec3(0, 1, 0));
+            scene.updateLightMatrixBufferForPointLight(0, glm::vec3(0, 0, 1), glm::vec3(0, 1, 0));
             break;
         case 4:
-            scene.updateLightMatrixBuffer(0, glm::vec3(0, 0, -1), glm::vec3(0, 1, 0));
+            scene.updateLightMatrixBufferForPointLight(0, glm::vec3(0, 0, -1), glm::vec3(0, 1, 0));
             break;
         case 5:
-            scene.updateLightMatrixBuffer(0, glm::vec3(0, 1, 0), glm::vec3(1, 0, 0));
+            scene.updateLightMatrixBufferForPointLight(0, glm::vec3(0, 1, 0), glm::vec3(1, 0, 0));
             break;
         case 6:
-            scene.updateLightMatrixBuffer(0, glm::vec3(0, -1, 0), glm::vec3(1, 0, 0));
+            scene.updateLightMatrixBufferForPointLight(0, glm::vec3(0, -1, 0), glm::vec3(1, 0, 0));
             break;
         }
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, scene.getLightMatrixBuffer()); // light as camera
