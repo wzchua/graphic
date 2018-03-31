@@ -1,0 +1,15 @@
+
+layout (location = 0) uniform sampler2D albedoWithLightAndShadow;//RGBA32F
+layout (location = 1) uniform sampler2D indirectIllumination;
+
+layout(location = 0) uniform image2D finalImage;
+
+void main() {
+    ivec2 size = textureSize(albedoWithLightAndShadow, 0);
+    ivec2 xy = ivec2(gl_GlobalInvocationID.xy);
+    if(xy.x < size.x && xy.y < size.y) {
+        vec4 albedo = texelFetch(albedoWithLightAndShadow, xy, 0);
+        vec4 indirect = texelFetch(indirectIllumination, xy, 0);
+        imageStore(albedoWithLightAndShadow, xy, vec4((albedo + indirect), 1.0f));
+    }
+}

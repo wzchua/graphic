@@ -1,7 +1,7 @@
 const vec2 size = vec2(2.0,0.0);
 const ivec3 off = ivec3(-1,0,1);
 
-layout (location = 0) out vec4 voxelPosition;
+layout (location = 0) out vec4 voxelPosition;//change to worldPos using RGBA32F
 layout (location = 1) out vec4 worldNormal;
 layout (location = 2) out vec4 albedo;
 layout (location = 3) out float spec;
