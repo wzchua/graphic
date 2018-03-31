@@ -28,7 +28,7 @@ Scene::Scene()
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
         pointLightBuffers.push_back(uboId);
     }
-
+    directionalLights = { { { 0.0f, -1.0f, 0.0f, 0.0f },{ 0.7f, 0.7f, 0.7f, 1.0f } } };
     directionalLightMap.resize(directionalLights.size());
     for (int i = 0; i < directionalLights.size(); i++) {
         GLuint uboId;
@@ -120,7 +120,18 @@ void Scene::updateLightMatrixBufferForDirectionalLight(GLuint index)
     if (glm::abs(glm::dot(up, dir)) == 1.0f) {
         up = glm::normalize(glm::cross(glm::vec3(0.0f, 0.0f, 1.0f), dir));
     }
-    /*glm::vec3 z = normalize(dir);
+
+    glm::vec3 boundaries[8];
+    boundaries[0] = sceneMin;
+    boundaries[1] = glm::vec3(sceneMin.x, sceneMax.y, sceneMin.z);
+    boundaries[2] = glm::vec3(sceneMax.x, sceneMax.y, sceneMin.z);
+    boundaries[3] = glm::vec3(sceneMax.x, sceneMin.y, sceneMin.z);
+    boundaries[4] = sceneMax;
+    boundaries[5] = glm::vec3(sceneMax.x, sceneMin.y, sceneMax.z);
+    boundaries[6] = glm::vec3(sceneMin.x, sceneMin.y, sceneMax.z);
+    boundaries[7] = glm::vec3(sceneMin.x, sceneMax.y, sceneMax.z);
+
+    glm::vec3 z = normalize(dir);
     glm::vec3 x = normalize(cross(z, up));
     glm::vec3 y = cross(x, z);
     glm::mat4 viewMatrix = glm::mat4(1.0f);
@@ -133,16 +144,21 @@ void Scene::updateLightMatrixBufferForDirectionalLight(GLuint index)
     viewMatrix[2][1] = y.z;
     viewMatrix[0][2] =-z.x;
     viewMatrix[1][2] =-z.y;
-    viewMatrix[2][2] =-z.z;*/
+    viewMatrix[2][2] =-z.z;
      
-    glm::mat4 viewMatrix = glm::mat3(glm::lookAt(pos,
+    /*glm::mat4 viewMatrix = glm::mat3(glm::lookAt(pos,
         center,
-        up));
-    glm::vec4 min = viewMatrix * glm::vec4(sceneMin, 1.0f);
-    glm::vec4 max = viewMatrix * glm::vec4(sceneMax, 1.0f);
-    glm::vec3 newMin = glm::min(min, max);
-    glm::vec3 newMax = glm::max(min, max);
-    glm::mat4 projMatrix = glm::ortho(newMin.x/2.0f, newMax.x / 2.0f, newMin.y / 2.0f, newMax.y / 2.0f, 0.0f, 4000.0f);
+        up));*/
+    for (auto& b : boundaries) {
+        b = viewMatrix * glm::vec4(b, 1.0f);
+    }
+    glm::vec3 min{ FLT_MAX, FLT_MAX, FLT_MAX };
+    glm::vec3 max{ -FLT_MAX, -FLT_MAX, -FLT_MAX };
+    for (auto& b : boundaries) {
+        min = glm::min(b, min);
+        max = glm::max(b, max);
+    }
+    glm::mat4 projMatrix = glm::ortho(min.x/2.5f, max.x / 2.5f, min.y / 2.5f, max.y / 2.5f, min.z - 1.0f, max.z);
     matrixLightBlock.modelViewMatrix = viewMatrix * modelMat;
     matrixLightBlock.modelViewProjMatrix = projMatrix * matrixLightBlock.modelViewMatrix;
     matrixLightBlock.normalMatrix = glm::mat4(glm::transpose(glm::inverse(glm::mat3(matrixLightBlock.modelViewMatrix))));

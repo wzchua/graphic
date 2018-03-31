@@ -31,7 +31,7 @@ private:
         glm::vec4 power;
     };
     std::vector<Light> pointLights;
-    std::vector<Light> directionalLights = { { { 0.0f, -1.0f, 1.0f, 0.0f },{ 0.7f, 0.7f, 0.7f, 1.0f } } };
+    std::vector<Light> directionalLights;
     std::vector<RSM> pointLightMap;
     std::vector<RSM> directionalLightMap;
     std::vector<GLuint> pointLightBuffers;

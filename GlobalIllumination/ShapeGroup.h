@@ -17,8 +17,8 @@ private:
     std::vector<GLvoid *> mListOfShapeStarts;
     unsigned int mVBOId, mVAOId, mEBOId;
     bool mUploadedToGPU = false;
-    glm::vec3 min;
-    glm::vec3 max;
+    glm::vec3 min{ FLT_MAX, FLT_MAX, FLT_MAX };
+    glm::vec3 max{ -FLT_MAX, -FLT_MAX, -FLT_MAX };
     GLuint64 textureHandles[4];
 public:
     void addShape(const tinyobj::shape_t & shape, const tinyobj::attrib_t & attrib, const GLuint64 textureIds[4], tinyobj::material_t const & mat);
