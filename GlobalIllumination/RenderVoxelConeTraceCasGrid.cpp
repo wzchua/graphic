@@ -62,12 +62,12 @@ void RenderVoxelConeTraceCasGrid::run(Scene & inputScene, GLBufferObject<Counter
     glBindImageTexture(0, output, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
     glMemoryBarrier(GL_UNIFORM_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
     glDispatchCompute(res.x / mWorkGroupSize.x, res.y / mWorkGroupSize.y, 1);
-    auto c = ssboCounterSet.getPtr();
+    /*auto c = ssboCounterSet.getPtr();
     int logCount = c->logCounter;
     c->logCounter = 0;
     ssboCounterSet.unMapPtr();
     std::vector<LogStruct> logs;
     ShaderLogger::getLogs(logList, logCount, logs);
     std::cout << "h\n";
-    gBuffer.dumpBuffersAsImages();
+    gBuffer.dumpBuffersAsImages();*/
 }

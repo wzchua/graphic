@@ -118,10 +118,9 @@ void Voxelizer::initializeWithScene(glm::vec3 min, glm::vec3 max)
 void Voxelizer::render(Scene& scene)
 {
     glBindBufferBase(GL_UNIFORM_BUFFER, GlobalCom::CAMERA_MATRIX_UBO_BINDING, scene.getMatrixBuffer());
+    mModuleLightRenderer.run(scene);
     mModuleGBufferGen.run(scene, mGBuffer);
     //mGBuffer.dumpBuffersAsImages();
-
-    mModuleLightRenderer.run(scene);
     std::vector<LogStruct> logs;
 
     using Clock = std::chrono::high_resolution_clock;
@@ -184,21 +183,8 @@ void Voxelizer::render(Scene& scene)
         // get the query result
         glGetQueryObjectui64v(query, GL_QUERY_RESULT, &elapsed_time);
         printf("Time Elapsed: %f ms\n", elapsed_time / 1000000.0);
-        /*auto c = ssboCounterSet.getPtr();
-        int logCount = c->logCounter;
-        c->logCounter = 0;
-        ssboCounterSet.unMapPtr();
-        std::vector<LogStruct> logs;
-        ShaderLogger::getLogs(ssboLogList, logCount, logs);*/
         mCascadedGrid.filter();
-        OpenGLTimer::timeTillGPUIsFree("After VCT render");
-        if (currentNumMode == 0) {
-            mModuleRenderVoxelConeTraceCasGrid.run(scene, ssboCounterSet, mCascadedGrid, ssboLogList, mGBuffer);
-        }
-        else {
-            mModuleVoxelVisualizer.rayCastVoxels(scene.cam, voxelMatrixData.worldToVoxelMat, mCascadedGrid, currentNumMode, gridDefinition);
-        }       
-        OpenGLTimer::timeTillGPUIsFree("After VCT render");
+        mModuleRenderVoxelConeTraceCasGrid.run(scene, ssboCounterSet, mCascadedGrid, ssboLogList, mGBuffer);  
     }
     break;
     case GRID:
@@ -213,7 +199,17 @@ void Voxelizer::render(Scene& scene)
 
 
     //ShaderLogger::getLogs(ssboLogList, logCount, logs);
+    if (currentNumMode == 0) {
+        //render shadows using rsm and gBUffer
 
+        //add indirect illumination
+
+        //bilts to framebuffer
+    }
+    else {
+        //if casgrid
+        mModuleVoxelVisualizer.rayCastVoxels(scene.cam, voxelMatrixData.worldToVoxelMat, mCascadedGrid, currentNumMode, gridDefinition);
+    }
 
     resetAllData();
     //OpenGLTimer::timeTillGPUIsFree("After Reset");

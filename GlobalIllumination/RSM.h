@@ -11,11 +11,13 @@ private:
     GLuint mDepthMap;
     GLuint mVoxelPositionMap;
     GLuint mNormalMap;
-    glm::mat4 shadowMap;
+    glm::mat4 mShadowMatrix;
+    const static glm::mat4 biasMatrix;
     bool hasInitialized = false;
 public:
     //void bindForGeneration(GLuint fbo, GLuint posBinding, GLuint normalBinding);
     void initialize(glm::ivec2 res);
+    void setShadowMatrix(glm::mat4 shadowMatrix) { mShadowMatrix = biasMatrix * shadowMatrix; };
     void dumpAsImage(std::string label);
     GLuint getDepthMap() { return mDepthMap; }
     GLuint getVoxelPositionMap() { return mVoxelPositionMap; }

@@ -1,5 +1,7 @@
 #include "RSM.h"
 
+const glm::mat4 RSM::biasMatrix = glm::mat4(0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.5, 0.5, 0.5, 1.0);
+
 void RSM::initialize(glm::ivec2 res)
 {
     if (hasInitialized) {

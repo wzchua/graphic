@@ -28,6 +28,7 @@ void GBuffer::initialize(GLuint width, GLuint height)
     glDrawBuffers(MAX_G_BUFFERS - 1, attachments); //
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     addAditionalBuffers(GL_RGBA8, "indirect_illumination");
+    addAditionalBuffers(GL_RGBA8, "final");
 }
 
 void GBuffer::bindGBuffersAsTexture(GLuint posBinding, GLuint normalBinding, GLuint albedoBinding, GLuint specBinding)
@@ -70,13 +71,13 @@ void GBuffer::dumpBuffersAsImages()
         int i = 0;
         for (; i < MAX_G_BUFFERS - 2; i++) {
             glGetTextureImage(mGBufferTextures[i], 0, GL_RGBA, GL_UNSIGNED_BYTE, width * height * 4, image.data());
-            std::string filepath = baseDir + mGBufferNames[i] + ".png";
+            std::string filepath = baseDir + "GBuffer_" + mGBufferNames[i] + ".png";
             stbi_write_png(filepath.c_str(), width, height, 4, image.data(), 0);
         }
         std::vector<float> imageFloat;
         imageFloat.resize(4 * width * height);
         glGetTextureImage(mGBufferTextures[i], 0, GL_RED, GL_FLOAT, width * height * 4, imageFloat.data());
-        std::string filepath = baseDir + mGBufferNames[i] + ".png";
+        std::string filepath = baseDir + "GBuffer_" + mGBufferNames[i] + ".png";
         for (int i = 0; i < image.size(); i++) {
             image[i] = (unsigned char)(imageFloat[i]/ 20.0f * 255.0f);
         }
@@ -89,13 +90,13 @@ void GBuffer::dumpBuffersAsImages()
         for (int i = 0; i < image.size(); i++) {
             image[i] = (unsigned char)(imageDepth[i] & 0xFFFFFF >> 16);
         }
-        filepath = baseDir + mGBufferNames[i] + ".png";
+        filepath = baseDir + "GBuffer_" + mGBufferNames[i] + ".png";
         stbi_write_png(filepath.c_str(), width, height, 1, image.data(), 4);
 
         image.resize(width * height * 4);        
         for (int j = 0; j < additionalBuffers.size(); j++) {
             glGetTextureImage(additionalBuffers[j], 0, GL_RGBA, GL_UNSIGNED_BYTE, width * height * 4, image.data());
-            std::string filepath = baseDir + additionalBufferNames[j] + ".png";
+            std::string filepath = baseDir + "GBuffer_" + additionalBufferNames[j] + ".png";
             stbi_write_png(filepath.c_str(), width, height, 4, image.data(), 0);
         }
 

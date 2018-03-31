@@ -98,20 +98,21 @@ GLuint Scene::getLightBuffer()
     return lightBuffer;
 }
 
-void Scene::updateLightMatrixBufferForPointLight(GLuint index, glm::vec3 forward, glm::vec3 up)
+glm::mat4 Scene::updateLightMatrixBufferForPointLight(GLuint index, glm::vec3 forward, glm::vec3 up)
 {    
     Light& selected = pointLights[index];
     glm::vec3 pos = glm::vec3(selected.position.x, selected.position.y, selected.position.z);
     lightCam.set(pos, forward, up, 90.0f, glm::ivec2(1024, 1024));
 
-    matrixLightBlock.modelViewMatrix = lightCam.getViewMatrix() * modelMat;
+    matrixLightBlock.modelViewMatrix = lightCam.getViewMatrix();
     matrixLightBlock.modelViewProjMatrix = lightCam.getProjMatrix() * matrixLightBlock.modelViewMatrix;
     matrixLightBlock.normalMatrix = glm::mat4(glm::transpose(glm::inverse(glm::mat3(matrixLightBlock.modelViewMatrix))));
 
     glNamedBufferSubData(matrixLightBuffer, 0, sizeof(MatrixBlock), &matrixLightBlock);
+    return matrixLightBlock.modelViewProjMatrix;
 }
 
-void Scene::updateLightMatrixBufferForDirectionalLight(GLuint index)
+glm::mat4 Scene::updateLightMatrixBufferForDirectionalLight(GLuint index)
 {
     glm::vec3 diff = sceneMax - sceneMin;
     glm::vec3 center = (diff) / 2.0f + sceneMin;
@@ -166,7 +167,7 @@ void Scene::updateLightMatrixBufferForDirectionalLight(GLuint index)
     glm::mat4 projMatrix = glm::ortho(min.x, max.x, min.y, max.y, max.z, -min.z); // forward is -z
     auto clipMin = projMatrix * glm::vec4(min, 1.0f);
     auto clipMax = projMatrix * glm::vec4(max, 1.0f);
-    matrixLightBlock.modelViewMatrix = translationM  * viewMatrix * modelMat;
+    matrixLightBlock.modelViewMatrix = translationM  * viewMatrix;
     matrixLightBlock.modelViewProjMatrix = projMatrix * matrixLightBlock.modelViewMatrix;
     matrixLightBlock.normalMatrix = glm::mat4(glm::transpose(glm::inverse(glm::mat3(matrixLightBlock.modelViewMatrix))));
 
@@ -177,7 +178,7 @@ void Scene::updateLightMatrixBufferForDirectionalLight(GLuint index)
     matrixLightBlock.normalMatrix = glm::mat4(glm::transpose(glm::inverse(glm::mat3(matrixLightBlock.modelViewMatrix))));*/
 
     glNamedBufferSubData(matrixLightBuffer, 0, sizeof(MatrixBlock), &matrixLightBlock);
-
+    return matrixLightBlock.modelViewProjMatrix;
 }
 
 GLuint Scene::getLightMatrixBuffer()

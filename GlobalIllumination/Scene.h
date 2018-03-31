@@ -69,8 +69,8 @@ public:
 
 
     GLuint getLightBuffer();
-    void updateLightMatrixBufferForPointLight(GLuint index, glm::vec3 forward, glm::vec3 up);
-    void updateLightMatrixBufferForDirectionalLight(GLuint index);
+    glm::mat4 updateLightMatrixBufferForPointLight(GLuint index, glm::vec3 forward, glm::vec3 up);
+    glm::mat4 updateLightMatrixBufferForDirectionalLight(GLuint index);
     GLuint getLightMatrixBuffer();
     void updateMatrixBuffer();
     GLuint getMatrixBuffer();
