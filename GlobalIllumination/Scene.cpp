@@ -28,7 +28,7 @@ Scene::Scene()
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
         pointLightBuffers.push_back(uboId);
     }
-    directionalLights = { { { 0.0f, -1.0f, 0.0f, 0.0f },{ 0.7f, 0.7f, 0.7f, 1.0f } } };
+    directionalLights = { { { 0.0f, -1.0f, 1.0f, 0.0f },{ 0.7f, 0.7f, 0.7f, 1.0f } } };
     directionalLightMap.resize(directionalLights.size());
     for (int i = 0; i < directionalLights.size(); i++) {
         GLuint uboId;
@@ -158,8 +158,14 @@ void Scene::updateLightMatrixBufferForDirectionalLight(GLuint index)
         min = glm::min(b, min);
         max = glm::max(b, max);
     }
-    glm::mat4 projMatrix = glm::ortho(min.x/2.5f, max.x / 2.5f, min.y / 2.5f, max.y / 2.5f, min.z - 1.0f, max.z);
-    matrixLightBlock.modelViewMatrix = viewMatrix * modelMat;
+    glm::mat4 translationM = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -max.z));
+    min = translationM * glm::vec4(min, 1.0f);
+    max = translationM * glm::vec4(max, 1.0f);
+
+    glm::mat4 projMatrix = glm::ortho(min.x, max.x, min.y, max.y, max.z, -min.z); // forward is -z
+    auto clipMin = projMatrix * glm::vec4(min, 1.0f);
+    auto clipMax = projMatrix * glm::vec4(max, 1.0f);
+    matrixLightBlock.modelViewMatrix = translationM  * viewMatrix * modelMat;
     matrixLightBlock.modelViewProjMatrix = projMatrix * matrixLightBlock.modelViewMatrix;
     matrixLightBlock.normalMatrix = glm::mat4(glm::transpose(glm::inverse(glm::mat3(matrixLightBlock.modelViewMatrix))));
 

@@ -45,7 +45,7 @@ private:
     GLuint lightBuffer;
     std::map<std::string, GLuint> textureMap;
     std::vector<Shape> list;
-    glm::mat4 modelMat = glm::scale(glm::mat4(1.0f), glm::vec3(0.2, 0.2, 0.2));
+    glm::mat4 modelMat = glm::mat4(1.0f);
     glm::vec3 sceneMin;
     glm::vec3 sceneMax;
     SceneMaterialManager mSceneMatManager;
