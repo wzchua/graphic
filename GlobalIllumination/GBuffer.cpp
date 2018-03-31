@@ -27,6 +27,7 @@ void GBuffer::initialize(GLuint width, GLuint height)
     }
     glDrawBuffers(MAX_G_BUFFERS - 1, attachments); //
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    addAditionalBuffers(GL_RGBA8, "indirect_illumination");
 }
 
 void GBuffer::bindGBuffersAsTexture(GLuint posBinding, GLuint normalBinding, GLuint albedoBinding, GLuint specBinding)
@@ -35,6 +36,23 @@ void GBuffer::bindGBuffersAsTexture(GLuint posBinding, GLuint normalBinding, GLu
     glBindTextureUnit(normalBinding, mGBufferTextures[1]);
     glBindTextureUnit(albedoBinding, mGBufferTextures[2]);
     glBindTextureUnit(specBinding, mGBufferTextures[3]);
+}
+
+GLuint GBuffer::addAditionalBuffers(GLenum format, std::string name)
+{
+    GLuint bufferId;
+    glCreateTextures(GL_TEXTURE_2D, 1, &bufferId);
+    glBindTexture(GL_TEXTURE_2D, bufferId);
+    glTexStorage2D(GL_TEXTURE_2D, 1, format, width, height);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    additionalBuffers.push_back(bufferId);
+    additionalBufferFormats.push_back(format);
+    additionalBufferNames.push_back(name);
+    return bufferId;
 }
 
 void GBuffer::dumpBuffersAsImages()
@@ -73,6 +91,14 @@ void GBuffer::dumpBuffersAsImages()
         }
         filepath = baseDir + mGBufferNames[i] + ".png";
         stbi_write_png(filepath.c_str(), width, height, 1, image.data(), 4);
+
+        image.resize(width * height * 4);        
+        for (int j = 0; j < additionalBuffers.size(); j++) {
+            glGetTextureImage(additionalBuffers[j], 0, GL_RGBA, GL_UNSIGNED_BYTE, width * height * 4, image.data());
+            std::string filepath = baseDir + additionalBufferNames[j] + ".png";
+            stbi_write_png(filepath.c_str(), width, height, 4, image.data(), 0);
+        }
+
     }
 }
 
