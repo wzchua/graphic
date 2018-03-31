@@ -20,7 +20,6 @@ void RenderLightTextures::initialize()
 
     glGenFramebuffers(1, &fboId);
     glBindFramebuffer(GL_FRAMEBUFFER, fboId);
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glFramebufferParameteri(GL_FRAMEBUFFER, GL_FRAMEBUFFER_DEFAULT_WIDTH, rsmRes.x);
     glFramebufferParameteri(GL_FRAMEBUFFER, GL_FRAMEBUFFER_DEFAULT_HEIGHT, rsmRes.y);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -30,6 +29,7 @@ void RenderLightTextures::run(Scene & inputScene)
 {
     shader.use();
     glBindFramebuffer(GL_FRAMEBUFFER, fboId);
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glViewport(0, 0, rsmRes.x, rsmRes.y);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);

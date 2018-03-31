@@ -21,6 +21,8 @@ public:
     static const GLuint OCTREE_NODE_SSBO_BINDING = 2;
     static const GLuint FRAGMENT_LIST_SSBO_BINDING = 3;
     static const GLuint FRAGMENT_LIST_SECONDARY_SSBO_BINDING = 4;
+    static const GLuint OCTREE_NODE_VALUE_SSBO_BINDING = 5;
+    static const GLuint OCTREE_LEAF_LIST_SSBO_BINDING = 6;
 
     static const GLuint COLOR_IMAGE_BINDING = 0;
     static const GLuint NORMAL_IMAGE_BINDING = 1;

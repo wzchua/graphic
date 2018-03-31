@@ -191,8 +191,9 @@ void Voxelizer::render(Scene& scene)
         std::vector<LogStruct> logs;
         ShaderLogger::getLogs(ssboLogList, logCount, logs);*/
         mCascadedGrid.filter();
+        OpenGLTimer::timeTillGPUIsFree("After VCT render");
         if (currentNumMode == 0) {
-            mModuleRenderVoxelConeTraceCasGrid.run(scene, voxelMatrixUBOId, ssboCounterSet, mCascadedGrid, ssboLogList);
+            mModuleRenderVoxelConeTraceCasGrid.run(scene, ssboCounterSet, mCascadedGrid, ssboLogList, mGBuffer);
         }
         else {
             mModuleVoxelVisualizer.rayCastVoxels(scene.cam, voxelMatrixData.worldToVoxelMat, mCascadedGrid, currentNumMode, gridDefinition);
@@ -215,14 +216,13 @@ void Voxelizer::render(Scene& scene)
 
 
     resetAllData();
-    OpenGLTimer::timeTillGPUIsFree("After Reset");
+    //OpenGLTimer::timeTillGPUIsFree("After Reset");
     auto timeEnd = Clock::now();
     std::cout << "time end: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeEnd - timeStart).count() << "ms" << std::endl;
 }
 
 void Voxelizer::resetAllData()
 {
-    CheckGLError();
     switch (mType) {
     case OCTREE:
     {
@@ -248,7 +248,6 @@ void Voxelizer::resetAllData()
     auto cPtr = ssboCounterSet.getPtr();
     cPtr[0] = mZeroedCounterBlock;
     ssboCounterSet.unMapPtr();
-    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_UPDATE_BARRIER_BIT);
 }
 
 void Voxelizer::onNumberPressed(int num)

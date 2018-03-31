@@ -7,19 +7,13 @@ void RenderVoxelConeTraceCasGrid::initialize()
     if (hasInitialized) {
         return;
     }
-    std::stringstream vertShaderString;
-    vertShaderString << GenericShaderCodeString::vertHeader << GenericShaderCodeString::vertFragOutput;
-    shader.generateShader(vertShaderString, "./Shaders/VoxelConeTracingRender.vert", ShaderProgram::VERTEX);
 
-    std::stringstream fragShaderString;
-    fragShaderString << GenericShaderCodeString::fragHeader;
-    //uniform blocks
-    fragShaderString << GenericShaderCodeString::materialUniformBlock(1) << voxelizeBlockString(3) << voxelizeCascadedBlockString(4);
-    fragShaderString << cameraUniformBlockShaderCodeString(5) << GenericShaderCodeString::genericLimitsUniformBlock(7);
-    //ssbo
-    fragShaderString << counterBlockBufferShaderCodeString(1) << logFunctionAndBufferShaderCodeString(7);
-
-    shader.generateShader(fragShaderString, "./Shaders/VoxelConeTracingCasGridRender.frag", ShaderProgram::FRAGMENT);
+    std::stringstream compShaderString;
+    compShaderString << GlobalShaderComponents::getHeader() << GlobalShaderComponents::getComputeShaderInputLayout(mWorkGroupSize.x, mWorkGroupSize.y);
+    compShaderString << voxelizeBlockString(GlobalShaderComponents::VOXELIZATION_MATRIX_UBO_BINDING) << voxelizeCascadedBlockString(GlobalShaderComponents::CASGRID_VOXELIZATION_INFO_UBO_BINDING);
+    compShaderString << cameraUniformBlockShaderCodeString(GlobalCom::CAMERA_UBO_BINDING);
+    compShaderString << counterBlockBufferShaderCodeString(GlobalShaderComponents::COUNTER_SSBO_BINDING) << logFunctionAndBufferShaderCodeString(GlobalShaderComponents::LOG_SSBO_BINDING);
+    shader.generateShader(compShaderString, "./Shaders/VoxelConeTracingCasGrid.comp", ShaderProgram::COMPUTE);
     shader.linkCompileValidate();
 
 
@@ -29,14 +23,14 @@ void RenderVoxelConeTraceCasGrid::initialize()
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
-void RenderVoxelConeTraceCasGrid::run(Scene & inputScene, GLuint voxelizeMatrixBlock, GLBufferObject<CounterBlock>& ssboCounterSet, CascadedGrid & cascadedGrid, GLBufferObject<LogStruct> & logList)
+void RenderVoxelConeTraceCasGrid::run(Scene & inputScene, GLBufferObject<CounterBlock>& ssboCounterSet, CascadedGrid & cascadedGrid, GLBufferObject<LogStruct> & logList, GBuffer & gBuffer)
 {
     shader.use();
     inputScene.updateMatrixBuffer();
     auto & res = inputScene.cam.getResolution();
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glViewport(0, 0, res.x, res.y);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
@@ -58,21 +52,19 @@ void RenderVoxelConeTraceCasGrid::run(Scene & inputScene, GLuint voxelizeMatrixB
         glBindTextureUnit(4 * i + 2, lightDirCasGrid[i]);
         glBindTextureUnit(4 * i + 3, lightEnergyCasGrid[i]);
     }
+    gBuffer.bindGBuffersAsTexture(12, 13, 14, 15);
 
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, inputScene.getMatrixBuffer()); //scene cam matrices
-    glBindBufferBase(GL_UNIFORM_BUFFER, 3, voxelizeMatrixBlock);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 4, cascadedGrid.getVoxelizedCascadedBlockBufferId());
-    glBindBufferBase(GL_UNIFORM_BUFFER, 5, camBlkBufferId); //scene cam matrices
-    ssboCounterSet.bind(1);
-    logList.bind(7);
+    glBindBufferBase(GL_UNIFORM_BUFFER, GlobalCom::CAMERA_MATRIX_UBO_BINDING, inputScene.getMatrixBuffer()); //scene cam matrices
+    glBindBufferBase(GL_UNIFORM_BUFFER, GlobalCom::CASGRID_VOXELIZATION_INFO_UBO_BINDING, cascadedGrid.getVoxelizedCascadedBlockBufferId());
+    glBindBufferBase(GL_UNIFORM_BUFFER, GlobalCom::CAMERA_UBO_BINDING, camBlkBufferId); //scene cam matrices
 
     glMemoryBarrier(GL_UNIFORM_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
-    inputScene.render(shader.getProgramId());
-    /*auto c = ssboCounterSet.getPtr();
+    glDispatchCompute(res.x / mWorkGroupSize.x, res.y / mWorkGroupSize.y, 1);
+    auto c = ssboCounterSet.getPtr();
     int logCount = c->logCounter;
     c->logCounter = 0;
     ssboCounterSet.unMapPtr();
     std::vector<LogStruct> logs;
     ShaderLogger::getLogs(logList, logCount, logs);
-    std::cout << "h\n";*/
+    std::cout << "h\n";
 }

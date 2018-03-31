@@ -202,11 +202,11 @@ void CascadedGrid::resetData()
 {
     for (int i = 0; i < mCascadeNumber; i++) {
         glInvalidateTexImage(texture3DColorCasGrid[i], 0);
-        glClearTexImage(texture3DColorCasGrid[i], 0, GL_RGBA, GL_FLOAT, NULL);
+        glClearTexImage(texture3DColorCasGrid[i], 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
         glInvalidateTexImage(texture3DNormalCasGrid[i], 0);
-        glClearTexImage(texture3DNormalCasGrid[i], 0, GL_RGBA, GL_FLOAT, NULL);
+        glClearTexImage(texture3DNormalCasGrid[i], 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
         glInvalidateTexImage(texture3DLightDirCasGrid[i], 0);
-        glClearTexImage(texture3DLightDirCasGrid[i], 0, GL_RGBA, GL_FLOAT, NULL);
+        glClearTexImage(texture3DLightDirCasGrid[i], 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
         glInvalidateTexImage(texture3DLightEnergyCasGrid[i], 0);
         glClearTexImage(texture3DLightEnergyCasGrid[i], 0, GL_RED_INTEGER, GL_UNSIGNED_INT, NULL);
     }

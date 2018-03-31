@@ -11,7 +11,12 @@ layout(binding = 9) uniform sampler3D normalBrickL2;
 layout(binding = 10) uniform sampler3D lightDirBrickL2;
 layout(binding = 11) uniform usampler3D lightEnergyBrickL2;
 
-layout (location = 0) out vec4 FragColor;
+layout(binding = 12) uniform sampler2D gbufferVoxelPosition;
+layout(binding = 13) uniform sampler2D gbufferNormal;
+layout(binding = 14) uniform sampler2D gbufferAlbedo;
+layout(binding = 15) uniform sampler2D gbufferSpec;
+
+//layout(binding = 0, rgba8) uniform image2D output;
 
 #define PI           3.14159265358979323846
 
@@ -82,18 +87,10 @@ vec4 evaluateColor(in sampler3D colorClip, in sampler3D normalClip, in sampler3D
         vec4 color = vec4(0.0f);
         float cosPhi = cos(radians(60));
         vec4 c = textureLod(colorClip, clipPos, lod);
-        // if(gl_FragCoord.x < 1.0f && gl_FragCoord.y < 1.0f) {
-        //     logFragment(c, vec4(clipPos, lod), 0, 4, 2, 3);
-        // }
         if(c.a > 0.0f) {                
             vec4 n = 2 * textureLod(normalClip, clipPos, lod) - 1.0f;
             uint lEnergy = textureLod(lightEnergyClip, clipPos, lod).r;
             vec4 l = 2 * textureLod(lightDirClip, clipPos, lod) - 1.0f;
-            // if(gl_FragCoord.x < 1.0f && gl_FragCoord.y < 1.0f) {
-            //     logFragment(c, n, lEnergy, 2, 2, 3);
-            //     logFragment(l, vec4(clipPos, 1.0f), lEnergy, 2, 2, 3);
-            // }
-
             GaussianLobe normalLobe = generateSG(vec3(1.0f), n.xyz);
             GaussianLobe lightLobe = generateSG(vec3(1.0f), l.xyz);
             
@@ -128,8 +125,8 @@ vec3 diffuseConeTrace(vec3 origin, vec3 dir) {
         i++;
         float len = length(rayVoxelPos - origin);
         lod = evaluateLOD(30.0f, len);
-        if(gl_FragCoord.x < 1.0f && gl_FragCoord.y < 1.0f) {
-            logFragment(vec4(gl_FragCoord.xy, len, lod), vec4(rayVoxelPos, lod), uint(findMinLevel(rayVoxelPos)), uint(gl_FragCoord.x), uint(gl_FragCoord.y), uint(i));
+        if(gl_GlobalInvocationID.x < 1 && gl_GlobalInvocationID.y < 1) {
+            logFragment(vec4(gl_GlobalInvocationID.xy, len, lod), vec4(rayVoxelPos, lod), uint(findMinLevel(rayVoxelPos)), uint(gl_GlobalInvocationID.x), uint(gl_GlobalInvocationID.y), uint(i));
         }
         adjustedDir = pow(2, int(lod)) * dir;
         if(lod < 1.0f) {
@@ -163,23 +160,32 @@ vec3 findOrthoVector(vec3 v) {
     return u;
 }
 
+const float voxelDim = 511.0f;
 void main() 
-{    
-    vec3 pos = (WorldToVoxelMat * vec4(wcPosition, 1.0f)).xyz;
-    uint energy = 0;
-    // 4x 60 from normal + 1 at normal;
-    vec3 normal = normalize(wcNormal);
-    vec3 orthoX = findOrthoVector(normal);
-    vec3 orthoY = normalize(cross(normal, orthoX)); 
-    vec3 diffuseColor = 0.2f * diffuseConeTrace(pos, normal);
-    //diffuseColor += 0.2f * diffuseConeTrace(pos, normalize(mix(normal, orthoX, 0.637)));
-    //diffuseColor += 0.2f * diffuseConeTrace(pos, normalize(mix(normal, -orthoX, 0.637)));
-    //diffuseColor += 0.2f * diffuseConeTrace(pos, normalize(mix(normal, orthoY, 0.637)));
-    //diffuseColor += 0.2f * diffuseConeTrace(pos, normalize(mix(normal, -orthoY, 0.637)));
-    vec3 view  = normalize(pos - camPosition.xyz);    
-    vec3 specularColor = vec3(0.0f);
-    /*if(shininess > 0.0f) {
-        specularColor = specularConeTrace(pos, reflect(view, normal), shininess);
-    }*/
-    FragColor = vec4(texture(texDiffuse, fTexCoord).rgb * (diffuseColor + specularColor), 1.0f);
+{   
+    ivec2 size = textureSize(gbufferVoxelPosition, 0);
+    ivec2 xy = ivec2(gl_GlobalInvocationID.xy);
+    
+    if(xy.x < size.x && xy.y < size.y) {
+        vec4 gbPos = texelFetch(gbufferVoxelPosition, xy, 0);
+        vec4 gbNormal = texelFetch(gbufferNormal, xy, 0);
+        vec4 gbColor = texelFetch(gbufferAlbedo, xy, 0);
+        float gbSpec = texelFetch(gbufferSpec, xy, 0).r;
+        vec3 pos = gbPos.xyz * voxelDim;
+        // 4x 60 from normal + 1 at normal;
+        vec3 normal = normalize(gbNormal.xyz * 2.0f - 1.0f);
+        vec3 orthoX = findOrthoVector(normal);
+        vec3 orthoY = normalize(cross(normal, orthoX)); 
+        vec3 diffuseColor = 0.2f * diffuseConeTrace(pos, normal);
+        //diffuseColor += 0.2f * diffuseConeTrace(pos, normalize(mix(normal, orthoX, 0.637)));
+        //diffuseColor += 0.2f * diffuseConeTrace(pos, normalize(mix(normal, -orthoX, 0.637)));
+        //diffuseColor += 0.2f * diffuseConeTrace(pos, normalize(mix(normal, orthoY, 0.637)));
+        //diffuseColor += 0.2f * diffuseConeTrace(pos, normalize(mix(normal, -orthoY, 0.637)));
+        vec3 view  = normalize(pos - camPosition.xyz);    
+        vec3 specularColor = vec3(0.0f);
+        /*if(shininess > 0.0f) {
+            specularColor = specularConeTrace(pos, reflect(view, normal), shininess);
+        }*/
+        //imageStore(output, xy, vec4(gbColor.rgb * (diffuseColor + specularColor), 1.0f));
+    }
 }

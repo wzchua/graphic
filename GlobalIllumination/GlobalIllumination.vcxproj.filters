@@ -209,9 +209,6 @@
     <ClInclude Include="RenderVoxelConeTrace.h">
       <Filter>Header Files\Modules</Filter>
     </ClInclude>
-    <ClInclude Include="GenericShaderCodeString.h">
-      <Filter>Header Files\DataStructure</Filter>
-    </ClInclude>
     <ClInclude Include="VoxelizeCascadedBlock.h">
       <Filter>Header Files\DataStructure</Filter>
     </ClInclude>

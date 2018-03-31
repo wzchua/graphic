@@ -94,9 +94,9 @@ void main() {
             wcNormal = texelFetch(worldNormalMap, xy, 0).xyz * 2.0f - 1.0f;
             computeLightValues(voxelPos, voxelLightPos, wcNormal, lightDir, recievedEnergy);
             clipPos = voxelToClipmapL0Mat * vec4(voxelPos, 1.0f);//check if within grid
-            if(gl_GlobalInvocationID.x >= 512 && gl_GlobalInvocationID.x < 514 && gl_GlobalInvocationID.y >=512 && gl_GlobalInvocationID.y < 514 ) {
-                logFragment(vec4(voxelPos.xyz,recievedEnergy.r), clipPos, (isWithinBoundaries(0, voxelPos)) ? 1:0, uint(xy.x), uint(xy.y), 3);
-            }
+            // if(gl_GlobalInvocationID.x >= 512 && gl_GlobalInvocationID.x < 514 && gl_GlobalInvocationID.y >=512 && gl_GlobalInvocationID.y < 514 ) {
+            //     logFragment(vec4(voxelPos.xyz,recievedEnergy.r), clipPos, (isWithinBoundaries(0, voxelPos)) ? 1:0, uint(xy.x), uint(xy.y), 3);
+            // }
             if(imageAtomicXYZWAvg(lightDirGridL0, ivec3(clipPos.xyz), vec4(lightDir, 1.0f))) {
                 imageAtomicAddFloat(lightEnergyGridL0, ivec3(clipPos.xyz), recievedEnergy.r);
             }
@@ -109,9 +109,9 @@ void main() {
                 wcNormal = texelFetch(worldNormalMap, upperLevelxy, 1).xyz * 2.0f - 1.0f;
                 computeLightValues(voxelPos, voxelLightPos, wcNormal, lightDir, recievedEnergy);
                 clipPos = voxelToClipmapL1Mat * vec4(voxelPos, 1.0f);
-                if(gl_GlobalInvocationID.x == 512 && gl_GlobalInvocationID.y ==512) {
-                    logFragment(vec4(voxelPos.xyz,recievedEnergy.r), clipPos, (isWithinBoundaries(0, voxelPos)) ? 1:0, 4, 2, 3);
-                }
+                // if(gl_GlobalInvocationID.x == 512 && gl_GlobalInvocationID.y ==512) {
+                //     logFragment(vec4(voxelPos.xyz,recievedEnergy.r), clipPos, (isWithinBoundaries(0, voxelPos)) ? 1:0, 4, 2, 3);
+                // }
 
                 if(imageAtomicXYZWAvg(lightDirGridL1, ivec3(clipPos.xyz), vec4(lightDir, 1.0f))) {
                     imageAtomicAddFloat(lightEnergyGridL1, ivec3(clipPos.xyz), recievedEnergy.r);

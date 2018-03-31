@@ -45,6 +45,7 @@ void RenderToCasGrid::run(Scene & inputScene, glm::mat4 & worldToVoxelMat, Casca
 
 
     glViewport(0, 0, dim, dim);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0);
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
     glDisable(GL_BLEND);

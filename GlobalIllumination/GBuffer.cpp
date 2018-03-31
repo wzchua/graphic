@@ -31,10 +31,10 @@ void GBuffer::initialize(GLuint width, GLuint height)
 
 void GBuffer::bindGBuffersAsTexture(GLuint posBinding, GLuint normalBinding, GLuint albedoBinding, GLuint specBinding)
 {
-    glBindImageTexture(posBinding, mGBufferTextures[0], 0, GL_TRUE, 0, GL_READ_WRITE, mGBufferFormat[0]);
-    glBindImageTexture(normalBinding, mGBufferTextures[1], 0, GL_TRUE, 0, GL_READ_WRITE, mGBufferFormat[1]);
-    glBindImageTexture(albedoBinding, mGBufferTextures[2], 0, GL_TRUE, 0, GL_READ_WRITE, mGBufferFormat[2]);
-    glBindImageTexture(specBinding, mGBufferTextures[3], 0, GL_TRUE, 0, GL_READ_WRITE, mGBufferFormat[3]);
+    glBindTextureUnit(posBinding, mGBufferTextures[0]);
+    glBindTextureUnit(normalBinding, mGBufferTextures[1]);
+    glBindTextureUnit(albedoBinding, mGBufferTextures[2]);
+    glBindTextureUnit(specBinding, mGBufferTextures[3]);
 }
 
 void GBuffer::dumpBuffersAsImages()

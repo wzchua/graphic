@@ -65,7 +65,6 @@
     <ClInclude Include="FilterOctree.h" />
     <ClInclude Include="GBuffer.h" />
     <ClInclude Include="GBufferGenerator.h" />
-    <ClInclude Include="GenericShaderCodeString.h" />
     <ClInclude Include="GlobalShaderComponents.h" />
     <ClInclude Include="Octree.h" />
     <ClInclude Include="OpenGLQueryObject.h" />

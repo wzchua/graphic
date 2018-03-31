@@ -1,6 +1,7 @@
 #include "RenderToGrid.h"
 
 
+typedef GlobalShaderComponents GlobalCom;
 
 void RenderToGrid::initialize()
 {
@@ -8,9 +9,9 @@ void RenderToGrid::initialize()
         return;
     }
     std::stringstream vertShaderString;
-    vertShaderString << GenericShaderCodeString::vertHeader << GenericShaderCodeString::vertGeomOutput;
-    vertShaderString << GenericShaderCodeString::genericLimitsUniformBlock(7);
-    vertShaderString << voxelizeBlockString(0) << counterBlockBufferShaderCodeString(1) << logFunctionAndBufferShaderCodeString(7);
+    vertShaderString << GlobalCom::getHeader() << GlobalCom::getVertTripleInputs() << GlobalCom::getVertToGeomTripleOutput();
+    vertShaderString << GlobalCom::getGlobalVariablesUBOCode();
+    vertShaderString << voxelizeBlockString(GlobalCom::VOXELIZATION_MATRIX_UBO_BINDING) << counterBlockBufferShaderCodeString(GlobalCom::COUNTER_SSBO_BINDING) << logFunctionAndBufferShaderCodeString(GlobalCom::LOG_SSBO_BINDING);
 
     voxelizeGridShader.generateShader(vertShaderString, "./Shaders/Voxelize.vert", ShaderProgram::VERTEX);
     voxelizeGridShader.generateShader("./Shaders/Voxelize.geom", ShaderProgram::GEOMETRY);
