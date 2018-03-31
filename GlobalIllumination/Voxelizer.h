@@ -46,8 +46,11 @@ public:
     void resetAllData();
     int projectionAxis = 0;
     void onNumberPressed(int num);
+    void changeCasGridDefinition();
+    void setup();
 private:
     int currentNumMode = 0;
+    int gridDefinition = 0;
     Type mType = CAS_GRID;
     unsigned int fragCount = 1024 * 1024 * 2;
     unsigned int nodeCount = 1024 * 1024 * 2;

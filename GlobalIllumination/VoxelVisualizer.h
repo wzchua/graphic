@@ -20,6 +20,7 @@ private:
         int height;
         int width;
         int isEnergy;
+        int gridDef;
     };
 
     ShaderProgram voxelVisualizerShader;
@@ -35,7 +36,7 @@ private:
     GLuint quadVAOId;
     GLuint quadVBOId;
     GLuint quadEBOId;
-    void rayCastVoxels(Camera& cam, glm::mat4 & worldToVoxelMat, int gridType);
+    void rayCastVoxels(Camera& cam, glm::mat4 & worldToVoxelMat, int gridType, int gridDef);
 public:
     enum Type {
         GRID, OCTREE
@@ -43,7 +44,7 @@ public:
     void initialize();
     void rasterizeVoxels(Camera& cam, glm::mat4 & worldToVoxelMat, GLBufferObject<glm::vec4>& inputssboVoxelList, GLuint noOfVoxels, GLuint colorTextureId);
     void rayCastVoxels(Camera& cam, glm::mat4 & worldToVoxelMat, Octree & octree, int gridType);
-    void rayCastVoxels(Camera& cam, glm::mat4 & worldToVoxelMat, CascadedGrid & cascadedGrid, int gridType);
+    void rayCastVoxels(Camera& cam, glm::mat4 & worldToVoxelMat, CascadedGrid & cascadedGrid, int gridType, int gridDef);
     void rayCastVoxelsGrid(Camera& cam, glm::mat4 & worldToVoxelMat, GLuint colorTextureId, int gridType);
     VoxelVisualizer();
     ~VoxelVisualizer();

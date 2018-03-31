@@ -12,6 +12,7 @@ layout(binding = 9) uniform RayCastBlock {
     int height;
     int width;
     int isEnergy;
+    int gridDef;
 };
 
 layout(binding = 7, std140) uniform LimitsUniformBlock {

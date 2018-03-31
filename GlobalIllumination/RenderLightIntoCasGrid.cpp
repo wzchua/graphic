@@ -30,6 +30,7 @@ void RenderLightIntoCasGrid::run(Scene & inputScene,  GLuint voxelizeMatrixBlock
     glBindImageTexture(3, textureLightEnergies[1], 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
     glBindImageTexture(4, textureLightDirections[2], 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
     glBindImageTexture(5, textureLightEnergies[2], 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
+    glMemoryBarrier(GL_TEXTURE_UPDATE_BARRIER_BIT);
 
     int numOfPointLight = inputScene.getTotalPointLights();
 
@@ -42,5 +43,15 @@ void RenderLightIntoCasGrid::run(Scene & inputScene,  GLuint voxelizeMatrixBlock
             glBindTextureUnit(1, rsm.getNormalMap());
             glDispatchCompute(res.x / mWorkGroupSize.x, res.y / mWorkGroupSize.y, 1);
         }
+    }
+
+    int numOfDirectionalLight = inputScene.getTotalDirectionalLights();
+    for (int i = 0; i < numOfDirectionalLight; i++) {
+        glBindBufferBase(GL_UNIFORM_BUFFER, GlobalShaderComponents::LIGHT_UBO_BINDING, inputScene.getDirectionalLightBufferId(i));
+        RSM& rsm = inputScene.getDirectionalLightRSM(i);
+        auto res = rsm.getResolution();
+        glBindTextureUnit(0, rsm.getVoxelPositionMap());
+        glBindTextureUnit(1, rsm.getNormalMap());
+        glDispatchCompute(res.x / mWorkGroupSize.x, res.y / mWorkGroupSize.y, 1);
     }
 }

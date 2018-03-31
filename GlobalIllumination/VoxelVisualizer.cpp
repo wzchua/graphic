@@ -98,10 +98,10 @@ void VoxelVisualizer::rayCastVoxels(Camera & cam, glm::mat4 & worldToVoxelMat, O
     voxelRayCastOctreeShader.use();
     octree.getNodeList().bind(2);
     octree.getNodeValueList().bind(3);
-    rayCastVoxels(cam, worldToVoxelMat, gridType);
+    rayCastVoxels(cam, worldToVoxelMat, gridType, 0);
 }
 
-void VoxelVisualizer::rayCastVoxels(Camera & cam, glm::mat4 & worldToVoxelMat, CascadedGrid & cascadedGrid, int gridType)
+void VoxelVisualizer::rayCastVoxels(Camera & cam, glm::mat4 & worldToVoxelMat, CascadedGrid & cascadedGrid, int gridType, int gridDef)
 {
     voxelRayCastCasGridShader.use();
     CascadedGrid::GridType type;
@@ -129,15 +129,15 @@ void VoxelVisualizer::rayCastVoxels(Camera & cam, glm::mat4 & worldToVoxelMat, C
     glBindTextureUnit(6, energy[2]);
 
     glBindBufferBase(GL_UNIFORM_BUFFER, GlobalShaderComponents::CASGRID_VOXELIZATION_INFO_UBO_BINDING, cascadedGrid.getVoxelizedCascadedBlockBufferId());
-    rayCastVoxels(cam, worldToVoxelMat, gridType);
+    rayCastVoxels(cam, worldToVoxelMat, gridType, gridDef);
 }
 
-void VoxelVisualizer::rayCastVoxels(Camera & cam, glm::mat4 & worldToVoxelMat, int gridType)
+void VoxelVisualizer::rayCastVoxels(Camera & cam, glm::mat4 & worldToVoxelMat, int gridType, int gridDef)
 {
     int width = 800;
     int height = 600;
     glm::mat4 viewToVoxelMat = worldToVoxelMat * glm::inverse(cam.getViewMatrix());
-    RayCastBlock block = { viewToVoxelMat, worldToVoxelMat * glm::vec4(cam.getPosition(), 1.0f), glm::vec4(cam.getForward(), 1.0f), glm::vec4(cam.getUp(), 1.0f), height, width, (gridType == 4) ? 1:0 };
+    RayCastBlock block = { viewToVoxelMat, worldToVoxelMat * glm::vec4(cam.getPosition(), 1.0f), glm::vec4(cam.getForward(), 1.0f), glm::vec4(cam.getUp(), 1.0f), height, width, (gridType == 4) ? 1:0, gridDef };
     glNamedBufferSubData(uniformBufferRaycastBlock, 0, sizeof(RayCastBlock), &block);
     glBindBufferBase(GL_UNIFORM_BUFFER, GlobalShaderComponents::RAYCAST_UBO_BINDING, uniformBufferRaycastBlock);
 
@@ -157,7 +157,7 @@ void VoxelVisualizer::rayCastVoxelsGrid(Camera & cam, glm::mat4 & worldToVoxelMa
 {
     voxelRayCastGridShader.use();
     glBindImageTexture(4, colorTextureId, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
-    rayCastVoxels(cam, worldToVoxelMat, gridType);
+    rayCastVoxels(cam, worldToVoxelMat, gridType, 0);
 }
 
 VoxelVisualizer::VoxelVisualizer()

@@ -150,7 +150,7 @@ vec3 diffuseConeTrace(vec3 origin, vec3 dir) {
         color += (1.0f - alpha) * c.rgb ;/// (len * len);
         alpha = alpha + (1.0f - alpha) * c.a;        
         rayVoxelPos += adjustedDir;
-        adjustedDir *= 2.0f;
+        adjustedDir *= 1.5f;
     }
     return color;
 }
@@ -170,12 +170,12 @@ void main()
     // 4x 60 from normal + 1 at normal;
     vec3 normal = normalize(wcNormal);
     vec3 orthoX = findOrthoVector(normal);
-    vec3 orthoY = cross(normal, orthoX); 
+    vec3 orthoY = normalize(cross(normal, orthoX)); 
     vec3 diffuseColor = 0.2f * diffuseConeTrace(pos, normal);
-    diffuseColor += 0.2f * diffuseConeTrace(pos, mix(normal, orthoX, 0.6));
-    diffuseColor += 0.2f * diffuseConeTrace(pos, mix(normal, -orthoX, 0.6));
-    diffuseColor += 0.2f * diffuseConeTrace(pos, mix(normal, orthoY, 0.6));
-    diffuseColor += 0.2f * diffuseConeTrace(pos, mix(normal, -orthoY, 0.6));
+    diffuseColor += 0.2f * diffuseConeTrace(pos, normalize(mix(normal, orthoX, 0.637)));
+    diffuseColor += 0.2f * diffuseConeTrace(pos, normalize(mix(normal, -orthoX, 0.637)));
+    diffuseColor += 0.2f * diffuseConeTrace(pos, normalize(mix(normal, orthoY, 0.637)));
+    diffuseColor += 0.2f * diffuseConeTrace(pos, normalize(mix(normal, -orthoY, 0.637)));
     vec3 view  = normalize(pos - camPosition.xyz);    
     vec3 specularColor = vec3(0.0f);
     /*if(shininess > 0.0f) {

@@ -54,7 +54,7 @@ void RSM::dumpAsImage(std::string label)
         image.resize(size);
 
         glGetTextureImage(mVoxelPositionMap, 0, GL_RGBA, GL_UNSIGNED_BYTE, size, image.data());
-        std::string filepath = baseDir + "RSMVoxPos_" + label + ".png";
+         std::string filepath = baseDir + "RSMVoxPos_" + label + ".png";
         stbi_write_png(filepath.c_str(), mRes.x, mRes.y, 4, image.data(), 0);
 
         glGetTextureImage(mNormalMap, 0, GL_RGBA, GL_UNSIGNED_BYTE, size, image.data());

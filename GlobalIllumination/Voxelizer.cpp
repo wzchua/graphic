@@ -100,7 +100,7 @@ void Voxelizer::initializeWithScene(glm::vec3 min, glm::vec3 max)
     //scale/translate scene into ortho box 512 x 512 x 512
     glm::vec3 length = (max - min);
     glm::vec3 translate = glm::vec3(0.0f) - min;
-    glm::vec3 scale = 512.0f / length;
+    glm::vec3 scale = 511.0f / length;
     //fixed ratio scaling
     float smallestScale = glm::min(scale.x, glm::min(scale.y, scale.z));
     scale = glm::vec3(smallestScale);
@@ -184,12 +184,18 @@ void Voxelizer::render(Scene& scene)
         // get the query result
         glGetQueryObjectui64v(query, GL_QUERY_RESULT, &elapsed_time);
         printf("Time Elapsed: %f ms\n", elapsed_time / 1000000.0);
+        /*auto c = ssboCounterSet.getPtr();
+        int logCount = c->logCounter;
+        c->logCounter = 0;
+        ssboCounterSet.unMapPtr();
+        std::vector<LogStruct> logs;
+        ShaderLogger::getLogs(ssboLogList, logCount, logs);*/
         mCascadedGrid.filter();
         if (currentNumMode == 0) {
             mModuleRenderVoxelConeTraceCasGrid.run(scene, voxelMatrixUBOId, ssboCounterSet, mCascadedGrid, ssboLogList);
         }
         else {
-            mModuleVoxelVisualizer.rayCastVoxels(scene.cam, voxelMatrixData.worldToVoxelMat, mCascadedGrid, currentNumMode);
+            mModuleVoxelVisualizer.rayCastVoxels(scene.cam, voxelMatrixData.worldToVoxelMat, mCascadedGrid, currentNumMode, gridDefinition);
         }       
         OpenGLTimer::timeTillGPUIsFree("After VCT render");
     }
@@ -248,6 +254,27 @@ void Voxelizer::resetAllData()
 void Voxelizer::onNumberPressed(int num)
 {
     currentNumMode = num;
+}
+
+void Voxelizer::changeCasGridDefinition()
+{
+    if (gridDefinition == mCascadedGrid.getCascadedLevels() - 1) {
+        gridDefinition = 0;
+    }
+    else {
+        gridDefinition += 1;
+    }
+}
+
+void Voxelizer::setup()
+{
+    //bindings
+    GlobalShaderComponents::bindUBO(voxelMatrixUBOId, GlobalShaderComponents::UBOType::VOXELIZATION_MATRIX);
+    GlobalShaderComponents::bindUBO(globalVariablesUBOId, GlobalShaderComponents::UBOType::GLOBAL_VARIABLES);
+
+    ssboCounterSet.bind(GlobalShaderComponents::COUNTER_SSBO_BINDING);
+    ssboLogList.bind(GlobalShaderComponents::LOG_SSBO_BINDING);
+
 }
 
 void Voxelizer::initialize3DTextures(GLuint & textureId, GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height, GLsizei depth)

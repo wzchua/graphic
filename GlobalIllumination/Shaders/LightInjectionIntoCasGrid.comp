@@ -8,7 +8,7 @@ layout(binding = 3, r32ui) uniform coherent volatile uimage3D lightEnergyGridL1;
 layout(binding = 4, r32ui) uniform coherent volatile uimage3D lightDirGridL2;
 layout(binding = 5, r32ui) uniform coherent volatile uimage3D lightEnergyGridL2;
 
-const float voxelDim = 512.0f;
+const float voxelDim = 511.0f;
 
 // includes -127.0f to 127.0f
 vec4 convXYZWToVec4( uint val) {
@@ -51,49 +51,85 @@ void imageAtomicAddFloat(layout ( r32ui ) coherent volatile uimage3D imgUI , ive
 
 
 void computeLightValues(in vec3 voxelPos, in vec3 voxelLightPos, in vec3 normal, out vec3 lightDir, out vec4 recievedEnergy) {
-  vec3 lightDisplacement = voxelLightPos - voxelPos;
-  lightDir = normalize(lightDisplacement);
-  float dist = length(lightDisplacement)/8.0f;
-  float distSq = dist * dist;
-  //light energy & direction
-  recievedEnergy = LightPower / (distSq * abs(dot(lightDir, normalize(normal))));
+  if(LightPosition.w == 0.0f) {
+    lightDir = -normalize(LightPosition.xyz);
+    recievedEnergy = 16.0f * LightPower / (abs(dot(lightDir, normalize(normal))));
+  } else {
+    vec3 lightDisplacement = voxelLightPos - voxelPos;
+    lightDir = normalize(lightDisplacement);
+    float dist = length(lightDisplacement)/8.0f;
+    float distSq = dist * dist;
+    //light energy & direction
+    recievedEnergy = LightPower / (distSq * abs(dot(lightDir, normalize(normal))));
+  }
+}
+
+bool isWithinBoundaries(int level, vec3 voxelPos) {
+    if(level == 0) {
+        return voxelPos.x >= level0min.x && voxelPos.x < level0max.x
+        && voxelPos.y >= level0min.y && voxelPos.y < level0max.y
+        && voxelPos.z >= level0min.z && voxelPos.z < level0max.z;
+    } else if(level == 1) {
+        return voxelPos.x >= level1min.x && voxelPos.x < level1max.x
+        && voxelPos.y >= level1min.y && voxelPos.y < level1max.y
+        && voxelPos.z >= level1min.z && voxelPos.z < level1max.z;
+    } else {
+        return voxelPos.x >= level2min.x && voxelPos.x < level2max.x
+        && voxelPos.y >= level2min.y && voxelPos.y < level2max.y
+        && voxelPos.z >= level2min.z && voxelPos.z < level2max.z;
+    }
 }
 
 void main() {
     ivec2 size = textureSize(voxelPositionMap, 0);
     ivec2 xy = ivec2(gl_GlobalInvocationID.xy);
     if(xy.x < size.x && xy.y < size.y) {
-        vec3 voxelPos = texelFetch(voxelPositionMap, xy, 0).xyz * voxelDim;
-        vec3 wcNormal = texelFetch(worldNormalMap, xy, 0).xyz * 2.0f - 1.0f;
         vec3 voxelLightPos = (WorldToVoxelMat * vec4(LightPosition.xyz, 1.0f)).xyz;
+        vec4 voxelPosRead = texelFetch(voxelPositionMap, xy, 0);
         vec3 lightDir; vec4 recievedEnergy; vec4 clipPos;
-        computeLightValues(voxelPos, voxelLightPos, wcNormal, lightDir, recievedEnergy);
-
-        clipPos = voxelToClipmapL0Mat * vec4(voxelPos, 1.0f);
-        if(imageAtomicXYZWAvg(lightDirGridL0, ivec3(clipPos.xyz), vec4(lightDir, 1.0f))) {
-            imageAtomicAddFloat(lightEnergyGridL0, ivec3(clipPos.xyz), recievedEnergy.r);
+        vec3 voxelPos;
+        vec3 wcNormal;         
+        voxelPos = voxelPosRead.xyz * voxelDim;
+        if(voxelPosRead.w != 0.0f && isWithinBoundaries(0, voxelPos)) {   
+            wcNormal = texelFetch(worldNormalMap, xy, 0).xyz * 2.0f - 1.0f;
+            computeLightValues(voxelPos, voxelLightPos, wcNormal, lightDir, recievedEnergy);
+            clipPos = voxelToClipmapL0Mat * vec4(voxelPos, 1.0f);//check if within grid
+            if(gl_GlobalInvocationID.x >= 512 && gl_GlobalInvocationID.x < 514 && gl_GlobalInvocationID.y >=512 && gl_GlobalInvocationID.y < 514 ) {
+                logFragment(vec4(voxelPos.xyz,recievedEnergy.r), clipPos, (isWithinBoundaries(0, voxelPos)) ? 1:0, uint(xy.x), uint(xy.y), 3);
+            }
+            if(imageAtomicXYZWAvg(lightDirGridL0, ivec3(clipPos.xyz), vec4(lightDir, 1.0f))) {
+                imageAtomicAddFloat(lightEnergyGridL0, ivec3(clipPos.xyz), recievedEnergy.r);
+            }
         }
-
         ivec2 upperLevelxy = xy/2;
         if(xy - 2 * upperLevelxy == ivec2(0)) {
-            voxelPos = texelFetch(voxelPositionMap, upperLevelxy, 1).xyz * voxelDim;
-            wcNormal = texelFetch(worldNormalMap, xy, 1).xyz * 2.0f - 1.0f;
-            computeLightValues(voxelPos, voxelLightPos, wcNormal, lightDir, recievedEnergy);
+            voxelPosRead = texelFetch(voxelPositionMap, upperLevelxy, 1);
+            voxelPos = voxelPosRead.xyz * voxelDim;
+            if(voxelPosRead.w != 0.0f && isWithinBoundaries(1, voxelPos)) {  
+                wcNormal = texelFetch(worldNormalMap, upperLevelxy, 1).xyz * 2.0f - 1.0f;
+                computeLightValues(voxelPos, voxelLightPos, wcNormal, lightDir, recievedEnergy);
+                clipPos = voxelToClipmapL1Mat * vec4(voxelPos, 1.0f);
+                if(gl_GlobalInvocationID.x == 512 && gl_GlobalInvocationID.y ==512) {
+                    logFragment(vec4(voxelPos.xyz,recievedEnergy.r), clipPos, (isWithinBoundaries(0, voxelPos)) ? 1:0, 4, 2, 3);
+                }
 
-            clipPos = voxelToClipmapL1Mat * vec4(voxelPos, 1.0f);
-            if(imageAtomicXYZWAvg(lightDirGridL1, ivec3(clipPos.xyz), vec4(lightDir, 1.0f))) {
-                imageAtomicAddFloat(lightEnergyGridL1, ivec3(clipPos.xyz), recievedEnergy.r);
+                if(imageAtomicXYZWAvg(lightDirGridL1, ivec3(clipPos.xyz), vec4(lightDir, 1.0f))) {
+                    imageAtomicAddFloat(lightEnergyGridL1, ivec3(clipPos.xyz), recievedEnergy.r);
+                }
             }
         }
         upperLevelxy = xy/4;
         if(xy - 4 * upperLevelxy == ivec2(0)) {
-            voxelPos = texelFetch(voxelPositionMap, upperLevelxy, 2).xyz * voxelDim;
-            wcNormal = texelFetch(worldNormalMap, xy, 2).xyz * 2.0f - 1.0f;
-            computeLightValues(voxelPos, voxelLightPos, wcNormal, lightDir, recievedEnergy);
+            voxelPosRead = texelFetch(voxelPositionMap, upperLevelxy, 2);
+            voxelPos = voxelPosRead.xyz * voxelDim;
+            if(voxelPosRead.w != 0.0f && isWithinBoundaries(2, voxelPos)) {  
+                wcNormal = texelFetch(worldNormalMap, upperLevelxy, 2).xyz * 2.0f - 1.0f;
+                computeLightValues(voxelPos, voxelLightPos, wcNormal, lightDir, recievedEnergy);
 
-            clipPos = voxelToClipmapL2Mat * vec4(voxelPos, 1.0f);
-            if(imageAtomicXYZWAvg(lightDirGridL2, ivec3(clipPos.xyz), vec4(lightDir, 1.0f))) {
-                imageAtomicAddFloat(lightEnergyGridL2, ivec3(clipPos.xyz), recievedEnergy.r);
+                clipPos = voxelToClipmapL2Mat * vec4(voxelPos, 1.0f);
+                if(imageAtomicXYZWAvg(lightDirGridL2, ivec3(clipPos.xyz), vec4(lightDir, 1.0f))) {
+                    imageAtomicAddFloat(lightEnergyGridL2, ivec3(clipPos.xyz), recievedEnergy.r);
+                }
             }
         }
     }

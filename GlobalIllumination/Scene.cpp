@@ -19,6 +19,7 @@ Scene::Scene()
     glBufferData(GL_UNIFORM_BUFFER, sizeof(MatrixBlock), &matrixLightBlock, GL_DYNAMIC_DRAW);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
+    //pointLights = { { { 20.0f, 120.0f, 20.0f, 1.0f },{ 0.7f, 0.7f, 0.7f, 1.0f } } };
     pointLightMap.resize(pointLights.size() * 6);
     for (int i = 0; i < pointLights.size(); i++) {
         GLuint uboId;
@@ -28,7 +29,7 @@ Scene::Scene()
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
         pointLightBuffers.push_back(uboId);
     }
-    directionalLights = { { { 0.0f, -1.0f, 1.0f, 0.0f },{ 0.7f, 0.7f, 0.7f, 1.0f } } };
+    directionalLights = { { { 0.0f, -1.0f, 0.0f, 0.0f },{ 0.7f, 0.7f, 0.7f, 1.0f } } };
     directionalLightMap.resize(directionalLights.size());
     for (int i = 0; i < directionalLights.size(); i++) {
         GLuint uboId;

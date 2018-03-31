@@ -12,6 +12,7 @@ layout(binding = 9) uniform RayCastBlock {
     int height;
     int width;
     int isEnergy;
+    int gridDef;
 };
 
 layout(binding = 3, std140) uniform LimitsUniformBlock {
@@ -166,7 +167,7 @@ void main() {
     vec3 rayPosition = rOrigin;
     bool hasHit = false;
     bool isRayInCube = true;
-    vec4 color; int level = 0;
+    vec4 color; int level = gridDef;
 
     // if(gl_FragCoord.x < 1 && gl_FragCoord.y < 1) {        
     //     logFragment(vec4(rayPosition, 1.0f), level0min, 0, 0, height, width);

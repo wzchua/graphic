@@ -1,10 +1,11 @@
 layout (location = 0) out vec4 voxelPosition;
 layout (location = 1) out vec4 worldNormal;
-const float voxelDim = 512.0f;
+const float voxelDim = 511.0f;
 const vec2 size = vec2(2.0,0.0);
 const ivec3 off = ivec3(-1,0,1);
 void main()
 {
+    voxelPosition = vec4(0.0f);
     if(texture(texAlpha, fTexCoord).r < 0.5f) {
         discard;
     }
@@ -24,6 +25,10 @@ void main()
 
     vec4 voxelPos = WorldToVoxelMat * vec4(wcPosition, 1.0f);
     voxelPos.xyz /= voxelDim;
-    voxelPosition = voxelPos;
+    if(voxelPos.x > 1.0f || voxelPos.x < 0.0f || voxelPos.y > 1.0f || voxelPos.y < 0.0f ||voxelPos.z > 1.0f || voxelPos.z < 0.0f) {
+        voxelPosition.w = 0.0f;
+    } else {        
+        voxelPosition = voxelPos;
+    }
     worldNormal = vec4(normalize(nwcNormal) * 0.5f + 0.5f, 1.0f);
 }

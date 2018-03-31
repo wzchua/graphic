@@ -20,6 +20,7 @@ void RenderLightTextures::initialize()
 
     glGenFramebuffers(1, &fboId);
     glBindFramebuffer(GL_FRAMEBUFFER, fboId);
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glFramebufferParameteri(GL_FRAMEBUFFER, GL_FRAMEBUFFER_DEFAULT_WIDTH, rsmRes.x);
     glFramebufferParameteri(GL_FRAMEBUFFER, GL_FRAMEBUFFER_DEFAULT_HEIGHT, rsmRes.y);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -30,7 +31,6 @@ void RenderLightTextures::run(Scene & inputScene)
     shader.use();
     glBindFramebuffer(GL_FRAMEBUFFER, fboId);
     glViewport(0, 0, rsmRes.x, rsmRes.y);
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
@@ -69,7 +69,7 @@ void RenderLightTextures::run(Scene & inputScene)
         glMemoryBarrier(GL_FRAMEBUFFER_BARRIER_BIT | GL_TEXTURE_UPDATE_BARRIER_BIT);
         glGenerateTextureMipmap(rsm.getVoxelPositionMap());
         glGenerateTextureMipmap(rsm.getNormalMap());
-        rsm.dumpAsImage(std::to_string(i));
+        //rsm.dumpAsImage(std::to_string(i));
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

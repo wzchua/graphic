@@ -24,6 +24,7 @@ void Renderer::voxelRender() {
 
 void Renderer::setToVoxelizeShader() {
     type = RenderType::VOXELIZE;
+    voxelizer.setup();
 }
 
 Renderer::Renderer(GLFWwindow * window, unsigned int viewHeight, unsigned int viewWidth) : viewHeight(viewHeight), viewWidth(viewWidth)
@@ -124,6 +125,9 @@ void Renderer::onKey(GLFWwindow* window, int key, int scancode, int action, int 
             }
             if (key == GLFW_KEY_4) {
                 voxelizer.onNumberPressed(4);
+            }
+            if (key == GLFW_KEY_TAB) {
+                voxelizer.changeCasGridDefinition();
             }
         }
         else if (type == Renderer::PHONG) {
