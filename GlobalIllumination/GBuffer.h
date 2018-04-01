@@ -25,6 +25,7 @@ public:
     GLuint addAditionalBuffers(GLenum format, std::string name);
     GLuint getAdditionalBuffers(int index) { return additionalBuffers[index]; }
     GLuint getFboId() { return fboId; }
+    glm::ivec2 getSize() { return glm::ivec2(width, height); }
     void dumpBuffersAsImages();
     GBuffer();
     ~GBuffer();

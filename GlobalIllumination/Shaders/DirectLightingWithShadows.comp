@@ -18,7 +18,7 @@ void main() {
         vec3 lightVec;
         vec3 viewVec = normalize(camPosition.xyz - wcPosition);
         if(LightPosition.w == 0.0f) {
-            lightVec = normalize(LightPosition.xyz);
+            lightVec = -normalize(LightPosition.xyz);
         } else {
             lightVec = normalize(LightPosition.xyz - wcPosition);
         }

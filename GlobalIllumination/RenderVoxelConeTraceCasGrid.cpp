@@ -29,12 +29,7 @@ void RenderVoxelConeTraceCasGrid::run(Scene & inputScene, GLBufferObject<Counter
     inputScene.updateMatrixBuffer();
     auto & res = inputScene.cam.getResolution();
     GLuint output = gBuffer.getAdditionalBuffers(0);
-    glViewport(0, 0, res.x, res.y);
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
+
     camBlk.camPosition = glm::vec4(inputScene.cam.getPosition(), 1.0f);
     camBlk.camForward = glm::vec4(inputScene.cam.getForward(), 1.0f);
     camBlk.camUp = glm::vec4(inputScene.cam.getUp(), 1.0f);

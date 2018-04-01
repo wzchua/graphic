@@ -23,6 +23,7 @@
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="CascadedGrid.cpp" />
     <ClCompile Include="FilterOctree.cpp" />
+    <ClCompile Include="FrameMuxer.cpp" />
     <ClCompile Include="GBuffer.cpp" />
     <ClCompile Include="GBufferGenerator.cpp" />
     <ClCompile Include="glad.c" />
@@ -63,6 +64,7 @@
     <ClInclude Include="CascadedGrid.h" />
     <ClInclude Include="CounterBlock.h" />
     <ClInclude Include="FilterOctree.h" />
+    <ClInclude Include="FrameMuxer.h" />
     <ClInclude Include="GBuffer.h" />
     <ClInclude Include="GBufferGenerator.h" />
     <ClInclude Include="GlobalShaderComponents.h" />

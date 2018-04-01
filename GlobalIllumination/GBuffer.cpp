@@ -27,6 +27,7 @@ void GBuffer::initialize(GLuint width, GLuint height)
     }
     glDrawBuffers(MAX_G_BUFFERS - 1, attachments); //
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    addAditionalBuffers(GL_RGBA8, "albedoWithShadow");
     addAditionalBuffers(GL_RGBA8, "indirect_illumination");
     addAditionalBuffers(GL_RGBA8, "final");
 }
