@@ -2,6 +2,7 @@
 #include <glad\glad.h>
 #include <stb_image_write.h>
 #include <vector>
+#include <glm\glm.hpp>
 
 class GBuffer
 {
@@ -19,9 +20,13 @@ private:
     GLuint fboId;
     bool hasInitialized = false;
 public:
+    static const int ALBEDO_SHADOWS = 0;
+    static const int INDIRECT = 1;
+    static const int FINAL = 2;
     enum type { VOXEL_POS, NORMAL, ALBEDO, SPECULAR, DEPTH};
     void initialize(GLuint width, GLuint height);
     void bindGBuffersAsTexture(GLuint posBinding, GLuint normalBinding, GLuint albedoBinding, GLuint specBinding);
+    void bindDepthBufferAsTexture(GLuint depthBinding);
     GLuint addAditionalBuffers(GLenum format, std::string name);
     GLuint getAdditionalBuffers(int index) { return additionalBuffers[index]; }
     GLuint getFboId() { return fboId; }

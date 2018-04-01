@@ -15,6 +15,7 @@ public:
     static const GLuint LIGHT_CAMERA_MATRIX_UBO_BINDING = 7;
     static const GLuint CAS_VOXELIZATION_MATRIX_UBO_BINDING = 8;
     static const GLuint RAYCAST_UBO_BINDING = 9;
+    static const GLuint LIGHT_SHADOW_BINDING = 10;
     
     static const GLuint COUNTER_SSBO_BINDING = 0;
     static const GLuint LOG_SSBO_BINDING = 1;
@@ -49,6 +50,7 @@ public:
 
     static std::string getCamMatrixUBOCode();
     static std::string getLightCamMatrixUBOCode();
+    static std::string getLightShadowMatrixUBOCode();
     static std::string getGlobalVariablesUBOCode();
     static std::string getMaterialUBOCode();
     enum UBOType {

@@ -30,7 +30,7 @@ void main() {
         vec3 diffuse = color * N_L * LightPower.r;
         vec3 specular = color * spec * LightPower.r;
         float visibleFactor = 1.0f;
-        vec4 shadowCoords = ShadowMatrix * vec4(wcPosition, 1.0f);
+        vec4 shadowCoords = ModelViewProjMatrix * vec4(wcPosition, 1.0f); //light cam buffer bound to light_cam_matrix_binding
         if(texture(depthMap, shadowCoords.xy).r < shadowCoords.z-0.005f) {
             visibleFactor = 0.0f;
         }

@@ -40,6 +40,11 @@ void GBuffer::bindGBuffersAsTexture(GLuint posBinding, GLuint normalBinding, GLu
     glBindTextureUnit(specBinding, mGBufferTextures[3]);
 }
 
+void GBuffer::bindDepthBufferAsTexture(GLuint depthBinding)
+{
+    glBindTextureUnit(depthBinding, mGBufferTextures[4]);
+}
+
 GLuint GBuffer::addAditionalBuffers(GLenum format, std::string name)
 {
     GLuint bufferId;

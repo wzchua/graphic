@@ -87,6 +87,15 @@ std::string GlobalShaderComponents::getLightCamMatrixUBOCode()
 )*";
     return s;
 }
+std::string GlobalShaderComponents::getLightShadowMatrixUBOCode()
+{
+    std::string s = R"*(layout(binding = )*" + std::to_string(LIGHT_SHADOW_BINDING)
+        + R"*(, std140) uniform ShadowBlock{
+    mat4 ShadowMatrix;     // ModelView matrix.
+}; 
+)*";
+    return s;
+}
 
 std::string GlobalShaderComponents::getGlobalVariablesUBOCode()
 {

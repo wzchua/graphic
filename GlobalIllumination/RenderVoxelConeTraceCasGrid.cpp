@@ -26,9 +26,8 @@ void RenderVoxelConeTraceCasGrid::initialize()
 void RenderVoxelConeTraceCasGrid::run(Scene & inputScene, GLBufferObject<CounterBlock>& ssboCounterSet, CascadedGrid & cascadedGrid, GLBufferObject<LogStruct> & logList, GBuffer & gBuffer)
 {
     shader.use();
-    inputScene.updateMatrixBuffer();
     auto & res = inputScene.cam.getResolution();
-    GLuint output = gBuffer.getAdditionalBuffers(0);
+    GLuint output = gBuffer.getAdditionalBuffers(GBuffer::INDIRECT);
 
     camBlk.camPosition = glm::vec4(inputScene.cam.getPosition(), 1.0f);
     camBlk.camForward = glm::vec4(inputScene.cam.getForward(), 1.0f);

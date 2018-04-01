@@ -22,6 +22,7 @@
     <ClCompile Include="AddToOctree.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="CascadedGrid.cpp" />
+    <ClCompile Include="ComputeShadows.cpp" />
     <ClCompile Include="FilterOctree.cpp" />
     <ClCompile Include="FrameMuxer.cpp" />
     <ClCompile Include="GBuffer.cpp" />
@@ -43,7 +44,6 @@
     <ClCompile Include="RenderToOctree.cpp" />
     <ClCompile Include="RenderVoxelConeTrace.cpp" />
     <ClCompile Include="RenderVoxelConeTraceCasGrid.cpp" />
-    <ClCompile Include="RenderWithShadows.cpp" />
     <ClCompile Include="RSM.cpp" />
     <ClCompile Include="SceneMaterialManager.cpp" />
     <ClCompile Include="ShaderProgram.cpp" />
@@ -62,6 +62,7 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="CameraBlock.h" />
     <ClInclude Include="CascadedGrid.h" />
+    <ClInclude Include="ComputeShadows.h" />
     <ClInclude Include="CounterBlock.h" />
     <ClInclude Include="FilterOctree.h" />
     <ClInclude Include="FrameMuxer.h" />
@@ -85,7 +86,6 @@
     <ClInclude Include="RenderToOctree.h" />
     <ClInclude Include="RenderVoxelConeTrace.h" />
     <ClInclude Include="RenderVoxelConeTraceCasGrid.h" />
-    <ClInclude Include="RenderWithShadows.h" />
     <ClInclude Include="RSM.h" />
     <ClInclude Include="SceneMaterialManager.h" />
     <ClInclude Include="ShaderProgram.h" />

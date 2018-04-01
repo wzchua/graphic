@@ -111,12 +111,6 @@
     <ClCompile Include="OpenGLTimer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="RenderLightTextures.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="RenderWithShadows.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="RSM.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -130,6 +124,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="FrameMuxer.cpp">
+      <Filter>Source Files\Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderLightTextures.cpp">
+      <Filter>Source Files\Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="ComputeShadows.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -215,12 +215,6 @@
     <ClInclude Include="VoxelizeCascadedBlock.h">
       <Filter>Header Files\DataStructure</Filter>
     </ClInclude>
-    <ClInclude Include="CascadedGrid.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Octree.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="RenderVoxelConeTraceCasGrid.h">
       <Filter>Header Files\Modules</Filter>
     </ClInclude>
@@ -239,18 +233,6 @@
     <ClInclude Include="OpenGLTimer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="RenderLightTextures.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="RenderWithShadows.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="RSM.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GBuffer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="GBufferGenerator.h">
       <Filter>Header Files\Modules</Filter>
     </ClInclude>
@@ -258,6 +240,24 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="FrameMuxer.h">
+      <Filter>Header Files\Modules</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderLightTextures.h">
+      <Filter>Header Files\Modules</Filter>
+    </ClInclude>
+    <ClInclude Include="RSM.h">
+      <Filter>Header Files\DataStructure</Filter>
+    </ClInclude>
+    <ClInclude Include="GBuffer.h">
+      <Filter>Header Files\DataStructure</Filter>
+    </ClInclude>
+    <ClInclude Include="CascadedGrid.h">
+      <Filter>Header Files\DataStructure</Filter>
+    </ClInclude>
+    <ClInclude Include="Octree.h">
+      <Filter>Header Files\DataStructure</Filter>
+    </ClInclude>
+    <ClInclude Include="ComputeShadows.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

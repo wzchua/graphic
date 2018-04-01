@@ -40,6 +40,20 @@ void RSM::initialize(glm::ivec2 res)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
     glBindTexture(GL_TEXTURE_2D, 0);
+
+    glGenBuffers(1, &mShadowMatrixBufferId);
+    glBindBuffer(GL_UNIFORM_BUFFER, mShadowMatrixBufferId);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), &mShadowMatrix, GL_STATIC_DRAW);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+}
+
+void RSM::setShadowMatrix(glm::mat4 shadowMatrix)
+{
+    auto newShadowMatrix = biasMatrix * shadowMatrix;
+    if (newShadowMatrix != mShadowMatrix) {
+        mShadowMatrix = newShadowMatrix;
+        glNamedBufferSubData(mShadowMatrixBufferId, 0, sizeof(glm::mat4), &mShadowMatrix);
+    }
 }
 
 void RSM::dumpAsImage(std::string label)
