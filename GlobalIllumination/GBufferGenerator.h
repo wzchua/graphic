@@ -10,7 +10,5 @@ class GBufferGenerator : public AbstractModule
 public:
     void initialize();
     void run(Scene & inputScene, GBuffer & gBuffer);
-    GBufferGenerator();
-    ~GBufferGenerator();
 };
 

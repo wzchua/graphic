@@ -1,19 +1,40 @@
 #include "OpenGLTimer.h"
 
-long OpenGLTimer::timeTillGPUIsFree(std::string msg, bool showOnConsole)
+void OpenGLTimer::setTimestamp()
 {
-    using Clock = std::chrono::high_resolution_clock;
-    auto timeStart = Clock::now();
-    auto syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
-    GLenum waitReturn = GL_UNSIGNALED;
-    while (waitReturn != GL_ALREADY_SIGNALED && waitReturn != GL_CONDITION_SATISFIED)
-    {
-        waitReturn = glClientWaitSync(syncObj, GL_SYNC_FLUSH_COMMANDS_BIT, 2);
+    GLuint query;
+    glGenQueries(1, &query);
+    glQueryCounter(query, GL_TIMESTAMP);
+    mQueries.push_back(query);
+}
+
+std::vector<GLuint64> OpenGLTimer::getElapsedTime()
+{
+    std::vector<GLuint64> elapsedTimes;
+    int done = 0;
+    auto lastQuery = mQueries.back();
+    while (!done) {
+        glGetQueryObjectiv(lastQuery,
+            GL_QUERY_RESULT_AVAILABLE,
+            &done);
     }
-    glDeleteSync(syncObj);
-    auto timeAfterRender = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - timeStart).count();
-    if (showOnConsole) {
-        std::cout << msg << ", time: " << std::to_string(timeAfterRender) << " ms\n";
+    GLuint64 timerStart, timerEnd;
+    glGetQueryObjectui64v(mQueries[0], GL_QUERY_RESULT, &timerStart);
+    for (int i = 1; i < mQueries.size(); i++) {
+        glGetQueryObjectui64v(mQueries[i], GL_QUERY_RESULT, &timerEnd);
+        elapsedTimes.push_back(timerEnd - timerStart);
+        timerStart = timerEnd;
     }
-    return timeAfterRender;
+    return elapsedTimes;
+}
+
+void OpenGLTimer::clearAll()
+{
+    glDeleteQueries(mQueries.size(), mQueries.data());
+    mQueries.clear();
+}
+
+OpenGLTimer::~OpenGLTimer()
+{
+    clearAll();
 }

@@ -159,12 +159,3 @@ void VoxelVisualizer::rayCastVoxelsGrid(Camera & cam, glm::mat4 & worldToVoxelMa
     glBindImageTexture(4, colorTextureId, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
     rayCastVoxels(cam, worldToVoxelMat, gridType, 0);
 }
-
-VoxelVisualizer::VoxelVisualizer()
-{
-}
-
-
-VoxelVisualizer::~VoxelVisualizer()
-{
-}

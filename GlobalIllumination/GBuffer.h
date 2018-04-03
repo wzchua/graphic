@@ -19,10 +19,12 @@ private:
     GLuint height;
     GLuint fboId;
     bool hasInitialized = false;
+    GLuint mFinalTexture;
+    const GLenum mFinalFormat = GL_RGBA8;
+    GLuint finalFboId;
 public:
     static const int ALBEDO_SHADOWS = 0;
     static const int INDIRECT = 1;
-    static const int FINAL = 2;
     enum type { VOXEL_POS, NORMAL, ALBEDO, SPECULAR, DEPTH};
     void initialize(GLuint width, GLuint height);
     void bindGBuffersAsTexture(GLuint posBinding, GLuint normalBinding, GLuint albedoBinding, GLuint specBinding);
@@ -30,6 +32,8 @@ public:
     GLuint addAditionalBuffers(GLenum format, std::string name);
     GLuint getAdditionalBuffers(int index) { return additionalBuffers[index]; }
     GLuint getFboId() { return fboId; }
+    GLuint getFinalTextureId() { return mFinalTexture; }
+    void blitFinalToScreen();
     glm::ivec2 getSize() { return glm::ivec2(width, height); }
     void dumpBuffersAsImages();
     GBuffer();

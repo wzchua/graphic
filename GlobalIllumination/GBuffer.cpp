@@ -29,7 +29,19 @@ void GBuffer::initialize(GLuint width, GLuint height)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     addAditionalBuffers(GL_RGBA8, "albedoWithShadow");
     addAditionalBuffers(GL_RGBA8, "indirect_illumination");
-    addAditionalBuffers(GL_RGBA8, "final");
+
+    glGenFramebuffers(1, &finalFboId);
+    glBindFramebuffer(GL_FRAMEBUFFER, finalFboId);
+    glCreateTextures(GL_TEXTURE_2D, 1, &mFinalTexture);
+    glBindTexture(GL_TEXTURE_2D, mFinalTexture);
+    glTexStorage2D(GL_TEXTURE_2D, 1, mFinalFormat, width, height);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, mFinalTexture, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void GBuffer::bindGBuffersAsTexture(GLuint posBinding, GLuint normalBinding, GLuint albedoBinding, GLuint specBinding)
@@ -60,6 +72,12 @@ GLuint GBuffer::addAditionalBuffers(GLenum format, std::string name)
     additionalBufferFormats.push_back(format);
     additionalBufferNames.push_back(name);
     return bufferId;
+}
+
+void GBuffer::blitFinalToScreen()
+{
+    glMemoryBarrier(GL_FRAMEBUFFER_BARRIER_BIT);
+    glBlitNamedFramebuffer(finalFboId, 0, 0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 }
 
 void GBuffer::dumpBuffersAsImages()

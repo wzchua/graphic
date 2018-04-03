@@ -6,7 +6,6 @@
 class FrameMuxer : public AbstractModule
 {
 private:
-    GLuint fboId;
     const glm::ivec3 mWorkGroupSize{ 32, 32, 1 };
 public:
     void initialize();

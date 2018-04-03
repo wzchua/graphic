@@ -117,27 +117,18 @@ void Voxelizer::initializeWithScene(glm::vec3 min, glm::vec3 max)
 
 void Voxelizer::render(Scene& scene)
 {
+    OpenGLTimer timer;
+    timer.setTimestamp();
     glBindBufferBase(GL_UNIFORM_BUFFER, GlobalCom::CAMERA_MATRIX_UBO_BINDING, scene.getMatrixBuffer());
-    mModuleLightRenderer.run(scene);
-    mModuleGBufferGen.run(scene, mGBuffer);
+    mModuleLightRenderer.run(scene); timer.setTimestamp();
+    mModuleGBufferGen.run(scene, mGBuffer); timer.setTimestamp();
     //mGBuffer.dumpBuffersAsImages();
     std::vector<LogStruct> logs;
-
-    using Clock = std::chrono::high_resolution_clock;
-    auto timeStart = Clock::now();
 
     switch (mType) {
     case OCTREE:
     {
-        mModuleRenderToOctree.run(scene, ssboCounterSet, voxelMatrixUBOId, globalVariablesUBOId, mOctree, ssboFragmentList, ssboLogList);
-        auto syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
-        GLenum waitReturn = GL_UNSIGNALED;
-        while (waitReturn != GL_ALREADY_SIGNALED && waitReturn != GL_CONDITION_SATISFIED)
-        {
-            waitReturn = glClientWaitSync(syncObj, GL_SYNC_FLUSH_COMMANDS_BIT, 2);
-        }
-        glDeleteSync(syncObj);
-        auto timeAfterRender = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - timeStart).count();
+        mModuleRenderToOctree.run(scene, ssboCounterSet, voxelMatrixUBOId, globalVariablesUBOId, mOctree, ssboFragmentList, ssboLogList); timer.setTimestamp();
         auto cPtr = ssboCounterSet.getPtr();
         auto c2 = *cPtr;
         ssboCounterSet.unMapPtr();
@@ -147,44 +138,25 @@ void Voxelizer::render(Scene& scene)
             nodeList.push_back(node[i]);
         }
         mOctree.getNodeList().unMapPtr();
-        //mModuleAddToOctree.run(ssboNodeList, ssboFragmentList, ssboCounterSet, ssboLeafIndexList, voxelLogUniformBuffer, texture3DColorList, texture3DNormalList, ssboLogList);
+        //mModuleAddToOctree.run(ssboNodeList, ssboFragmentList, ssboCounterSet, ssboLeafIndexList, voxelLogUniformBuffer, texture3DColorList, texture3DNormalList, ssboLogList); timer.setTimestamp();
         mModuleVoxelVisualizer.rayCastVoxels(scene.cam, voxelMatrixData.worldToVoxelMat, mOctree, currentNumMode);
-        auto timeAfterAddingToOctree = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - timeStart).count();
-        std::cout << " ms. time after render: " << timeAfterRender << " ms. time after add to octree: " << timeAfterAddingToOctree << " ms" << std::endl;
 
         // inject light
-        //mModuleRenderLightIntoOctree.run(scene, ssboNodeList, texture3DLightEnergyList, texture3DLightDirList, voxelMatrixUniformBuffer);
+        //mModuleRenderLightIntoOctree.run(scene, ssboNodeList, texture3DLightEnergyList, texture3DLightDirList, voxelMatrixUniformBuffer); timer.setTimestamp();
 
         // filter octree geometry / light
-        //mModuleFilterOctree.run(ssboCounterSet, ssboNodeList, ssboLeafIndexList, texture3DColorList, texture3DNormalGrid, texture3DLightEnergyList, texture3DLightDirList);
+        //mModuleFilterOctree.run(ssboCounterSet, ssboNodeList, ssboLeafIndexList, texture3DColorList, texture3DNormalGrid, texture3DLightEnergyList, texture3DLightDirList); timer.setTimestamp();
 
         // render cam RSM and draw shading using VCT
-        //mModuleRenderVCT.run(scene, ssboCounterSet, ssboNodeList, texture3DColorList, texture3DNormalGrid, texture3DLightEnergyList, texture3DLightDirList);
+        //mModuleRenderVCT.run(scene, ssboCounterSet, ssboNodeList, texture3DColorList, texture3DNormalGrid, texture3DLightEnergyList, texture3DLightDirList); timer.setTimestamp();
     }
     break;
     case CAS_GRID:
     {
-        mModuleRenderToCasGrid.run(scene, voxelMatrixData.worldToVoxelMat, mCascadedGrid);
-
-        GLuint query;
-        GLuint64 elapsed_time;
-        int done = 0;
-
-        glGenQueries(1, &query);
-        glBeginQuery(GL_TIME_ELAPSED, query);
-        mModuleRenderLightIntoCasGrid.run(scene, voxelMatrixUBOId, mCascadedGrid);
-        glEndQuery(GL_TIME_ELAPSED);
-        while (!done) {
-            glGetQueryObjectiv(query,
-                GL_QUERY_RESULT_AVAILABLE,
-                &done);
-        }
-
-        // get the query result
-        glGetQueryObjectui64v(query, GL_QUERY_RESULT, &elapsed_time);
-        printf("Time Elapsed: %f ms\n", elapsed_time / 1000000.0);
-        mCascadedGrid.filter();
-        mModuleRenderVoxelConeTraceCasGrid.run(scene, ssboCounterSet, mCascadedGrid, ssboLogList, mGBuffer);  
+        mModuleRenderToCasGrid.run(scene, voxelMatrixData.worldToVoxelMat, mCascadedGrid); timer.setTimestamp();
+        mModuleRenderLightIntoCasGrid.run(scene, voxelMatrixUBOId, mCascadedGrid); timer.setTimestamp();
+        mCascadedGrid.filter(); timer.setTimestamp();
+        mModuleRenderVoxelConeTraceCasGrid.run(scene, ssboCounterSet, mCascadedGrid, ssboLogList, mGBuffer); timer.setTimestamp();
     }
     break;
     case GRID:
@@ -201,20 +173,24 @@ void Voxelizer::render(Scene& scene)
     //ShaderLogger::getLogs(ssboLogList, logCount, logs);
     if (currentNumMode == 0) {
         //render shadows using rsm and gBUffer
-
+        timer.setTimestamp();
         //add indirect illumination
-
+        timer.setTimestamp();
         //bilts to framebuffer
+        mGBuffer.blitFinalToScreen(); timer.setTimestamp();
     }
     else {
         //if casgrid
-        mModuleVoxelVisualizer.rayCastVoxels(scene.cam, voxelMatrixData.worldToVoxelMat, mCascadedGrid, currentNumMode, gridDefinition);
+        switch (mType) {
+        case OCTREE:
+            break;
+        case CAS_GRID:
+            mModuleVoxelVisualizer.rayCastVoxels(scene.cam, voxelMatrixData.worldToVoxelMat, mCascadedGrid, currentNumMode, gridDefinition); timer.setTimestamp();
+            break;
+        }
     }
 
-    resetAllData();
-    //OpenGLTimer::timeTillGPUIsFree("After Reset");
-    auto timeEnd = Clock::now();
-    std::cout << "time end: " << std::chrono::duration_cast<std::chrono::milliseconds>(timeEnd - timeStart).count() << "ms" << std::endl;
+    resetAllData(); timer.setTimestamp();
 }
 
 void Voxelizer::resetAllData()

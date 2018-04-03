@@ -37,12 +37,3 @@ void GBufferGenerator::run(Scene & inputScene, GBuffer & gBuffer)
     inputScene.render(shader.getProgramId());
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
-
-GBufferGenerator::GBufferGenerator()
-{
-}
-
-
-GBufferGenerator::~GBufferGenerator()
-{
-}

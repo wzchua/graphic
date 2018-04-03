@@ -46,7 +46,5 @@ public:
     void rayCastVoxels(Camera& cam, glm::mat4 & worldToVoxelMat, Octree & octree, int gridType);
     void rayCastVoxels(Camera& cam, glm::mat4 & worldToVoxelMat, CascadedGrid & cascadedGrid, int gridType, int gridDef);
     void rayCastVoxelsGrid(Camera& cam, glm::mat4 & worldToVoxelMat, GLuint colorTextureId, int gridType);
-    VoxelVisualizer();
-    ~VoxelVisualizer();
 };
 
