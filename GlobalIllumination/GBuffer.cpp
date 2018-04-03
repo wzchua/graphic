@@ -73,15 +73,33 @@ void GBuffer::dumpBuffersAsImages()
         std::string baseDir = sPath.substr(0, lastIndex + 1);
 
         std::vector<unsigned char> image;
+        std::vector<float> imageFloat;
         image.resize(width * height * 4);
+        imageFloat.resize(4 * width * height);
         int i = 0;
+        {
+            glGetTextureImage(mGBufferTextures[i], 0, GL_RGBA, GL_FLOAT, width * height * 4, imageFloat.data());
+            std::string filepath = baseDir + "GBuffer_" + mGBufferNames[i] + ".png";
+            glm::vec4 min, max;
+            for(int j = 0; j < imageFloat.size(); j+=4) {
+                min = glm::min(min, glm::vec4(imageFloat[j], imageFloat[j+1],imageFloat[j+2], imageFloat[j+3]));
+                max = glm::max(max, glm::vec4(imageFloat[j], imageFloat[j+1],imageFloat[j+2], imageFloat[j+3]));
+            }
+            glm::vec4 diff = max-min;
+            for(int j = 0; j < imageFloat.size(); j+=4) {
+                image[j] = (unsigned char)(imageFloat[j]/diff.x * 255.0f);
+                image[j+1] = (unsigned char)(imageFloat[j+1]/diff.y * 255.0f);
+                image[j+2] = (unsigned char)(imageFloat[j+2]/diff.z * 255.0f);
+                image[j+3] = (unsigned char)(imageFloat[j+3]/diff.w * 255.0f);
+            }
+            stbi_write_png(filepath.c_str(), width, height, 4, image.data(), 0);
+            i++;
+        }
         for (; i < MAX_G_BUFFERS - 2; i++) {
             glGetTextureImage(mGBufferTextures[i], 0, GL_RGBA, GL_UNSIGNED_BYTE, width * height * 4, image.data());
             std::string filepath = baseDir + "GBuffer_" + mGBufferNames[i] + ".png";
             stbi_write_png(filepath.c_str(), width, height, 4, image.data(), 0);
         }
-        std::vector<float> imageFloat;
-        imageFloat.resize(4 * width * height);
         glGetTextureImage(mGBufferTextures[i], 0, GL_RED, GL_FLOAT, width * height * 4, imageFloat.data());
         std::string filepath = baseDir + "GBuffer_" + mGBufferNames[i] + ".png";
         for (int i = 0; i < image.size(); i++) {

@@ -3,7 +3,7 @@ layout (location = 0) uniform sampler2D worldPosition;//RGBA32F
 layout (location = 1) uniform sampler2D worldNormal;
 layout (location = 2) uniform sampler2D albedo;
 layout (location = 3) uniform sampler2D specMap;
-layout (location = 4) uniform sampler2D depthMap;
+layout (location = 4) uniform sampler2D depthRSMMap;
 
 layout(location = 0) uniform image2D albedoWithLightAndShadow;
 
@@ -12,7 +12,7 @@ void main() {
     ivec2 xy = ivec2(gl_GlobalInvocationID.xy);
     if(xy.x < size.x && xy.y < size.y) {
         vec3 wcPosition = texelFetch(worldPosition, xy, 0).xyz;
-        vec3 wcNormal = normalize(texelFetch(worldNormal, xy, 0).xyz);
+        vec3 wcNormal = normalize(texelFetch(worldNormal, xy, 0).xyz * 2.0f - 1.0f);
         vec4 color = texelFetch(albedo, xy, 0);
         float shininess = texelFetch(specMap, xy, 0).r;
         vec3 lightVec;
@@ -30,8 +30,8 @@ void main() {
         vec3 diffuse = color * N_L * LightPower.r;
         vec3 specular = color * spec * LightPower.r;
         float visibleFactor = 1.0f;
-        vec4 shadowCoords = ModelViewProjMatrix * vec4(wcPosition, 1.0f); //light cam buffer bound to light_cam_matrix_binding
-        if(texture(depthMap, shadowCoords.xy).r < shadowCoords.z-0.005f) {
+        vec4 shadowCoords = ShadowMatrix * vec4(wcPosition, 1.0f);
+        if(texture(depthRSMMap, shadowCoords.xy).r < shadowCoords.z-0.005f) {
             visibleFactor = 0.0f;
         }
         imageStore(albedoWithLightAndShadow, xy, vec4(visibleFactor * (color + specular), 1.0f));

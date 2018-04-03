@@ -1,5 +1,5 @@
-layout (location = 0) out vec4 voxelPosition;
-layout (location = 1) out vec4 worldNormal;
+layout (location = 0) out vec4 voxelPosition;//RGB10_A2
+layout (location = 1) out vec4 worldNormal;//RGB10_A2
 const float voxelDim = 511.0f;
 const vec2 size = vec2(2.0,0.0);
 const ivec3 off = ivec3(-1,0,1);

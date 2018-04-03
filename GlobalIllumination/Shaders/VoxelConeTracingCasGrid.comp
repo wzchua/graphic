@@ -11,7 +11,7 @@ layout(binding = 9) uniform sampler3D normalBrickL2;
 layout(binding = 10) uniform sampler3D lightDirBrickL2;
 layout(binding = 11) uniform usampler3D lightEnergyBrickL2;
 
-layout(binding = 12) uniform sampler2D gbufferVoxelPosition;
+layout(binding = 12) uniform sampler2D gbufferWorldPosition;
 layout(binding = 13) uniform sampler2D gbufferNormal;
 layout(binding = 14) uniform sampler2D gbufferAlbedo;
 layout(binding = 15) uniform sampler2D gbufferSpec;
@@ -162,15 +162,15 @@ vec3 findOrthoVector(vec3 v) {
 const float voxelDim = 511.0f;
 void main() 
 {   
-    ivec2 size = textureSize(gbufferVoxelPosition, 0);
+    ivec2 size = textureSize(gbufferWorldPosition, 0);
     ivec2 xy = ivec2(gl_GlobalInvocationID.xy);
     
     if(xy.x < size.x && xy.y < size.y) {
-        vec4 gbPos = texelFetch(gbufferVoxelPosition, xy, 0);
+        vec4 gbPos = texelFetch(gbufferWorldPosition, xy, 0);
         vec4 gbNormal = texelFetch(gbufferNormal, xy, 0);
         vec4 gbColor = texelFetch(gbufferAlbedo, xy, 0);
         float gbSpec = texelFetch(gbufferSpec, xy, 0).r;
-        vec3 pos = gbPos.xyz * voxelDim;
+        vec3 pos = WorldToVoxelMat * gbPos;
         // 4x 60 from normal + 1 at normal;
         vec3 normal = normalize(gbNormal.xyz * 2.0f - 1.0f);
         vec3 orthoX = findOrthoVector(normal);

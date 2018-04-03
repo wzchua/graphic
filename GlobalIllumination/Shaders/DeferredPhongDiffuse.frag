@@ -1,7 +1,7 @@
 const vec2 size = vec2(2.0,0.0);
 const ivec3 off = ivec3(-1,0,1);
 
-layout (location = 0) out vec4 voxelPosition;//change to worldPos using RGBA32F
+layout (location = 0) out vec4 worldPosition;//change to worldPos using RGBA32F
 layout (location = 1) out vec4 worldNormal;
 layout (location = 2) out vec4 albedo;
 layout (location = 3) out float spec;
@@ -25,12 +25,8 @@ void main()
         nwcNormal = normalize(nwcNormal + cross(va, vb));
     }
 
-    vec4 pos = WorldToVoxelMat * vec4(wcPosition, 1.0f);
-    pos = pos/pos.w;
-    pos.xyz /= 512.0f;
-
-    voxelPosition = pos;
-    worldNormal = vec4(nwcNormal, 1.0f) * 0.5f + 0.5f;
-    albedo = vec4(diffuse.rgb * texture(texDiffuse, fTexCoord).rgb, 1.0f);
-    spec = shininess;
+    worldPosition = vec4(wcPosition, 1.0f);//RGBA32F
+    worldNormal = vec4(nwcNormal, 1.0f) * 0.5f + 0.5f;//RGB10_A2
+    albedo = vec4(diffuse.rgb * texture(texDiffuse, fTexCoord).rgb, 1.0f);//RGBA8
+    spec = shininess;//R16F
 }
