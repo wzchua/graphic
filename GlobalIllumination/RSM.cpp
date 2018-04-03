@@ -9,11 +9,11 @@ void RSM::initialize(glm::ivec2 res)
     }
     hasInitialized = true;
     mRes = res;
-    const GLfloat texBorder[] = { 1.0f, 0.0f, 0.0f, 0.0f };
+    const GLfloat texBorder[] = { 0.0f, 0.0f, 0.0f, 0.0f };
 
     glCreateTextures(GL_TEXTURE_2D, 1, &mDepthMap);
     glBindTexture(GL_TEXTURE_2D, mDepthMap);
-    glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT24, res.x, res.y);
+    glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32, res.x, res.y);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);

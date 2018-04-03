@@ -1,4 +1,6 @@
 #include "GBufferGenerator.h"
+#include "LogStruct.h"
+#include "CounterBlock.h"
 
 
 
@@ -16,6 +18,7 @@ void GBufferGenerator::initialize()
     fragShaderString << GlobalCom::getHeader() << GlobalCom::getFragTripleInput();
     fragShaderString << GlobalCom::getMaterialUBOCode();
     fragShaderString << voxelizeBlockString(GlobalCom::VOXELIZATION_MATRIX_UBO_BINDING);
+    fragShaderString << counterBlockBufferShaderCodeString(GlobalShaderComponents::COUNTER_SSBO_BINDING) << logFunctionAndBufferShaderCodeString(GlobalShaderComponents::LOG_SSBO_BINDING);
     shader.generateShader(fragShaderString, "./Shaders/DeferredPhongDiffuse.frag", ShaderProgram::FRAGMENT);
 
     shader.linkCompileValidate();
@@ -28,6 +31,7 @@ void GBufferGenerator::run(Scene & inputScene, GBuffer & gBuffer)
     inputScene.updateMatrixBuffer();
 
     glBindFramebuffer(GL_FRAMEBUFFER, gBuffer.getFboId());
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glViewport(0, 0, res.x, res.y);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);

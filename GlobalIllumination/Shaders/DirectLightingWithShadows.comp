@@ -1,11 +1,11 @@
 
-layout (location = 0) uniform sampler2D worldPosition;//RGBA32F
-layout (location = 1) uniform sampler2D worldNormal;
-layout (location = 2) uniform sampler2D albedo;
-layout (location = 3) uniform sampler2D specMap;
-layout (location = 4) uniform sampler2D depthRSMMap;
+layout (binding = 0) uniform sampler2D worldPosition;//RGBA32F
+layout (binding = 1) uniform sampler2D worldNormal;
+layout (binding = 2) uniform sampler2D albedo;
+layout (binding = 3) uniform sampler2D specMap;
+layout (binding = 4) uniform sampler2D depthRSMMap;
 
-layout(location = 0) uniform image2D albedoWithLightAndShadow;
+layout(binding = 0, rgba8) writeonly uniform image2D albedoWithLightAndShadow;
 
 void main() {
     ivec2 size = textureSize(worldPosition, 0);
@@ -15,6 +15,10 @@ void main() {
         vec3 wcNormal = normalize(texelFetch(worldNormal, xy, 0).xyz * 2.0f - 1.0f);
         vec4 color = texelFetch(albedo, xy, 0);
         float shininess = texelFetch(specMap, xy, 0).r;
+        // if(xy.x < 1 && xy.y < 1) {
+        //     logFragment(color, vec4(wcNormal, 1.0f), 0, 2, 2, 3);
+        // }
+
         vec3 lightVec;
         vec3 viewVec = normalize(camPosition.xyz - wcPosition);
         if(LightPosition.w == 0.0f) {
@@ -27,13 +31,16 @@ void main() {
         float N_L = max(0.0, dot(wcNormal, lightVec));
         float R_V = max(0.0, dot(reflectVec, viewVec));
         float spec = (R_V == 0.0) ? 0.0 : pow(R_V, shininess);
-        vec3 diffuse = color * N_L * LightPower.r;
-        vec3 specular = color * spec * LightPower.r;
-        float visibleFactor = 1.0f;
+        vec4 diffuse = color * N_L * LightPower.r;
+        vec4 specular = color * spec * LightPower.r;
         vec4 shadowCoords = ShadowMatrix * vec4(wcPosition, 1.0f);
-        if(texture(depthRSMMap, shadowCoords.xy).r < shadowCoords.z-0.005f) {
+        //shadowCoords = shadowCoords/shadowCoords.w;
+        float visibleFactor = 1.0f;
+        if(shadowCoords.x < 0.0 || shadowCoords.y < 0.0 || shadowCoords.x > 1.0 || shadowCoords.y > 1.0) {
+            visibleFactor = 0.0f;
+        } else if(texture(depthRSMMap, shadowCoords.xy).z < shadowCoords.z - 0.005) {
             visibleFactor = 0.0f;
         }
-        imageStore(albedoWithLightAndShadow, xy, vec4(visibleFactor * (color + specular), 1.0f));
+        imageStore(albedoWithLightAndShadow, xy, visibleFactor * (diffuse + specular));
     }
 }

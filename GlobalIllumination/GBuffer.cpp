@@ -96,7 +96,7 @@ void GBuffer::dumpBuffersAsImages()
         imageFloat.resize(4 * width * height);
         int i = 0;
         {
-            glGetTextureImage(mGBufferTextures[i], 0, GL_RGBA, GL_FLOAT, width * height * 4, imageFloat.data());
+            glGetTextureImage(mGBufferTextures[i], 0, GL_RGBA, GL_FLOAT, width * height * 16, imageFloat.data());
             std::string filepath = baseDir + "GBuffer_" + mGBufferNames[i] + ".png";
             glm::vec4 min, max;
             for(int j = 0; j < imageFloat.size(); j+=4) {
@@ -142,6 +142,11 @@ void GBuffer::dumpBuffersAsImages()
             stbi_write_png(filepath.c_str(), width, height, 4, image.data(), 0);
         }
 
+        {
+            glGetTextureImage(mFinalTexture, 0, GL_RGBA, GL_UNSIGNED_BYTE, width * height * 4, image.data());
+            std::string filepath = baseDir + "GBuffer_Final.png";
+            stbi_write_png(filepath.c_str(), width, height, 4, image.data(), 0);
+        }
     }
 }
 

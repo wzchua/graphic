@@ -31,6 +31,8 @@
 #include "GBufferGenerator.h"
 #include "GlobalShaderComponents.h"
 #include "RenderLightTextures.h"
+#include "ComputeShadows.h"
+#include "FrameMuxer.h"
 
 typedef GlobalShaderComponents::GlobalsBlock GlobalsBlock;
 class Voxelizer
@@ -48,6 +50,7 @@ public:
     void onNumberPressed(int num);
     void changeCasGridDefinition();
     void setup();
+    void dumpCurrentGBuffer();
 private:
     int currentNumMode = 0;
     int gridDefinition = 0;
@@ -58,11 +61,14 @@ private:
     int texWdith = 512;
     int texHeight = 512;
     unsigned int maxLogCount = 500;
+    bool toDumpCurrentGBuffer = true;
 
     GBuffer mGBuffer;
     GBufferGenerator mModuleGBufferGen;
 
     RenderLightTextures mModuleLightRenderer;
+    ComputeShadows mModuleComputeShadows;
+    FrameMuxer mModuleFrameMuxer;
 
     VoxelizeBlock voxelMatrixData;
     GlobalsBlock globalVariablesData = { fragCount, nodeCount, nodeCount, maxLogCount };

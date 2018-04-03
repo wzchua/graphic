@@ -83,66 +83,65 @@ float evaluateLOD(float degree, float len) {
     return log2(2 * len * tan(radians(degree)));
 }
 vec4 evaluateColor(in sampler3D colorClip, in sampler3D normalClip, in sampler3D lightDirClip, 
-    in usampler3D lightEnergyClip, float lod, vec3 clipPos, vec3 viewDir) {
+    in usampler3D lightEnergyClip, float lod, vec3 clipPos, GaussianLobe viewLobe) {
         vec4 color = vec4(0.0f);
-        float cosPhi = cos(radians(60));
         vec4 c = textureLod(colorClip, clipPos, lod);
         if(c.a > 0.0f) {                
-            vec4 n = 2 * textureLod(normalClip, clipPos, lod) - 1.0f;
+            vec4 n = 2.0f * textureLod(normalClip, clipPos, lod) - 1.0f;
             uint lEnergy = textureLod(lightEnergyClip, clipPos, lod).r;
-            vec4 l = 2 * textureLod(lightDirClip, clipPos, lod) - 1.0f;
+            vec4 l = 2.0f * textureLod(lightDirClip, clipPos, lod) - 1.0f;
             GaussianLobe normalLobe = generateSG(vec3(1.0f), n.xyz);
             GaussianLobe lightLobe = generateSG(vec3(1.0f), l.xyz);
-            
-            GaussianLobe viewLobe;
-            viewLobe.amplitude = vec3(1.0f);
-            viewLobe.axis = viewDir;
-            viewLobe.sharpness = 1.0f/(cosPhi * cosPhi);
-            vec3 brdf = c.rgb / PI;
-            vec3 convLightNormal = max(InnerProduct(normalLobe, viewLobe), 0.0f);
 
-            color.rgb = brdf * float(lEnergy)/536870911.0f * convLightNormal;
+            vec3 brdf = c.rgb / PI;
+            vec3 convLightNormal = max(InnerProduct(viewLobe, Product(normalLobe, lightLobe)), 0.0f);
+
+            color.rgb = brdf * float(lEnergy)/134217727.0f * convLightNormal;
             color.a = c.a;
         }
         return color;
     }
 // origin & dir in world space
-vec3 diffuseConeTrace(vec3 origin, vec3 dir) {
+vec3 diffuseConeTrace(vec3 origin, vec3 dir, float angle) {
     if(!isWithinBoundary(origin)) {
         return vec3(0.0);
     }
-    float angle = 60.0f;
     float alpha = 0.0f;
     int level = findMinLevel(origin);
     vec3 adjustedDir = pow(2, level) * dir; // lengthen dir when traversing through larger grid dim
     vec3 rayVoxelPos = origin + adjustedDir;
     float lod; vec4 clipPos;
 
+    float cosPhi = cos(radians(angle));
+    GaussianLobe viewLobe;
+    viewLobe.amplitude = vec3(1.0f);
+    viewLobe.axis = -dir;
+    viewLobe.sharpness = 1.0f/(cosPhi * cosPhi);
     vec3 color = vec3(0.0f);
     vec4 c;
     int i = 0;
-    while(alpha < 1.0f && isWithinBoundary(rayVoxelPos) && i < 10) {
+    while(alpha < 1.0f && isWithinBoundary(rayVoxelPos) && i < 256) {
         i++;
         float len = length(rayVoxelPos - origin);
-        lod = evaluateLOD(30.0f, len);
-        if(gl_GlobalInvocationID.x < 1 && gl_GlobalInvocationID.y < 1) {
-            logFragment(vec4(gl_GlobalInvocationID.xy, len, lod), vec4(rayVoxelPos, lod), uint(findMinLevel(rayVoxelPos)), uint(gl_GlobalInvocationID.x), uint(gl_GlobalInvocationID.y), uint(i));
-        }
-        adjustedDir = pow(2, int(lod)) * dir;
+        lod = evaluateLOD(angle/2.0f, len);
+        // if(gl_GlobalInvocationID.x < 1 && gl_GlobalInvocationID.y < 1) {
+        //     logFragment(vec4(gl_GlobalInvocationID.xy, len, lod), vec4(rayVoxelPos, lod), uint(findMinLevel(rayVoxelPos)), uint(gl_GlobalInvocationID.x), uint(gl_GlobalInvocationID.y), uint(i));
+        // }
+        //adjustedDir = pow(2, lod) * dir;
         if(lod < 1.0f) {
             clipPos = (voxelToClipmapL0Mat * vec4(rayVoxelPos, 1.0f));
             clipPos = clipPos/clipPos.w / 128.0f;
-            c = evaluateColor(colorBrickL0, normalBrickL0, lightDirBrickL0, lightEnergyBrickL0, lod, clipPos.xyz, dir);
+            c = evaluateColor(colorBrickL0, normalBrickL0, lightDirBrickL0, lightEnergyBrickL0, lod, clipPos.xyz, viewLobe);
         } else if(lod < 2.0f) {
             clipPos = (voxelToClipmapL1Mat * vec4(rayVoxelPos, 1.0f));
             clipPos = clipPos/clipPos.w / 128.0f;
             lod = lod - 1.0f;
-            c = evaluateColor(colorBrickL1, normalBrickL1, lightDirBrickL1, lightEnergyBrickL1, lod, clipPos.xyz, dir);
+            c = evaluateColor(colorBrickL1, normalBrickL1, lightDirBrickL1, lightEnergyBrickL1, lod, clipPos.xyz, viewLobe);
         } else {
             clipPos = (voxelToClipmapL2Mat * vec4(rayVoxelPos, 1.0f));
             clipPos = clipPos/clipPos.w / 128.0f;
             lod = lod - 2.0f;
-            c = evaluateColor(colorBrickL2, normalBrickL2, lightDirBrickL2, lightEnergyBrickL2, lod, clipPos.xyz, dir);
+            c = evaluateColor(colorBrickL2, normalBrickL2, lightDirBrickL2, lightEnergyBrickL2, lod, clipPos.xyz, viewLobe);
         }
         color += (1.0f - alpha) * c.rgb ;/// (len * len);
         alpha = alpha + (1.0f - alpha) * c.a;        
@@ -170,16 +169,17 @@ void main()
         vec4 gbNormal = texelFetch(gbufferNormal, xy, 0);
         vec4 gbColor = texelFetch(gbufferAlbedo, xy, 0);
         float gbSpec = texelFetch(gbufferSpec, xy, 0).r;
-        vec3 pos = WorldToVoxelMat * gbPos;
+        vec3 pos = (WorldToVoxelMat * gbPos).xyz;
         // 4x 60 from normal + 1 at normal;
         vec3 normal = normalize(gbNormal.xyz * 2.0f - 1.0f);
         vec3 orthoX = findOrthoVector(normal);
-        vec3 orthoY = normalize(cross(normal, orthoX)); 
-        vec3 diffuseColor = 0.2f * diffuseConeTrace(pos, normal);
-        diffuseColor += 0.2f * diffuseConeTrace(pos, normalize(mix(normal, orthoX, 0.637)));
-        diffuseColor += 0.2f * diffuseConeTrace(pos, normalize(mix(normal, -orthoX, 0.637)));
-        diffuseColor += 0.2f * diffuseConeTrace(pos, normalize(mix(normal, orthoY, 0.637)));
-        diffuseColor += 0.2f * diffuseConeTrace(pos, normalize(mix(normal, -orthoY, 0.637)));
+        vec3 orthoY = normalize(cross(normal, orthoX));
+        float diffuseAngle = 70.0f;
+        vec3 diffuseColor = 0.2f * diffuseConeTrace(pos, normal, diffuseAngle);
+        diffuseColor += 0.2f * diffuseConeTrace(pos, normalize(mix(normal, orthoX, 0.7)), diffuseAngle);
+        diffuseColor += 0.2f * diffuseConeTrace(pos, normalize(mix(normal, -orthoX, 0.7)), diffuseAngle);
+        diffuseColor += 0.2f * diffuseConeTrace(pos, normalize(mix(normal, orthoY, 0.7)), diffuseAngle);
+        diffuseColor += 0.2f * diffuseConeTrace(pos, normalize(mix(normal, -orthoY, 0.7)), diffuseAngle);
         vec3 view  = normalize(pos - camPosition.xyz);    
         vec3 specularColor = vec3(0.0f);
         /*if(shininess > 0.0f) {

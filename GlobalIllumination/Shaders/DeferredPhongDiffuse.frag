@@ -27,6 +27,10 @@ void main()
 
     worldPosition = vec4(wcPosition, 1.0f);//RGBA32F
     worldNormal = vec4(nwcNormal, 1.0f) * 0.5f + 0.5f;//RGB10_A2
-    albedo = vec4(diffuse.rgb * texture(texDiffuse, fTexCoord).rgb, 1.0f);//RGBA8
+    albedo = diffuse * texture(texDiffuse, fTexCoord);//RGBA8
     spec = shininess;//R16F
+    // ivec2 xy = ivec2(gl_FragCoord.xy);
+    // if(xy.x < 1 && xy.y < 1) {
+    //     logFragment(albedo, vec4(nwcNormal, 1.0f), 0, 1, 2, 3);
+    // }
 }

@@ -51,6 +51,8 @@ Voxelizer::Voxelizer()
     mModuleVoxelVisualizer.initialize();
     mModuleGBufferGen.initialize();
     mModuleLightRenderer.initialize();
+    mModuleComputeShadows.initialize();
+    mModuleFrameMuxer.initialize();
     switch(mType) {
     case OCTREE:
         mOctree.initialize();
@@ -123,7 +125,7 @@ void Voxelizer::render(Scene& scene)
     mModuleLightRenderer.run(scene); timer.setTimestamp();
     mModuleGBufferGen.run(scene, mGBuffer); timer.setTimestamp();
     //mGBuffer.dumpBuffersAsImages();
-    std::vector<LogStruct> logs;
+    //std::vector<LogStruct> logs;
 
     switch (mType) {
     case OCTREE:
@@ -173,11 +175,17 @@ void Voxelizer::render(Scene& scene)
     //ShaderLogger::getLogs(ssboLogList, logCount, logs);
     if (currentNumMode == 0) {
         //render shadows using rsm and gBUffer
-        timer.setTimestamp();
+        mModuleComputeShadows.run(scene, mGBuffer); timer.setTimestamp();
         //add indirect illumination
-        timer.setTimestamp();
+        mModuleFrameMuxer.run(mGBuffer); timer.setTimestamp();
         //bilts to framebuffer
         mGBuffer.blitFinalToScreen(); timer.setTimestamp();
+
+        if (toDumpCurrentGBuffer) {
+            toDumpCurrentGBuffer = false;
+            mGBuffer.dumpBuffersAsImages();
+            scene.getDirectionalLightRSM(0).dumpAsImage("0");
+        }
     }
     else {
         //if casgrid
@@ -191,6 +199,11 @@ void Voxelizer::render(Scene& scene)
     }
 
     resetAllData(); timer.setTimestamp();
+    auto times = timer.getElapsedTime();
+    for (auto t : times) {
+        std::cout << std::to_string(t / 1000000.0) << "ms ";
+    }
+    std::cout << "\n\n";
 }
 
 void Voxelizer::resetAllData()
@@ -246,6 +259,11 @@ void Voxelizer::setup()
     ssboCounterSet.bind(GlobalShaderComponents::COUNTER_SSBO_BINDING);
     ssboLogList.bind(GlobalShaderComponents::LOG_SSBO_BINDING);
 
+}
+
+void Voxelizer::dumpCurrentGBuffer()
+{
+    toDumpCurrentGBuffer = true;
 }
 
 void Voxelizer::initialize3DTextures(GLuint & textureId, GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height, GLsizei depth)

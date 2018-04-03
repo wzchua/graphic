@@ -46,7 +46,7 @@ void RenderLightTextures::run(Scene & inputScene)
             glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, rsm.getVoxelPositionMap(), 0);
             glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, rsm.getNormalMap(), 0);
 
-            inputScene.updateLightMatrixBufferForPointLight(i, forward[j], up[j]);
+            rsm.setShadowMatrix(inputScene.updateLightMatrixBufferForPointLight(i, forward[j], up[j]));
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             inputScene.render(shader.getProgramId());
             glMemoryBarrier(GL_FRAMEBUFFER_BARRIER_BIT | GL_TEXTURE_UPDATE_BARRIER_BIT);

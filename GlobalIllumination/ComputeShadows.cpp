@@ -1,4 +1,6 @@
 #include "ComputeShadows.h"
+#include "LogStruct.h"
+#include "CounterBlock.h"
 
 void ComputeShadows::initialize()
 {
@@ -8,7 +10,8 @@ void ComputeShadows::initialize()
 
     std::stringstream compShaderString;
     compShaderString << GlobalShaderComponents::getHeader() << GlobalShaderComponents::getComputeShaderInputLayout(mWorkGroupSize.x, mWorkGroupSize.y);
-    compShaderString << cameraUniformBlockShaderCodeString(GlobalShaderComponents::CAMERA_UBO_BINDING) << GlobalShaderComponents::getLightShadowMatrixUBOCode();
+    compShaderString << cameraUniformBlockShaderCodeString(GlobalShaderComponents::CAMERA_UBO_BINDING) << GlobalShaderComponents::getLightShadowMatrixUBOCode()<< Scene::getLightUBOCode(GlobalShaderComponents::LIGHT_UBO_BINDING);
+    compShaderString << counterBlockBufferShaderCodeString(GlobalShaderComponents::COUNTER_SSBO_BINDING) << logFunctionAndBufferShaderCodeString(GlobalShaderComponents::LOG_SSBO_BINDING);
     shader.generateShader(compShaderString, "./Shaders/DirectLightingWithShadows.comp", ShaderProgram::COMPUTE);
     shader.linkCompileValidate();
 
@@ -32,7 +35,8 @@ void ComputeShadows::run(Scene & inputScene, GBuffer & gBuffer)
     glNamedBufferSubData(camBlkBufferId, 0, sizeof(CameraBlock), &camBlk);
     glBindBufferBase(GL_UNIFORM_BUFFER, GlobalShaderComponents::CAMERA_UBO_BINDING, camBlkBufferId); //scene cam matrices
     gBuffer.bindGBuffersAsTexture(0, 1, 2, 3);
-    glBindImageTexture(0, output, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
+    glBindImageTexture(0, output, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
+    glm::ivec2 setOfWorkGroups = glm::ivec2(ceil(res.x * 1.0f / mWorkGroupSize.x), ceil(res.y * 1.0f / mWorkGroupSize.y));
 
     
     int numOfPointLight = inputScene.getTotalPointLights();
@@ -43,7 +47,7 @@ void ComputeShadows::run(Scene & inputScene, GBuffer & gBuffer)
             glBindTextureUnit(4, rsm.getDepthMap());
             glBindBufferBase(GL_UNIFORM_BUFFER, GlobalShaderComponents::LIGHT_SHADOW_BINDING, rsm.getShadowMatrixBufferId());
             glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
-            glDispatchCompute(res.x / mWorkGroupSize.x, res.y / mWorkGroupSize.y, 1);
+            glDispatchCompute(setOfWorkGroups.x, setOfWorkGroups.y, 1);
         }
     }
 
@@ -54,7 +58,6 @@ void ComputeShadows::run(Scene & inputScene, GBuffer & gBuffer)
         glBindTextureUnit(4, rsm.getDepthMap());
         glBindBufferBase(GL_UNIFORM_BUFFER, GlobalShaderComponents::LIGHT_SHADOW_BINDING, rsm.getShadowMatrixBufferId());
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
-        glDispatchCompute(res.x / mWorkGroupSize.x, res.y / mWorkGroupSize.y, 1);
+        glDispatchCompute(setOfWorkGroups.x, setOfWorkGroups.y, 1);
     }
-
 }
