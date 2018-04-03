@@ -175,7 +175,14 @@ void Voxelizer::render(Scene& scene)
     //ShaderLogger::getLogs(ssboLogList, logCount, logs);
     if (currentNumMode == 0) {
         //render shadows using rsm and gBUffer
-        mModuleComputeShadows.run(scene, mGBuffer); timer.setTimestamp();
+        mModuleComputeShadows.run(scene, mGBuffer); timer.setTimestamp(); 
+        /*auto c = ssboCounterSet.getPtr();
+        int logCount = c->logCounter;
+        c->logCounter = 0;
+        ssboCounterSet.unMapPtr();
+        std::vector<LogStruct> logs;
+        ShaderLogger::getLogs(ssboLogList, logCount, logs);
+        std::cout << "h\n";*/
         //add indirect illumination
         mModuleFrameMuxer.run(mGBuffer); timer.setTimestamp();
         //bilts to framebuffer
