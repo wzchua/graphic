@@ -22,6 +22,7 @@
     <ClCompile Include="AddToOctree.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="CascadedGrid.cpp" />
+    <ClCompile Include="CasGridFilter.cpp" />
     <ClCompile Include="ComputeShadows.cpp" />
     <ClCompile Include="FilterOctree.cpp" />
     <ClCompile Include="FrameMuxer.cpp" />
@@ -62,6 +63,7 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="CameraBlock.h" />
     <ClInclude Include="CascadedGrid.h" />
+    <ClInclude Include="CasGridFilter.h" />
     <ClInclude Include="ComputeShadows.h" />
     <ClInclude Include="CounterBlock.h" />
     <ClInclude Include="FilterOctree.h" />

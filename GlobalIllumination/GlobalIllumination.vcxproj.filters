@@ -132,6 +132,9 @@
     <ClCompile Include="ComputeShadows.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="CasGridFilter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Shape.h">
@@ -258,6 +261,9 @@
       <Filter>Header Files\DataStructure</Filter>
     </ClInclude>
     <ClInclude Include="ComputeShadows.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CasGridFilter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

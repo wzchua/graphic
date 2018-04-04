@@ -43,6 +43,7 @@ public:
     std::vector<GLuint> & getCasGridTextureIds(GridType type);
     VoxelizeCascadedBlock & getVoxelizedCascadedBlock();
     GLuint getVoxelizedCascadedBlockBufferId();
+    int getNextMiplevelIndex(int casGridLevel, int currentMipLevel);
     CascadedGrid();
     ~CascadedGrid();
     CascadedGrid(const CascadedGrid&) = delete;

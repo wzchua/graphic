@@ -132,6 +132,9 @@ void Renderer::onKey(GLFWwindow* window, int key, int scancode, int action, int 
             if (key == GLFW_KEY_F6) {
                 voxelizer.dumpCurrentGBuffer();
             }
+            if (key == GLFW_KEY_Q) {
+                voxelizer.changeCasGridMipLevel();
+            }
         }
         else if (type == Renderer::PHONG) {
             if (key == GLFW_KEY_0) {

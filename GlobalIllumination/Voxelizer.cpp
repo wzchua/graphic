@@ -69,6 +69,7 @@ Voxelizer::Voxelizer()
         mCascadedGrid.initializeGrids(3);
         mModuleRenderToCasGrid.initialize();
         mModuleRenderLightIntoCasGrid.initialize();
+        mModuleCasGridFilter.initialize();
         mModuleRenderVoxelConeTraceCasGrid.initialize();
         break;
     case GRID:
@@ -157,14 +158,15 @@ void Voxelizer::render(Scene& scene)
     {
         mModuleRenderToCasGrid.run(scene, voxelMatrixData.worldToVoxelMat, mCascadedGrid); timer.setTimestamp();
         mModuleRenderLightIntoCasGrid.run(scene, voxelMatrixUBOId, mCascadedGrid); timer.setTimestamp();
-        mCascadedGrid.filter(); timer.setTimestamp();
+        mModuleCasGridFilter.run(mCascadedGrid); timer.setTimestamp();
+        //mCascadedGrid.filter(); timer.setTimestamp();
         mModuleRenderVoxelConeTraceCasGrid.run(scene, ssboCounterSet, mCascadedGrid, ssboLogList, mGBuffer); timer.setTimestamp();
     }
     break;
     case GRID:
     {
         mModuleRenderToGrid.run(scene, ssboCounterSet, voxelMatrixUBOId, globalVariablesUBOId, ssboLogList, texture3DColorGrid, texture3DNormalGrid, ssboVoxelList);
-        mModuleVoxelVisualizer.rayCastVoxelsGrid(scene.cam, voxelMatrixData.worldToVoxelMat, texture3DColorGrid, currentNumMode);
+        mModuleVoxelVisualizer.rayCastVoxelsGrid(scene.cam, voxelMatrixData.worldToVoxelMat, texture3DColorGrid, currentNumMode, gridMipLevel);
     }
     break;
     default:
@@ -200,7 +202,7 @@ void Voxelizer::render(Scene& scene)
         case OCTREE:
             break;
         case CAS_GRID:
-            mModuleVoxelVisualizer.rayCastVoxels(scene.cam, voxelMatrixData.worldToVoxelMat, mCascadedGrid, currentNumMode, gridDefinition); timer.setTimestamp();
+            mModuleVoxelVisualizer.rayCastVoxels(scene.cam, voxelMatrixData.worldToVoxelMat, mCascadedGrid, currentNumMode, gridDefinition, gridMipLevel); timer.setTimestamp();
             break;
         }
     }
@@ -255,6 +257,11 @@ void Voxelizer::changeCasGridDefinition()
     else {
         gridDefinition += 1;
     }
+}
+
+void Voxelizer::changeCasGridMipLevel()
+{
+    gridMipLevel = mCascadedGrid.getNextMiplevelIndex(gridDefinition, gridMipLevel);
 }
 
 void Voxelizer::setup()

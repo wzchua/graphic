@@ -1,0 +1,44 @@
+layout(binding = 0, rgba8) readonly uniform image3D colorBrick;
+layout(binding = 1, rgba8) readonly uniform image3D normalBrick;
+layout(binding = 2, rgba8) readonly uniform image3D lightDirBrick;
+layout(binding = 3, r32ui) readonly uniform uimage3D lightEnergyBrick;
+
+layout(binding = 4, rgba8) writeonly uniform image3D outputColorBrick;
+layout(binding = 5, rgba8) writeonly uniform image3D outputNormalBrick;
+layout(binding = 6, rgba8) writeonly uniform image3D outputLightDirBrick;
+layout(binding = 7, r32ui) writeonly uniform uimage3D outputLightEnergyBrick;
+
+const ivec3 one = ivec3(1, 0, 0);
+const ivec3 two = ivec3(0, 1, 0);
+const ivec3 three = ivec3(1, 1, 0);
+const ivec3 four = ivec3(0, 0, 1);
+const ivec3 five = ivec3(1, 0, 1);
+const ivec3 six = ivec3(0, 1, 1);
+const ivec3 seven = ivec3(1, 1, 1);
+void main() {
+    ivec3 size = imageSize(outputColorBrick);
+    ivec3 xyz = ivec3(gl_GlobalInvocationID.xyz);
+    if(xyz.x < size.x && xyz.y < size.y && xyz.z < size.z) {
+        ivec3 inputxyz = xyz*2;      
+        vec4 avg = imageLoad(colorBrick, inputxyz) + imageLoad(colorBrick, inputxyz + one) 
+            + imageLoad(colorBrick, inputxyz + two) + imageLoad(colorBrick, inputxyz + three)
+            + imageLoad(colorBrick, inputxyz + four) + imageLoad(colorBrick, inputxyz + five)
+            + imageLoad(colorBrick, inputxyz + six) + imageLoad(colorBrick, inputxyz + seven);
+        imageStore(outputColorBrick, xyz, avg/8.0f);
+        avg = imageLoad(normalBrick, inputxyz) + imageLoad(normalBrick, inputxyz + one) 
+            + imageLoad(normalBrick, inputxyz + two) + imageLoad(normalBrick, inputxyz + three)
+            + imageLoad(normalBrick, inputxyz + four) + imageLoad(normalBrick, inputxyz + five)
+            + imageLoad(normalBrick, inputxyz + six) + imageLoad(normalBrick, inputxyz + seven);
+        imageStore(outputNormalBrick, xyz, avg/8.0f);
+        avg = imageLoad(lightDirBrick, inputxyz) + imageLoad(lightDirBrick, inputxyz + one) 
+            + imageLoad(lightDirBrick, inputxyz + two) + imageLoad(lightDirBrick, inputxyz + three)
+            + imageLoad(lightDirBrick, inputxyz + four) + imageLoad(lightDirBrick, inputxyz + five)
+            + imageLoad(lightDirBrick, inputxyz + six) + imageLoad(lightDirBrick, inputxyz + seven);
+        imageStore(outputLightDirBrick, xyz, avg/8.0f);
+        uvec4 e = imageLoad(lightEnergyBrick, inputxyz) + imageLoad(lightEnergyBrick, inputxyz + one) 
+            + imageLoad(lightEnergyBrick, inputxyz + two) + imageLoad(lightEnergyBrick, inputxyz + three)
+            + imageLoad(lightEnergyBrick, inputxyz + four) + imageLoad(lightEnergyBrick, inputxyz + five)
+            + imageLoad(lightEnergyBrick, inputxyz + six) + imageLoad(lightEnergyBrick, inputxyz + seven);
+        imageStore(outputLightEnergyBrick, xyz, e/8);
+    }
+}

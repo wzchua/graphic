@@ -13,6 +13,7 @@ layout(binding = 9) uniform RayCastBlock {
     int width;
     int isEnergy;
     int gridDef;
+    int mipLevel;
 };
 
 layout(binding = 3, std140) uniform LimitsUniformBlock {
@@ -77,9 +78,9 @@ void logFragment(vec4 pos, vec4 color, uint nodeIndex, uint brickPtr, uint index
 
 bool isRayInCubeSpace(vec3 rayPosition, int level) {
     if(level == 2) {
-        return rayPosition.x >= 0.0f && rayPosition.x <=512.0f
-            && rayPosition.y >= 0.0f && rayPosition.y <=512.0f
-            && rayPosition.z >= 0.0f && rayPosition.z <=512.0f;
+        return rayPosition.x >= 0.0f && rayPosition.x <=511.0f
+            && rayPosition.y >= 0.0f && rayPosition.y <=511.0f
+            && rayPosition.z >= 0.0f && rayPosition.z <=511.0f;
     } else if(level == 1) {
         return rayPosition.x >= level1min.x  && rayPosition.x <=level1max.x
             && rayPosition.y >= level1min.y && rayPosition.y <=level1max.y
@@ -123,25 +124,28 @@ vec4 loadColor(vec3 pos, int level) {
     vec4 clipPos; uint energy;
     if(level == 0) {
         clipPos = (voxelToClipmapL0Mat * vec4(pos, 1.0f));
+        clipPos.xyz /= float(1 << mipLevel);
         if(isEnergy == 1) {
-            energy = texelFetch(energyGridL0, ivec3(clipPos.xyz), 0).r;
+            energy = texelFetch(energyGridL0, ivec3(clipPos.xyz), mipLevel).r;
             return transformEnergyToColor(energy);
         }
-        return texelFetch(colorGridL0, ivec3(clipPos.xyz), 0);
+        return texelFetch(colorGridL0, ivec3(clipPos.xyz), mipLevel);
     } else if(level == 1) {
         clipPos = (voxelToClipmapL1Mat * vec4(pos, 1.0f));
+        clipPos.xyz /= float(1 << mipLevel);
         if(isEnergy == 1) {
-            energy = texelFetch(energyGridL1, ivec3(clipPos.xyz), 0).r;
+            energy = texelFetch(energyGridL1, ivec3(clipPos.xyz), mipLevel).r;
             return transformEnergyToColor(energy);
         }
-        return texelFetch(colorGridL1, ivec3(clipPos.xyz), 0);
+        return texelFetch(colorGridL1, ivec3(clipPos.xyz), mipLevel);
     } else {
         clipPos = (voxelToClipmapL2Mat * vec4(pos, 1.0f));
+        clipPos.xyz /= float(1 << mipLevel);
         if(isEnergy == 1) {
-            energy = texelFetch(energyGridL2, ivec3(clipPos.xyz), 0).r;
+            energy = texelFetch(energyGridL2, ivec3(clipPos.xyz), mipLevel).r;
             return transformEnergyToColor(energy);
         }
-        return texelFetch(colorGridL2, ivec3(clipPos.xyz), 0);
+        return texelFetch(colorGridL2, ivec3(clipPos.xyz), mipLevel);
     }
 }
 

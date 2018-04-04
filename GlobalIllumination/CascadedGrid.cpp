@@ -279,6 +279,16 @@ GLuint CascadedGrid::getVoxelizedCascadedBlockBufferId()
     return voxelCascadedBlockId;
 }
 
+int CascadedGrid::getNextMiplevelIndex(int casGridLevel, int currentMipLevel)
+{
+    if (casGridLevel == 2) {
+        return (currentMipLevel + 1) % (10 - mCascadeNumber);
+    }
+    else {
+        return (currentMipLevel+1) % 2;
+    }
+}
+
 CascadedGrid::CascadedGrid()
 {
 }
