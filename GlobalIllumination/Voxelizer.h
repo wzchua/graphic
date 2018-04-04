@@ -64,7 +64,7 @@ private:
     int texWdith = 512;
     int texHeight = 512;
     unsigned int maxLogCount = 500;
-    bool toDumpCurrentGBuffer = true;
+    bool toDumpCurrentGBuffer = false;
 
     GBuffer mGBuffer;
     GBufferGenerator mModuleGBufferGen;

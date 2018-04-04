@@ -24,6 +24,9 @@ void main() {
             + imageLoad(colorBrick, inputxyz + two) + imageLoad(colorBrick, inputxyz + three)
             + imageLoad(colorBrick, inputxyz + four) + imageLoad(colorBrick, inputxyz + five)
             + imageLoad(colorBrick, inputxyz + six) + imageLoad(colorBrick, inputxyz + seven);
+        // if(gl_GlobalInvocationID.x < 1 && gl_GlobalInvocationID.y < 1) {
+        //     logFragment(avg, avg, 1, uint(gl_GlobalInvocationID.x), uint(gl_GlobalInvocationID.y), uint(gl_GlobalInvocationID.z));
+        // }
         imageStore(outputColorBrick, xyz, avg/8.0f);
         avg = imageLoad(normalBrick, inputxyz) + imageLoad(normalBrick, inputxyz + one) 
             + imageLoad(normalBrick, inputxyz + two) + imageLoad(normalBrick, inputxyz + three)

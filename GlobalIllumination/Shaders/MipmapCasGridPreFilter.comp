@@ -1,0 +1,21 @@
+layout(binding = 0, rgba8) uniform image3D colorBrickL0;
+layout(binding = 1, rgba8) uniform image3D normalBrickL0;
+layout(binding = 2, rgba8) uniform image3D lightDirBrickL0;
+
+void main() {
+    ivec3 size = imageSize(colorBrickL0);
+    ivec3 xyz = ivec3(gl_GlobalInvocationID.xyz);
+    if(xyz.x < size.x && xyz.y < size.y && xyz.z < size.z) {
+        vec4 data = imageLoad(colorBrickL0, xyz);
+        data.w = min(data.w * 255.0f, 1.0f);
+        imageStore(colorBrickL0, xyz, data);
+
+        data = imageLoad(normalBrickL0, xyz);
+        data.w = min(data.w * 255.0f, 1.0f);
+        imageStore(normalBrickL0, xyz, data);
+
+        data = imageLoad(lightDirBrickL0, xyz);
+        data.w = min(data.w * 255.0f, 1.0f);
+        imageStore(lightDirBrickL0, xyz, data);        
+    }
+}

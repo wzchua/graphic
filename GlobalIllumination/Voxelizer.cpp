@@ -32,7 +32,9 @@ Voxelizer::Voxelizer()
     glGetIntegerv(GL_MAX_UNIFORM_BLOCK_SIZE, &size);
     std::cout << "GL_MAX_UNIFORM_BLOCK_SIZE is " << size << " bytes." << std::endl;
     glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &size);
-    std::cout << "GL_MAX_TEXTURE_IMAGE_UNITS is " << size << " ." << std::endl; 
+    std::cout << "GL_MAX_TEXTURE_IMAGE_UNITS is " << size << " ." << std::endl;
+    glGetIntegerv(GL_MAX_IMAGE_UNITS, &size);
+    std::cout << "GL_MAX_IMAGE_UNITS is " << size << " ." << std::endl; 
     int work_grp_size[3];
     glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 0, &work_grp_size[0]);
     glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 1, &work_grp_size[1]);
@@ -103,7 +105,7 @@ void Voxelizer::initializeWithScene(glm::vec3 min, glm::vec3 max)
     //scale/translate scene into ortho box 512 x 512 x 512
     glm::vec3 length = (max - min);
     glm::vec3 translate = glm::vec3(0.0f) - min;
-    glm::vec3 scale = 511.0f / length;
+    glm::vec3 scale = 512.0f / length;
     //fixed ratio scaling
     float smallestScale = glm::min(scale.x, glm::min(scale.y, scale.z));
     scale = glm::vec3(smallestScale);
@@ -178,19 +180,19 @@ void Voxelizer::render(Scene& scene)
     if (currentNumMode == 0) {
         //render shadows using rsm and gBUffer
         mModuleComputeShadows.run(scene, mGBuffer); timer.setTimestamp(); 
-        /*auto c = ssboCounterSet.getPtr();
-        int logCount = c->logCounter;
-        c->logCounter = 0;
-        ssboCounterSet.unMapPtr();
-        std::vector<LogStruct> logs;
-        ShaderLogger::getLogs(ssboLogList, logCount, logs);
-        std::cout << "h\n";*/
         //add indirect illumination
         mModuleFrameMuxer.run(mGBuffer); timer.setTimestamp();
         //bilts to framebuffer
         mGBuffer.blitFinalToScreen(); timer.setTimestamp();
 
         if (toDumpCurrentGBuffer) {
+            auto c = ssboCounterSet.getPtr();
+            int logCount = c->logCounter;
+            c->logCounter = 0;
+            ssboCounterSet.unMapPtr();
+            std::vector<LogStruct> logs;
+            ShaderLogger::getLogs(ssboLogList, logCount, logs);
+            std::cout << "\n";
             toDumpCurrentGBuffer = false;
             mGBuffer.dumpBuffersAsImages();
             scene.getDirectionalLightRSM(0).dumpAsImage("0");

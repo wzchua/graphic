@@ -8,7 +8,7 @@ vec4 convRGBA8ToVec4( uint val) {
 uint convVec4ToRGBA8( vec4 val) {
     return ( uint ( val.w) &0x000000FF) <<24U | ( uint( val.z) &0x000000FF) <<16U | ( uint( val.y ) &0x000000FF) <<8U | ( uint( val.x) &0x000000FF);
 }
-void imageAtomicRGBA8Avg( layout ( r32ui ) coherent volatile uimage3D imgUI , ivec3 coords , vec4 val ) {
+bool imageAtomicRGBA8Avg( layout ( r32ui ) coherent volatile uimage3D imgUI , ivec3 coords , vec4 val ) {
     val.rgb *=255.0f; // Optimise following calculations
     uint newVal = convVec4ToRGBA8( val );
     uint prevStoredVal = 0; uint curStoredVal;
@@ -16,11 +16,16 @@ void imageAtomicRGBA8Avg( layout ( r32ui ) coherent volatile uimage3D imgUI , iv
     while ( ( curStoredVal = imageAtomicCompSwap( imgUI , coords , prevStoredVal , newVal )) != prevStoredVal) {
         prevStoredVal = curStoredVal;
         vec4 rval = convRGBA8ToVec4( curStoredVal);
+        if(rval.w >= 255.0f) {          
+            //logFragment(vec4(coords, 0.0f), vec4(gl_GlobalInvocationID.xy, 0.0f, 1.0f), 0, 0, 0, 0);
+            return false;
+        }
         rval.xyz =( rval.xyz * rval.w) ; // Denormalize
         vec4 curValF = rval + val; // Add new value
         curValF.xyz /=( curValF.w); // Renormalize
         newVal = convVec4ToRGBA8( curValF );
     }
+    return true;
 }
 
 // includes -127.0f to 127.0f
@@ -33,7 +38,7 @@ uint convVec4ToXYZW( vec4 val) {
     val.xyz = (val.xyz + 128.0f);
     return ( uint ( val.w) &0x000000FF) <<24U | ( uint( val.z) &0x000000FF) <<16U | ( uint( val.y ) &0x000000FF) <<8U | ( uint( val.x) &0x000000FF);
 }
-void imageAtomicXYZWAvg( layout ( r32ui ) coherent volatile uimage3D imgUI , ivec3 coords , vec4 val ) {
+bool imageAtomicXYZWAvg( layout ( r32ui ) coherent volatile uimage3D imgUI , ivec3 coords , vec4 val ) {
     val.rgb *= 127.0f;
     uint newVal = convVec4ToXYZW( val );
     uint prevStoredVal = 0; uint curStoredVal;
@@ -41,11 +46,16 @@ void imageAtomicXYZWAvg( layout ( r32ui ) coherent volatile uimage3D imgUI , ive
     while ( ( curStoredVal = imageAtomicCompSwap( imgUI , coords , prevStoredVal , newVal )) != prevStoredVal) {
         prevStoredVal = curStoredVal;
         vec4 rval = convXYZWToVec4( curStoredVal);
+        if(rval.w >= 255.0f) {          
+            //logFragment(vec4(coords, 0.0f), vec4(gl_GlobalInvocationID.xy, 0.0f, 1.0f), 0, 0, 0, 0);
+            return false;
+        }
         rval.xyz =( rval.xyz * rval.w) ; // Denormalize
         vec4 curValF = rval + val; // Add new value
         curValF.xyz /=( curValF.w); // Renormalize
         newVal = convVec4ToXYZW( curValF );
     }
+    return false;
 }
 
 void addToGrid(vec4 color, vec3 normal) {

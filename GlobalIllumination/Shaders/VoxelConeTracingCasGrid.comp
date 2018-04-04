@@ -91,12 +91,16 @@ vec4 evaluateColor(in sampler3D colorClip, in sampler3D normalClip, in sampler3D
             uint lEnergy = textureLod(lightEnergyClip, clipPos, lod).r;
             vec4 l = 2.0f * textureLod(lightDirClip, clipPos, lod) - 1.0f;
             GaussianLobe normalLobe = generateSG(vec3(1.0f), n.xyz);
-            GaussianLobe lightLobe = generateSG(vec3(1.0f), l.xyz);
+            GaussianLobe lightLobe = generateSG(vec3(float(lEnergy)/134217727.0f), l.xyz);
 
             vec3 brdf = c.rgb / PI;
-            vec3 convLightNormal = max(InnerProduct(viewLobe, Product(normalLobe, lightLobe)), 0.0f);
-
-            color.rgb = brdf * float(lEnergy)/134217727.0f * convLightNormal;
+            vec3 convLightNormal = max(InnerProduct(normalLobe, lightLobe), 0.0f);
+            
+            if(gl_GlobalInvocationID.x < 1 && gl_GlobalInvocationID.y < 1) {
+                logFragment(c, n, lEnergy, uint(gl_GlobalInvocationID.x), uint(gl_GlobalInvocationID.y), 0);
+                logFragment(l, vec4(InnerProduct(normalLobe, lightLobe), 1.0f), 1, uint(gl_GlobalInvocationID.x), uint(gl_GlobalInvocationID.y), 0);
+            }
+            color.rgb = brdf * convLightNormal;
             color.a = c.a;
         }
         return color;
@@ -109,7 +113,7 @@ vec3 diffuseConeTrace(vec3 origin, vec3 dir, float angle) {
     float alpha = 0.0f;
     int level = findMinLevel(origin);
     vec3 adjustedDir = pow(2, level) * dir; // lengthen dir when traversing through larger grid dim
-    vec3 rayVoxelPos = origin + adjustedDir;
+    vec3 rayVoxelPos = origin + adjustedDir + dir; //(set initial point further)
     float lod; vec4 clipPos;
 
     float cosPhi = cos(radians(angle));
@@ -124,10 +128,10 @@ vec3 diffuseConeTrace(vec3 origin, vec3 dir, float angle) {
         i++;
         float len = length(rayVoxelPos - origin);
         lod = evaluateLOD(angle/2.0f, len);
-        // if(gl_GlobalInvocationID.x < 1 && gl_GlobalInvocationID.y < 1) {
-        //     logFragment(vec4(gl_GlobalInvocationID.xy, len, lod), vec4(rayVoxelPos, lod), uint(findMinLevel(rayVoxelPos)), uint(gl_GlobalInvocationID.x), uint(gl_GlobalInvocationID.y), uint(i));
-        // }
-        //adjustedDir = pow(2, lod) * dir;
+        if(gl_GlobalInvocationID.x < 1 && gl_GlobalInvocationID.y < 1) {
+            logFragment(vec4(dir, alpha), vec4(rayVoxelPos, lod), uint(findMinLevel(rayVoxelPos)), uint(gl_GlobalInvocationID.x), uint(gl_GlobalInvocationID.y), uint(i));
+        }
+        adjustedDir = pow(2, lod) * dir;
         if(lod < 1.0f) {
             clipPos = (voxelToClipmapL0Mat * vec4(rayVoxelPos, 1.0f));
             clipPos = clipPos/clipPos.w / 128.0f;
@@ -176,10 +180,10 @@ void main()
         vec3 orthoY = normalize(cross(normal, orthoX));
         float diffuseAngle = 70.0f;
         vec3 diffuseColor = 0.2f * diffuseConeTrace(pos, normal, diffuseAngle);
-        diffuseColor += 0.2f * diffuseConeTrace(pos, normalize(mix(normal, orthoX, 0.7)), diffuseAngle);
-        diffuseColor += 0.2f * diffuseConeTrace(pos, normalize(mix(normal, -orthoX, 0.7)), diffuseAngle);
-        diffuseColor += 0.2f * diffuseConeTrace(pos, normalize(mix(normal, orthoY, 0.7)), diffuseAngle);
-        diffuseColor += 0.2f * diffuseConeTrace(pos, normalize(mix(normal, -orthoY, 0.7)), diffuseAngle);
+        diffuseColor += 0.2f * diffuseConeTrace(pos, normalize(mix(normal, orthoX, 0.8)), diffuseAngle);
+        diffuseColor += 0.2f * diffuseConeTrace(pos, normalize(mix(normal, -orthoX, 0.8)), diffuseAngle);
+        diffuseColor += 0.2f * diffuseConeTrace(pos, normalize(mix(normal, orthoY, 0.8)), diffuseAngle);
+        diffuseColor += 0.2f * diffuseConeTrace(pos, normalize(mix(normal, -orthoY, 0.8)), diffuseAngle);
         vec3 view  = normalize(pos - camPosition.xyz);    
         vec3 specularColor = vec3(0.0f);
         /*if(shininess > 0.0f) {

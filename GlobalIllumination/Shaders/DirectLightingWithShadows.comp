@@ -38,10 +38,10 @@ void main() {
         shadowCoords = shadowCoords/shadowCoords.w;
         float visibleFactor = 1.0f;
         float r = texture(depthRSMMap, shadowCoords.xy).r;
-        if(r != 1.0f){
-          //if(xy.x > 182 && xy.x < 186 && xy.y > 300 && xy.y < 310) {
-        logFragment(shadowCoords, texture(depthRSMMap, shadowCoords.xy), 1, 2, 2, 3);
-          }
+        // if(r != 1.0f){
+        //   //if(xy.x > 182 && xy.x < 186 && xy.y > 300 && xy.y < 310) {
+        // logFragment(shadowCoords, texture(depthRSMMap, shadowCoords.xy), 1, 2, 2, 3);
+        //   }
         if(shadowCoords.x < 0.0 || shadowCoords.y < 0.0 || shadowCoords.x > 1.0 || shadowCoords.y > 1.0) {
             visibleFactor = 0.0f;
         } else if(texture(depthRSMMap, shadowCoords.xy).r < shadowCoords.z- 0.001) {
