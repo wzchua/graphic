@@ -1,11 +1,11 @@
 layout(binding = 0, rgba8) readonly uniform image3D colorBrick;
-layout(binding = 1, rgba8) readonly uniform image3D normalBrick;
-layout(binding = 2, rgba8) readonly uniform image3D lightDirBrick;
+layout(binding = 1, rgba8_snorm) readonly uniform image3D normalBrick;
+layout(binding = 2, rgba8_snorm) readonly uniform image3D lightDirBrick;
 layout(binding = 3, r32ui) readonly uniform uimage3D lightEnergyBrick;
 
 layout(binding = 4, rgba8) writeonly uniform image3D outputColorBrick;
-layout(binding = 5, rgba8) writeonly uniform image3D outputNormalBrick;
-layout(binding = 6, rgba8) writeonly uniform image3D outputLightDirBrick;
+layout(binding = 5, rgba8_snorm) writeonly uniform image3D outputNormalBrick;
+layout(binding = 6, rgba8_snorm) writeonly uniform image3D outputLightDirBrick;
 layout(binding = 7, r32ui) writeonly uniform uimage3D outputLightEnergyBrick;
 
 const ivec3 one = ivec3(1, 0, 0);
@@ -24,15 +24,15 @@ void main() {
             + imageLoad(colorBrick, inputxyz + two) + imageLoad(colorBrick, inputxyz + three)
             + imageLoad(colorBrick, inputxyz + four) + imageLoad(colorBrick, inputxyz + five)
             + imageLoad(colorBrick, inputxyz + six) + imageLoad(colorBrick, inputxyz + seven);
-        // if(gl_GlobalInvocationID.x < 1 && gl_GlobalInvocationID.y < 1) {
-        //     logFragment(avg, avg, 1, uint(gl_GlobalInvocationID.x), uint(gl_GlobalInvocationID.y), uint(gl_GlobalInvocationID.z));
-        // }
         imageStore(outputColorBrick, xyz, avg/8.0f);
         avg = imageLoad(normalBrick, inputxyz) + imageLoad(normalBrick, inputxyz + one) 
             + imageLoad(normalBrick, inputxyz + two) + imageLoad(normalBrick, inputxyz + three)
             + imageLoad(normalBrick, inputxyz + four) + imageLoad(normalBrick, inputxyz + five)
             + imageLoad(normalBrick, inputxyz + six) + imageLoad(normalBrick, inputxyz + seven);
         imageStore(outputNormalBrick, xyz, avg/8.0f);
+        if(gl_GlobalInvocationID.x < 1 && gl_GlobalInvocationID.y < 1) {
+            logFragment(vec4(xyz, 1.0f), avg, 1, uint(gl_GlobalInvocationID.x), uint(gl_GlobalInvocationID.y), uint(gl_GlobalInvocationID.z));
+        }
         avg = imageLoad(lightDirBrick, inputxyz) + imageLoad(lightDirBrick, inputxyz + one) 
             + imageLoad(lightDirBrick, inputxyz + two) + imageLoad(lightDirBrick, inputxyz + three)
             + imageLoad(lightDirBrick, inputxyz + four) + imageLoad(lightDirBrick, inputxyz + five)

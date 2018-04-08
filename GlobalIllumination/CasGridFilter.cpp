@@ -35,8 +35,8 @@ void CasGridFilter::run(CascadedGrid & casGrid)
 
     for (int i = 0; i < 3; i++) {
         glBindImageTexture(0, colorCasGrid[i], 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
-        glBindImageTexture(1, normalCasGrid[i], 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
-        glBindImageTexture(2, lightDirCasGrid[i], 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
+        glBindImageTexture(1, normalCasGrid[i], 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8_SNORM);
+        glBindImageTexture(2, lightDirCasGrid[i], 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8_SNORM);
         glDispatchCompute(setOfWorkGroups.x, setOfWorkGroups.y, setOfWorkGroups.z);
     }
 
@@ -46,25 +46,25 @@ void CasGridFilter::run(CascadedGrid & casGrid)
     //level 0
     GLuint level = 0;
     glBindImageTexture(0, colorCasGrid[level], 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
-    glBindImageTexture(1, normalCasGrid[level], 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
-    glBindImageTexture(2, lightDirCasGrid[level], 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
+    glBindImageTexture(1, normalCasGrid[level], 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8_SNORM);
+    glBindImageTexture(2, lightDirCasGrid[level], 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8_SNORM);
     glBindImageTexture(3, lightEnergyCasGrid[level], 0, GL_TRUE, 0, GL_READ_ONLY, GL_R32UI);
 
     glBindImageTexture(4, colorCasGrid[level], 1, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
-    glBindImageTexture(5, normalCasGrid[level], 1, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
-    glBindImageTexture(6, lightDirCasGrid[level], 1, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
+    glBindImageTexture(5, normalCasGrid[level], 1, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8_SNORM);
+    glBindImageTexture(6, lightDirCasGrid[level], 1, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8_SNORM);
     glBindImageTexture(7, lightEnergyCasGrid[level], 1, GL_TRUE, 0, GL_WRITE_ONLY, GL_R32UI);
     glDispatchCompute(setOfWorkGroups.x, setOfWorkGroups.y, setOfWorkGroups.z);
 
     level = 1;
     glBindImageTexture(0, colorCasGrid[level], 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
-    glBindImageTexture(1, normalCasGrid[level], 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
-    glBindImageTexture(2, lightDirCasGrid[level], 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
+    glBindImageTexture(1, normalCasGrid[level], 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8_SNORM);
+    glBindImageTexture(2, lightDirCasGrid[level], 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8_SNORM);
     glBindImageTexture(3, lightEnergyCasGrid[level], 0, GL_TRUE, 0, GL_READ_ONLY, GL_R32UI);
 
     glBindImageTexture(4, colorCasGrid[level], 1, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
-    glBindImageTexture(5, normalCasGrid[level], 1, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
-    glBindImageTexture(6, lightDirCasGrid[level], 1, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
+    glBindImageTexture(5, normalCasGrid[level], 1, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8_SNORM);
+    glBindImageTexture(6, lightDirCasGrid[level], 1, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8_SNORM);
     glBindImageTexture(7, lightEnergyCasGrid[level], 1, GL_TRUE, 0, GL_WRITE_ONLY, GL_R32UI);
     glDispatchCompute(setOfWorkGroups.x, setOfWorkGroups.y, setOfWorkGroups.z);
 
@@ -74,13 +74,13 @@ void CasGridFilter::run(CascadedGrid & casGrid)
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
         int lowerLevel = i - 1;
         glBindImageTexture(0, colorCasGrid[level], lowerLevel, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
-        glBindImageTexture(1, normalCasGrid[level], lowerLevel, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
-        glBindImageTexture(2, lightDirCasGrid[level], lowerLevel, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
+        glBindImageTexture(1, normalCasGrid[level], lowerLevel, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8_SNORM);
+        glBindImageTexture(2, lightDirCasGrid[level], lowerLevel, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8_SNORM);
         glBindImageTexture(3, lightEnergyCasGrid[level], lowerLevel, GL_TRUE, 0, GL_READ_ONLY, GL_R32UI);
 
         glBindImageTexture(4, colorCasGrid[level], i, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
-        glBindImageTexture(5, normalCasGrid[level], i, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
-        glBindImageTexture(6, lightDirCasGrid[level], i, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
+        glBindImageTexture(5, normalCasGrid[level], i, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8_SNORM);
+        glBindImageTexture(6, lightDirCasGrid[level], i, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8_SNORM);
         glBindImageTexture(7, lightEnergyCasGrid[level], i, GL_TRUE, 0, GL_WRITE_ONLY, GL_R32UI);
         glDispatchCompute(setOfWorkGroups.x, setOfWorkGroups.y, setOfWorkGroups.z);
     }

@@ -43,11 +43,17 @@ layout(binding = 0) coherent buffer CounterBlock{
 };
 
 layout(binding = 0) uniform sampler3D colorGridL0;
-layout(binding = 1) uniform sampler3D colorGridL1;
-layout(binding = 2) uniform sampler3D colorGridL2;
-layout(binding = 4) uniform usampler3D energyGridL0;
-layout(binding = 5) uniform usampler3D energyGridL1;
-layout(binding = 6) uniform usampler3D energyGridL2;
+layout(binding = 1) uniform sampler3D normalGridL0;
+layout(binding = 2) uniform sampler3D lightDirGridL0;
+layout(binding = 3) uniform usampler3D lightEnergyGridL0;
+layout(binding = 4) uniform sampler3D colorGridL1;
+layout(binding = 5) uniform sampler3D normalGridL1;
+layout(binding = 6) uniform sampler3D lightDirGridL1;
+layout(binding = 7) uniform usampler3D lightEnergyGridL1;
+layout(binding = 8) uniform sampler3D colorGridL2;
+layout(binding = 9) uniform sampler3D normalGridL2;
+layout(binding = 10) uniform sampler3D lightDirGridL2;
+layout(binding = 11) uniform usampler3D lightEnergyGridL2;
 
 struct LogStruct {
     vec4 position;
@@ -57,7 +63,7 @@ struct LogStruct {
     uint index1;
     uint index2;
 };
-layout(binding = 7,std430) coherent buffer LogBlock{
+layout(binding = 1,std430) coherent buffer LogBlock{
     uint maxLogCount; uint padding[3];
     LogStruct logList[];
 };
@@ -120,32 +126,60 @@ vec4 transformEnergyToColor(uint energy) {
         return vec4(vec3(float(energy) / 536870911.0f), 1.0f);
     }
 }
+vec4 mapTo01(vec4 val) {
+    val.xyz *= 0.5f + 0.5f;
+    return val;
+}
 vec4 loadColor(vec3 pos, int level) {
-    vec4 clipPos; uint energy;
+    vec4 clipPos; vec4 val;
     if(level == 0) {
         clipPos = (voxelToClipmapL0Mat * vec4(pos, 1.0f));
         clipPos.xyz /= float(1 << mipLevel);
         if(isEnergy == 1) {
-            energy = texelFetch(energyGridL0, ivec3(clipPos.xyz), mipLevel).r;
-            return transformEnergyToColor(energy);
+            return texelFetch(colorGridL0, ivec3(clipPos.xyz), mipLevel);
+        } else if(isEnergy == 2) {            
+            val = texelFetch(normalGridL0, ivec3(clipPos.xyz), mipLevel);
+            val.xyz *= 0.5f + 0.5f;
+            return val;
+        } else if(isEnergy == 3) {
+            val = texelFetch(lightDirGridL0, ivec3(clipPos.xyz), mipLevel);
+            val.xyz *= 0.5f + 0.5f;
+            return val;
+        } else {            
+            return transformEnergyToColor(texelFetch(lightEnergyGridL0, ivec3(clipPos.xyz), mipLevel).r);
         }
-        return texelFetch(colorGridL0, ivec3(clipPos.xyz), mipLevel);
     } else if(level == 1) {
         clipPos = (voxelToClipmapL1Mat * vec4(pos, 1.0f));
         clipPos.xyz /= float(1 << mipLevel);
         if(isEnergy == 1) {
-            energy = texelFetch(energyGridL1, ivec3(clipPos.xyz), mipLevel).r;
-            return transformEnergyToColor(energy);
+            return texelFetch(colorGridL1, ivec3(clipPos.xyz), mipLevel);
+        } else if(isEnergy == 2) {            
+            val =  texelFetch(normalGridL1, ivec3(clipPos.xyz), mipLevel);
+            val.xyz *= 0.5f + 0.5f;
+            return val;
+        } else if(isEnergy == 3) {
+            val =  texelFetch(lightDirGridL1, ivec3(clipPos.xyz), mipLevel);
+            val.xyz *= 0.5f + 0.5f;
+            return val;
+        } else {            
+            return transformEnergyToColor(texelFetch(lightEnergyGridL1, ivec3(clipPos.xyz), mipLevel).r);
         }
-        return texelFetch(colorGridL1, ivec3(clipPos.xyz), mipLevel);
     } else {
         clipPos = (voxelToClipmapL2Mat * vec4(pos, 1.0f));
         clipPos.xyz /= float(1 << mipLevel);
         if(isEnergy == 1) {
-            energy = texelFetch(energyGridL2, ivec3(clipPos.xyz), mipLevel).r;
-            return transformEnergyToColor(energy);
+            return texelFetch(colorGridL2, ivec3(clipPos.xyz), mipLevel);
+        } else if(isEnergy == 2) {            
+            val = texelFetch(normalGridL2, ivec3(clipPos.xyz), mipLevel);
+            val.xyz *= 0.5f + 0.5f;
+            return val;
+        } else if(isEnergy == 3) {
+            val = texelFetch(lightDirGridL2, ivec3(clipPos.xyz), mipLevel);
+            val.xyz *= 0.5f + 0.5f;
+            return val;
+        } else {            
+            return transformEnergyToColor(texelFetch(lightEnergyGridL2, ivec3(clipPos.xyz), mipLevel).r);
         }
-        return texelFetch(colorGridL2, ivec3(clipPos.xyz), mipLevel);
     }
 }
 
@@ -189,8 +223,8 @@ void main() {
         }
         color = loadColor(rayPosition, level);
         hasHit = color.a != 0.0f;
-        // if(gl_FragCoord.x < 1 && gl_FragCoord.y < 1) {        
-        //     logFragment(vec4(rayPosition, 1.0f), color, uint(hasHit), 0, height, width);
+        // if(gl_FragCoord.x < 1 && gl_FragCoord.y < 1) {    
+        //     logFragment(vec4(rayPosition, 1.0f), color, uint(hasHit), isEnergy, height, width);    
         // }
     } while(!hasHit);
 

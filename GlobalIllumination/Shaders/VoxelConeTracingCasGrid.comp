@@ -31,7 +31,7 @@ GaussianLobe generateSG(vec3 amplitude, vec3 mean) {
     GaussianLobe g;
     g.amplitude = amplitude;
     g.axis = normalize(mean);
-    float len = min(length(mean), 0.9999f);
+    float len = min(length(mean), 0.99f);
     g.sharpness = len / (1.0f - len); //Toksvig's filtering
     return g;
 }
@@ -82,24 +82,32 @@ bool isWithinBoundary(vec3 inputPos) {
 float evaluateLOD(float degree, float len) {
     return log2(2 * len * tan(radians(degree)));
 }
+vec3 evaluateShadingFactorDiffseSG(vec4 normal, vec4 lightDir, float energy, GaussianLobe viewLobe) {
+    GaussianLobe normalLobe = generateSG(vec3(1.0f), normal.xyz);
+    GaussianLobe lightLobe = generateSG(vec3(energy), lightDir.xyz);
+
+    return max(InnerProduct(normalLobe, lightLobe), 0.0f);
+}
+vec3 evaluateShadingFactorDiffusePhong(vec4 normal, vec4 lightDir, float lEnergy, GaussianLobe viewLobe) {    
+
+    return vec3(lEnergy) * max(dot(normalize(normal.xyz), normalize(lightDir.xyz)), 0.0f);
+}
 vec4 evaluateColor(in sampler3D colorClip, in sampler3D normalClip, in sampler3D lightDirClip, 
     in usampler3D lightEnergyClip, float lod, vec3 clipPos, GaussianLobe viewLobe) {
         vec4 color = vec4(0.0f);
         vec4 c = textureLod(colorClip, clipPos, lod);
         if(c.a > 0.0f) {                
-            vec4 n = 2.0f * textureLod(normalClip, clipPos, lod) - 1.0f;
-            uint lEnergy = textureLod(lightEnergyClip, clipPos, lod).r;
-            vec4 l = 2.0f * textureLod(lightDirClip, clipPos, lod) - 1.0f;
-            GaussianLobe normalLobe = generateSG(vec3(1.0f), n.xyz);
-            GaussianLobe lightLobe = generateSG(vec3(float(lEnergy)/134217727.0f), l.xyz);
-
+            vec4 n = textureLod(normalClip, clipPos, lod);
+            float lEnergy = float(textureLod(lightEnergyClip, clipPos, lod).r)/268435455.0f;
+            vec4 l =  textureLod(lightDirClip, clipPos, lod);
             vec3 brdf = c.rgb / PI;
-            vec3 convLightNormal = max(InnerProduct(normalLobe, lightLobe), 0.0f);
+            //vec3 convLightNormal = evaluateShadingFactorDiffuseSG(n, l, lEnergy, viewLobe);
+            vec3 convLightNormal = evaluateShadingFactorDiffusePhong(n, l, lEnergy, viewLobe);
             
-            if(gl_GlobalInvocationID.x < 1 && gl_GlobalInvocationID.y < 1) {
-                logFragment(c, n, lEnergy, uint(gl_GlobalInvocationID.x), uint(gl_GlobalInvocationID.y), 0);
-                logFragment(l, vec4(InnerProduct(normalLobe, lightLobe), 1.0f), 1, uint(gl_GlobalInvocationID.x), uint(gl_GlobalInvocationID.y), 0);
-            }
+            // if(gl_GlobalInvocationID.x < 1 && gl_GlobalInvocationID.y < 1) {
+            //     logFragment(c, n, textureLod(lightEnergyClip, clipPos, lod).r, uint(gl_GlobalInvocationID.x), uint(gl_GlobalInvocationID.y), 0);
+            //     logFragment(l, vec4(dot(normalize(n.xyz), normalize(l.xyz))), 1, uint(gl_GlobalInvocationID.x), uint(gl_GlobalInvocationID.y), 0);
+            // }
             color.rgb = brdf * convLightNormal;
             color.a = c.a;
         }
@@ -124,13 +132,13 @@ vec3 diffuseConeTrace(vec3 origin, vec3 dir, float angle) {
     vec3 color = vec3(0.0f);
     vec4 c;
     int i = 0;
-    while(alpha < 1.0f && isWithinBoundary(rayVoxelPos) && i < 256) {
+    while(alpha < 1.0f && isWithinBoundary(rayVoxelPos) && i < 32) {
         i++;
         float len = length(rayVoxelPos - origin);
         lod = evaluateLOD(angle/2.0f, len);
-        if(gl_GlobalInvocationID.x < 1 && gl_GlobalInvocationID.y < 1) {
-            logFragment(vec4(dir, alpha), vec4(rayVoxelPos, lod), uint(findMinLevel(rayVoxelPos)), uint(gl_GlobalInvocationID.x), uint(gl_GlobalInvocationID.y), uint(i));
-        }
+        // if(gl_GlobalInvocationID.x < 1 && gl_GlobalInvocationID.y < 1) {
+        //     logFragment(vec4(dir, alpha), vec4(rayVoxelPos, lod), uint(findMinLevel(rayVoxelPos)), uint(gl_GlobalInvocationID.x), uint(gl_GlobalInvocationID.y), uint(i));
+        // }
         adjustedDir = pow(2, lod) * dir;
         if(lod < 1.0f) {
             clipPos = (voxelToClipmapL0Mat * vec4(rayVoxelPos, 1.0f));

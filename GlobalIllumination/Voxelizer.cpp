@@ -207,6 +207,17 @@ void Voxelizer::render(Scene& scene)
             mModuleVoxelVisualizer.rayCastVoxels(scene.cam, voxelMatrixData.worldToVoxelMat, mCascadedGrid, currentNumMode, gridDefinition, gridMipLevel); timer.setTimestamp();
             break;
         }
+
+        if (toDumpCurrentGBuffer) {
+            auto c = ssboCounterSet.getPtr();
+            int logCount = c->logCounter;
+            c->logCounter = 0;
+            ssboCounterSet.unMapPtr();
+            std::vector<LogStruct> logs;
+            ShaderLogger::getLogs(ssboLogList, logCount, logs);
+            std::cout << "\n";
+            toDumpCurrentGBuffer = false;
+        }
     }
 
     resetAllData(); timer.setTimestamp();

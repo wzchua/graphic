@@ -57,5 +57,7 @@ void RenderToCasGrid::run(Scene & inputScene, glm::mat4 & worldToVoxelMat, Casca
         glBindImageTexture(GlobalCom::NORMAL_IMAGE_BINDING, textureNormals[i], 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         inputScene.render(currentShaderProgram);
+
+
     }
 }

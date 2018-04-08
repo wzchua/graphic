@@ -104,29 +104,18 @@ void VoxelVisualizer::rayCastVoxels(Camera & cam, glm::mat4 & worldToVoxelMat, O
 void VoxelVisualizer::rayCastVoxels(Camera & cam, glm::mat4 & worldToVoxelMat, CascadedGrid & cascadedGrid, int gridType, int gridDef, int mipLevel)
 {
     voxelRayCastCasGridShader.use();
-    CascadedGrid::GridType type;
-    switch (gridType) {
-    case 1:
-        type = CascadedGrid::COLOR;
-        break;
-    case 2:
-        type = CascadedGrid::NORMAL;
-        break;
-    case 3:
-        type = CascadedGrid::LIGHT_DIRECTION;
-        break;
-    case 4:
-        type = CascadedGrid::LIGHT_ENERGY;
-        break;
+
+    auto & colorCasGrid = cascadedGrid.getCasGridTextureIds(CascadedGrid::GridType::COLOR);
+    auto & normalCasGrid = cascadedGrid.getCasGridTextureIds(CascadedGrid::GridType::NORMAL);
+    auto & lightDirCasGrid = cascadedGrid.getCasGridTextureIds(CascadedGrid::GridType::LIGHT_DIRECTION);
+    auto & lightEnergyCasGrid = cascadedGrid.getCasGridTextureIds(CascadedGrid::GridType::LIGHT_ENERGY);
+
+    for (int i = 0; i < 3; i++) {
+        glBindTextureUnit(4 * i + 0, colorCasGrid[i]);
+        glBindTextureUnit(4 * i + 1, normalCasGrid[i]);
+        glBindTextureUnit(4 * i + 2, lightDirCasGrid[i]);
+        glBindTextureUnit(4 * i + 3, lightEnergyCasGrid[i]);
     }
-    auto& grid = cascadedGrid.getCasGridTextureIds(type);
-    glBindTextureUnit(0, grid[0]);
-    glBindTextureUnit(1, grid[1]);
-    glBindTextureUnit(2, grid[2]);    
-    auto& energy = cascadedGrid.getCasGridTextureIds(CascadedGrid::LIGHT_ENERGY);
-    glBindTextureUnit(4, energy[0]);
-    glBindTextureUnit(5, energy[1]);
-    glBindTextureUnit(6, energy[2]);
 
     glBindBufferBase(GL_UNIFORM_BUFFER, GlobalShaderComponents::CASGRID_VOXELIZATION_INFO_UBO_BINDING, cascadedGrid.getVoxelizedCascadedBlockBufferId());
     rayCastVoxels(cam, worldToVoxelMat, gridType, gridDef, mipLevel);
@@ -137,7 +126,7 @@ void VoxelVisualizer::rayCastVoxels(Camera & cam, glm::mat4 & worldToVoxelMat, i
     int width = 800;
     int height = 600;
     glm::mat4 viewToVoxelMat = worldToVoxelMat * glm::inverse(cam.getViewMatrix());
-    RayCastBlock block = { viewToVoxelMat, worldToVoxelMat * glm::vec4(cam.getPosition(), 1.0f), glm::vec4(cam.getForward(), 1.0f), glm::vec4(cam.getUp(), 1.0f), height, width, (gridType == 4) ? 1:0, gridDef, mipLevel };
+    RayCastBlock block = { viewToVoxelMat, worldToVoxelMat * glm::vec4(cam.getPosition(), 1.0f), glm::vec4(cam.getForward(), 1.0f), glm::vec4(cam.getUp(), 1.0f), height, width, gridType, gridDef, mipLevel };
     glNamedBufferSubData(uniformBufferRaycastBlock, 0, sizeof(RayCastBlock), &block);
     glBindBufferBase(GL_UNIFORM_BUFFER, GlobalShaderComponents::RAYCAST_UBO_BINDING, uniformBufferRaycastBlock);
 
