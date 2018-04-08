@@ -47,6 +47,6 @@ void main() {
         } else if(texture(depthRSMMap, shadowCoords.xy).r < shadowCoords.z- 0.005) {
             visibleFactor = 0.0f;
         }
-        imageStore(albedoWithLightAndShadow, xy, vec4(visibleFactor * (diffuse + specular), 1.0f));
+        imageStore(albedoWithLightAndShadow, xy, vec4(visibleFactor * (diffuse + specular) * 2.0f, 1.0f));
     }
 }
