@@ -53,7 +53,7 @@ private:
     Scene(const Scene&); // no implementation 
     Scene& operator=(const Scene&); // no implementation 
 public:
-    Camera cam = Camera(glm::vec3(1.0f, 20.0f, 1.0f));
+    Camera cam = Camera(glm::vec3(-110.0f, 75.0f, 190.0f));
     Scene();
     ~Scene();
     bool LoadObjScene(std::string filename);

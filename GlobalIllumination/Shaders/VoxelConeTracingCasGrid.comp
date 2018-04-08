@@ -82,7 +82,7 @@ bool isWithinBoundary(vec3 inputPos) {
 float evaluateLOD(float degree, float len) {
     return log2(2 * len * tan(radians(degree)));
 }
-vec3 evaluateShadingFactorDiffseSG(vec4 normal, vec4 lightDir, float energy, GaussianLobe viewLobe) {
+vec3 evaluateShadingFactorDiffuseSG(vec4 normal, vec4 lightDir, float energy, GaussianLobe viewLobe) {
     GaussianLobe normalLobe = generateSG(vec3(1.0f), normal.xyz);
     GaussianLobe lightLobe = generateSG(vec3(energy), lightDir.xyz);
 
@@ -92,24 +92,47 @@ vec3 evaluateShadingFactorDiffusePhong(vec4 normal, vec4 lightDir, float lEnergy
 
     return vec3(lEnergy) * max(dot(normalize(normal.xyz), normalize(lightDir.xyz)), 0.0f);
 }
+vec4 texelFetchInterpolated(in sampler3D clipGrid, vec3 clipPos, float lod) {
+        int lodfloor = int(floor(lod));
+        int lodCeil = int(ceil(lod));
+        vec3 floorPos = clipPos / float(1 << lodfloor);
+        vec3 ceilPos = clipPos / float(1 << lodCeil);
+        return mix(texelFetch(clipGrid, ivec3(floorPos), lodfloor), texelFetch(clipGrid, ivec3(ceilPos), lodCeil), lod - float(lodfloor));
+        //return texelFetch(clipGrid, ivec3(floorPos), lodfloor);
+}
+vec4 texelFetchInterpolatedU(in usampler3D clipGrid, vec3 clipPos, float lod) {
+        int lodfloor = int(floor(lod));
+        int lodCeil = int(ceil(lod));
+        vec3 floorPos = clipPos / float(1 << lodfloor);
+        vec3 ceilPos = clipPos / float(1 << lodCeil);
+        return mix(texelFetch(clipGrid, ivec3(floorPos), lodfloor), texelFetch(clipGrid, ivec3(ceilPos), lodCeil), lod - float(lodfloor));
+        //return texelFetch(clipGrid, ivec3(floorPos), lodfloor);
+}
 vec4 evaluateColor(in sampler3D colorClip, in sampler3D normalClip, in sampler3D lightDirClip, 
     in usampler3D lightEnergyClip, float lod, vec3 clipPos, GaussianLobe viewLobe) {
         vec4 color = vec4(0.0f);
-        vec4 c = textureLod(colorClip, clipPos, lod);
-        if(c.a > 0.0f) {                
-            vec4 n = textureLod(normalClip, clipPos, lod);
-            float lEnergy = float(textureLod(lightEnergyClip, clipPos, lod).r)/268435455.0f;
-            vec4 l =  textureLod(lightDirClip, clipPos, lod);
-            vec3 brdf = c.rgb / PI;
-            //vec3 convLightNormal = evaluateShadingFactorDiffuseSG(n, l, lEnergy, viewLobe);
-            vec3 convLightNormal = evaluateShadingFactorDiffusePhong(n, l, lEnergy, viewLobe);
-            
-            // if(gl_GlobalInvocationID.x < 1 && gl_GlobalInvocationID.y < 1) {
-            //     logFragment(c, n, textureLod(lightEnergyClip, clipPos, lod).r, uint(gl_GlobalInvocationID.x), uint(gl_GlobalInvocationID.y), 0);
-            //     logFragment(l, vec4(dot(normalize(n.xyz), normalize(l.xyz))), 1, uint(gl_GlobalInvocationID.x), uint(gl_GlobalInvocationID.y), 0);
+        int lodInt = int(floor(lod));
+        vec4 c = texelFetchInterpolated(colorClip, clipPos, lod);
+        if(gl_GlobalInvocationID.x < 1 && gl_GlobalInvocationID.y < 1) {
+            logFragment(c, vec4(clipPos, lod), 1, uint(gl_GlobalInvocationID.x), uint(gl_GlobalInvocationID.y), 0);
+        }
+        if(c.a > 0.0f) {         
+            color.a = c.a;       
+            float lEnergy = float(texelFetchInterpolatedU(lightEnergyClip, clipPos, lod).r)/134217727.0f;
+            // if(lEnergy == 0.0f) {
+            //     return color;
             // }
-            color.rgb = brdf * convLightNormal;
-            color.a = c.a;
+            vec4 n = texelFetchInterpolated(normalClip, clipPos, lod);
+            vec4 l =  texelFetchInterpolated(lightDirClip, clipPos, lod);
+            vec3 brdf = c.rgb / PI;
+            vec3 convLightNormal = evaluateShadingFactorDiffuseSG(n, l, lEnergy, viewLobe);
+            //vec3 convLightNormal = evaluateShadingFactorDiffusePhong(n, l, lEnergy, viewLobe);
+            
+            if(gl_GlobalInvocationID.x < 1 && gl_GlobalInvocationID.y < 1) {
+                logFragment(vec4(l.xyz, lEnergy), n, textureLod(lightEnergyClip, clipPos, lod).r, uint(gl_GlobalInvocationID.x), uint(gl_GlobalInvocationID.y), 0);
+                logFragment(c, vec4(convLightNormal, dot(normalize(n.xyz), normalize(l.xyz))), 1, uint(gl_GlobalInvocationID.x), uint(gl_GlobalInvocationID.y), 0);
+            }
+            color.rgb = brdf * lEnergy ;//* convLightNormal;
         }
         return color;
     }
@@ -120,8 +143,8 @@ vec3 diffuseConeTrace(vec3 origin, vec3 dir, float angle) {
     }
     float alpha = 0.0f;
     int level = findMinLevel(origin);
-    vec3 adjustedDir = pow(2, level) * dir; // lengthen dir when traversing through larger grid dim
-    vec3 rayVoxelPos = origin + adjustedDir + dir; //(set initial point further)
+    vec3 adjustedDir = pow(2, level) * dir; // lengthen dir when traversing through larger grid 
+    vec3 rayVoxelPos = origin + pow(2, level) * dir * 2.0f; //(set initial point further)
     float lod; vec4 clipPos;
 
     float cosPhi = cos(radians(angle));
@@ -132,47 +155,133 @@ vec3 diffuseConeTrace(vec3 origin, vec3 dir, float angle) {
     vec3 color = vec3(0.0f);
     vec4 c;
     int i = 0;
-    while(alpha < 1.0f && isWithinBoundary(rayVoxelPos) && i < 32) {
+    while(alpha < 1.0f && isWithinBoundary(rayVoxelPos) && i < 128) {
         i++;
         float len = length(rayVoxelPos - origin);
-        lod = evaluateLOD(angle/2.0f, len);
-        // if(gl_GlobalInvocationID.x < 1 && gl_GlobalInvocationID.y < 1) {
-        //     logFragment(vec4(dir, alpha), vec4(rayVoxelPos, lod), uint(findMinLevel(rayVoxelPos)), uint(gl_GlobalInvocationID.x), uint(gl_GlobalInvocationID.y), uint(i));
-        // }
+        lod = max(evaluateLOD(angle/2.0f, len), float(findMinLevel(rayVoxelPos)));
+        if(gl_GlobalInvocationID.x < 1 && gl_GlobalInvocationID.y < 1) {
+            logFragment(vec4(dir, alpha), vec4(rayVoxelPos, lod), uint(findMinLevel(rayVoxelPos)), uint(gl_GlobalInvocationID.x), uint(gl_GlobalInvocationID.y), uint(i));
+        }
         adjustedDir = pow(2, lod) * dir;
         if(lod < 1.0f) {
             clipPos = (voxelToClipmapL0Mat * vec4(rayVoxelPos, 1.0f));
-            clipPos = clipPos/clipPos.w / 128.0f;
+            clipPos = clipPos/clipPos.w;
             c = evaluateColor(colorBrickL0, normalBrickL0, lightDirBrickL0, lightEnergyBrickL0, lod, clipPos.xyz, viewLobe);
         } else if(lod < 2.0f) {
             clipPos = (voxelToClipmapL1Mat * vec4(rayVoxelPos, 1.0f));
-            clipPos = clipPos/clipPos.w / 128.0f;
+            clipPos = clipPos/clipPos.w;
             lod = lod - 1.0f;
             c = evaluateColor(colorBrickL1, normalBrickL1, lightDirBrickL1, lightEnergyBrickL1, lod, clipPos.xyz, viewLobe);
         } else {
             clipPos = (voxelToClipmapL2Mat * vec4(rayVoxelPos, 1.0f));
-            clipPos = clipPos/clipPos.w / 128.0f;
+            clipPos = clipPos/clipPos.w;
             lod = lod - 2.0f;
             c = evaluateColor(colorBrickL2, normalBrickL2, lightDirBrickL2, lightEnergyBrickL2, lod, clipPos.xyz, viewLobe);
         }
-        color += (1.0f - alpha) * c.rgb ;/// (len * len);
+        color = alpha * color + (1.0f - alpha) * c.rgb ;/// (len * len);
         alpha = alpha + (1.0f - alpha) * c.a;        
         rayVoxelPos += adjustedDir;
     }
     return color;
 }
+vec4 textureCasGridColorLod(vec3 voxelPos, float lod) {
+    vec4 c;vec4 clipPos;
+    if(lod < 1.0f) {
+        clipPos = (voxelToClipmapL0Mat * vec4(voxelPos, 1.0f));
+        c = texelFetch(colorBrickL0, ivec3(clipPos.xyz), int(lod));
+    } else if(lod < 2.0f) {
+        clipPos = (voxelToClipmapL1Mat * vec4(voxelPos, 1.0f));
+        c = texelFetch(colorBrickL1, ivec3(clipPos.xyz), int(lod - 1.0f));
+    } else {
+        clipPos = (voxelToClipmapL2Mat * vec4(voxelPos, 1.0f));
+        c = texelFetch(colorBrickL2, ivec3(clipPos.xyz), int(lod - 2.0f));
+
+    }
+    return c;
+}
+void voxelTest() {
+    vec3 voxel1 = vec3(0.0f, 28.0f, 428.0f);
+    int level1 = findMinLevel(voxel1);
+    vec4 c = textureCasGridColorLod(voxel1, float(level1));
+    logFragment(vec4(voxel1, c.a),  (voxelToClipmapL2Mat * vec4(voxel1, 1.0f)), uint(level1), uint(gl_GlobalInvocationID.x), uint(gl_GlobalInvocationID.y), 0);
+
+    vec3 voxel2 = vec3(6.0f, 28.0f, 428.0f);
+    int level2 = findMinLevel(voxel2);
+    c = textureCasGridColorLod(voxel2, float(level2));
+    logFragment(vec4(voxel2, c.a), (voxelToClipmapL2Mat * vec4(voxel2, 1.0f)), uint(level2), uint(gl_GlobalInvocationID.x), uint(gl_GlobalInvocationID.y), 0);
+
+    for(int i = 0; i < 60; i+=2) {
+        voxel2 = vec3(12.0f + float(i), 27.0f, 446.0f);
+        level2 = findMinLevel(voxel2);
+        c = textureCasGridColorLod(voxel2, float(level2));
+        logFragment(vec4(voxel2, c.a), (voxelToClipmapL2Mat * vec4(voxel2, 1.0f)), uint(level2), uint(gl_GlobalInvocationID.x), uint(gl_GlobalInvocationID.y), 0);
+    }
+
+}
+// origin & dir in world space
+// vec3 diffuseConeTraceTest() {
+//     vec3 origin,dir; float angle=70.0f;
+//     if(!isWithinBoundary(origin)) {
+//         return vec3(0.0);
+//     }
+//     float alpha = 0.0f;
+//     int level = findMinLevel(origin);
+//     vec3 adjustedDir = pow(2, level) * dir; // lengthen dir when traversing through larger grid dim
+//     vec3 rayVoxelPos = origin + adjustedDir*4.0f; //(set initial point further)
+//     float lod; vec4 clipPos;
+
+//     float cosPhi = cos(radians(angle));
+//     GaussianLobe viewLobe;
+//     viewLobe.amplitude = vec3(1.0f);
+//     viewLobe.axis = -dir;
+//     viewLobe.sharpness = 1.0f/(cosPhi * cosPhi);
+//     vec3 color = vec3(0.0f);
+//     vec4 c;
+//     int i = 0;
+//         float len = length(rayVoxelPos - origin);
+//         lod = evaluateLOD(angle/2.0f, len);
+//     while(alpha < 1.0f && isWithinBoundary(rayVoxelPos) && i < 32) {
+//         i++;
+//         if(gl_GlobalInvocationID.x < 1 && gl_GlobalInvocationID.y < 1) {
+//             logFragment(vec4(dir, alpha), vec4(rayVoxelPos, lod), uint(findMinLevel(rayVoxelPos)), uint(gl_GlobalInvocationID.x), uint(gl_GlobalInvocationID.y), uint(i));
+//         }
+//         //adjustedDir = pow(2, lod) * dir;
+//         if(lod < 1.0f) {
+//             clipPos = (voxelToClipmapL0Mat * vec4(rayVoxelPos, 1.0f));
+//             clipPos = clipPos/clipPos.w / 128.0f;
+//             c = evaluateColor(colorBrickL0, normalBrickL0, lightDirBrickL0, lightEnergyBrickL0, lod, clipPos.xyz, viewLobe);
+//         } else if(lod < 2.0f) {
+//             clipPos = (voxelToClipmapL1Mat * vec4(rayVoxelPos, 1.0f));
+//             clipPos = clipPos/clipPos.w / 128.0f;
+//             lod = lod - 1.0f;
+//             c = evaluateColor(colorBrickL1, normalBrickL1, lightDirBrickL1, lightEnergyBrickL1, lod, clipPos.xyz, viewLobe);
+//         } else {
+//             clipPos = (voxelToClipmapL2Mat * vec4(rayVoxelPos, 1.0f));
+//             clipPos = clipPos/clipPos.w / 128.0f;
+//             lod = lod - 2.0f;
+//             c = evaluateColor(colorBrickL2, normalBrickL2, lightDirBrickL2, lightEnergyBrickL2, lod, clipPos.xyz, viewLobe);
+//         }
+//         color = alpha * color + (1.0f - alpha) * c.rgb ;/// (len * len);
+//         alpha = alpha + (1.0f - alpha) * c.a;        
+//         rayVoxelPos += adjustedDir;
+//     }
+//     return color;
+// }
 
 vec3 findOrthoVector(vec3 v) {
     vec3 u = cross(v, vec3(1, 0, 0));
     if(abs(dot(u, v)) == 1.0f) {
         u = cross(v, vec3(0, 1, 0));
     }
-    return u;
+    return normalize(u);
 }
 
 const float voxelDim = 511.0f;
 void main() 
 {   
+    // if(gl_GlobalInvocationID.x < 1 && gl_GlobalInvocationID.y < 1) {
+    //     voxelTest();
+    // }
     ivec2 size = textureSize(gbufferWorldPosition, 0);
     ivec2 xy = ivec2(gl_GlobalInvocationID.xy);
     
@@ -186,12 +295,35 @@ void main()
         vec3 normal = normalize(gbNormal.xyz * 2.0f - 1.0f);
         vec3 orthoX = findOrthoVector(normal);
         vec3 orthoY = normalize(cross(normal, orthoX));
-        float diffuseAngle = 70.0f;
-        vec3 diffuseColor = 0.2f * diffuseConeTrace(pos, normal, diffuseAngle);
-        diffuseColor += 0.2f * diffuseConeTrace(pos, normalize(mix(normal, orthoX, 0.8)), diffuseAngle);
-        diffuseColor += 0.2f * diffuseConeTrace(pos, normalize(mix(normal, -orthoX, 0.8)), diffuseAngle);
-        diffuseColor += 0.2f * diffuseConeTrace(pos, normalize(mix(normal, orthoY, 0.8)), diffuseAngle);
-        diffuseColor += 0.2f * diffuseConeTrace(pos, normalize(mix(normal, -orthoY, 0.8)), diffuseAngle);
+        float diffuseAngle = 60.0f;
+        if(gl_GlobalInvocationID.x < 1 && gl_GlobalInvocationID.y < 1) {
+            logFragment(WorldToVoxelMat * camPosition, camPosition, 0, uint(gl_GlobalInvocationID.x), uint(gl_GlobalInvocationID.y), 0);
+            logFragment(vec4(pos, 1.0f), vec4(normal, 1.0f), 0, uint(gl_GlobalInvocationID.x), uint(gl_GlobalInvocationID.y), 0);
+            logFragment(vec4(orthoX, 1.0f), vec4(orthoY, 1.0f), 0, uint(gl_GlobalInvocationID.x), uint(gl_GlobalInvocationID.y), 0);
+            logFragment(vec4(normalize(mix(normal, orthoX, 0.6)), 1.0f), vec4(normalize(mix(normal, -orthoX, 0.6)), 1.0f), 1, uint(gl_GlobalInvocationID.x), uint(gl_GlobalInvocationID.y), 0);
+            logFragment(vec4(normalize(mix(normal, orthoY, 0.6)), 1.0f), vec4(normalize(mix(normal, -orthoY, 0.6)), 1.0f), 1, uint(gl_GlobalInvocationID.x), uint(gl_GlobalInvocationID.y), 0);
+            logFragment(vec4(0.0f), vec4(0.0f), 1, uint(gl_GlobalInvocationID.x), uint(gl_GlobalInvocationID.y), 0);
+        }
+        vec3 diffuseColor = diffuseConeTrace(pos, normal, diffuseAngle);
+        if(gl_GlobalInvocationID.x < 1 && gl_GlobalInvocationID.y < 1) {
+            logFragment(vec4(0.0f), vec4(diffuseColor,0.0f), 1, uint(gl_GlobalInvocationID.x), uint(gl_GlobalInvocationID.y), 0);
+        }
+        diffuseColor += diffuseConeTrace(pos, normalize(mix(normal, orthoX, 0.5)), diffuseAngle);
+        if(gl_GlobalInvocationID.x < 1 && gl_GlobalInvocationID.y < 1) {
+            logFragment(vec4(0.0f), vec4(diffuseColor,0.0f), 1, uint(gl_GlobalInvocationID.x), uint(gl_GlobalInvocationID.y), 0);
+        }
+        diffuseColor += diffuseConeTrace(pos, normalize(mix(normal, -orthoX, 0.5)), diffuseAngle);
+        if(gl_GlobalInvocationID.x < 1 && gl_GlobalInvocationID.y < 1) {
+            logFragment(vec4(0.0f), vec4(diffuseColor,0.0f), 1, uint(gl_GlobalInvocationID.x), uint(gl_GlobalInvocationID.y), 0);
+        }
+        diffuseColor += diffuseConeTrace(pos, normalize(mix(normal, orthoY, 0.5)), diffuseAngle);
+        if(gl_GlobalInvocationID.x < 1 && gl_GlobalInvocationID.y < 1) {
+            logFragment(vec4(0.0f), vec4(diffuseColor,0.0f), 1, uint(gl_GlobalInvocationID.x), uint(gl_GlobalInvocationID.y), 0);
+        }
+        diffuseColor += diffuseConeTrace(pos, normalize(mix(normal, -orthoY, 0.5)), diffuseAngle);
+        if(gl_GlobalInvocationID.x < 1 && gl_GlobalInvocationID.y < 1) {
+            logFragment(vec4(0.0f), vec4(diffuseColor,0.0f), 1, uint(gl_GlobalInvocationID.x), uint(gl_GlobalInvocationID.y), 0);
+        }
         vec3 view  = normalize(pos - camPosition.xyz);    
         vec3 specularColor = vec3(0.0f);
         /*if(shininess > 0.0f) {

@@ -116,14 +116,14 @@ int findMinLevel(vec3 inputPos) {
 vec4 transformEnergyToColor(uint energy) {
     if(energy == 0) {
         return vec4(0.0f);
-    } else if(energy <= 65535) {
-        return vec4(0.0f, 0.0f, float(energy) / 65535.0f, 1.0f);
+    } else if(energy <= 511) {
+        return vec4(0.0f, 0.0f, float(energy) / 511.0f, 1.0f);
     } else if(energy <= 131071) {
         return vec4(0.0f, float(energy) / 131071.0f, 0.0f, 1.0f);
-    } else if(energy <= 262143) {
-        return vec4(float(energy) / 262143.0f, 0.0f, 0.0f, 1.0f);
+    } else if(energy <= 536870911) {
+        return vec4(float(energy) / 536870911.0f, 0.0f, 0.0f, 1.0f);
     } else {
-        return vec4(vec3(float(energy) / 536870911.0f), 1.0f);
+        return vec4(vec3(float(energy) / 4294967296.0f), 1.0f);
     }
 }
 vec4 mapTo01(vec4 val) {
@@ -167,6 +167,9 @@ vec4 loadColor(vec3 pos, int level) {
     } else {
         clipPos = (voxelToClipmapL2Mat * vec4(pos, 1.0f));
         clipPos.xyz /= float(1 << mipLevel);
+        // if(floor(pos.y) != 27.0f) {
+        //     return vec4(0.0f);
+        // }
         if(isEnergy == 1) {
             return texelFetch(colorGridL2, ivec3(clipPos.xyz), mipLevel);
         } else if(isEnergy == 2) {            

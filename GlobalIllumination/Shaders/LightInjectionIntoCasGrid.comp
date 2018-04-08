@@ -35,14 +35,14 @@ bool imageAtomicXYZWAvg( layout ( r32ui ) coherent volatile uimage3D imgUI , ive
         curValF.xyz /=( curValF.w); // Renormalize
         newVal = convVec4ToXYZW( curValF );        
     }
-    return false;
+    return true;
 }
 
 uint convVec4ToRGBA8( vec4 val) {
     return ( uint ( val.w) &0x000000FF) <<24U | ( uint( val.z) &0x000000FF) <<16U | ( uint( val.y ) &0x000000FF) <<8U | ( uint( val.x) &0x000000FF);
 }
 void imageAtomicAddFloat(layout ( r32ui ) coherent volatile uimage3D imgUI , ivec3 coords , float val ) {
-    uint convertedVal = uint(val * 268435455.0f);
+    uint convertedVal = uint(val * 134217727.0f);
     imageAtomicAdd(imgUI, coords, convertedVal);
 }
 
@@ -87,47 +87,65 @@ void main() {
         vec3 voxelPos;
         vec3 wcNormal;         
         voxelPos = voxelPosRead.xyz * voxelDim;
-        if(voxelPosRead.w != 0.0f && isWithinBoundaries(0, voxelPos)) {   
+        if(voxelPosRead.w != 0.0f) {
             wcNormal = texelFetch(worldNormalMap, xy, 0).xyz * 2.0f - 1.0f;
             computeLightValues(voxelPos, voxelLightPos, wcNormal, lightDir, recievedEnergy);
-            clipPos = voxelToClipmapL0Mat * vec4(voxelPos, 1.0f);//check if within grid
-            // if(gl_GlobalInvocationID.x >= 512 && gl_GlobalInvocationID.x < 514 && gl_GlobalInvocationID.y >=512 && gl_GlobalInvocationID.y < 514 ) {
-            //     logFragment(vec4(voxelPos.xyz,recievedEnergy.r), clipPos, (isWithinBoundaries(0, voxelPos)) ? 1:0, uint(xy.x), uint(xy.y), 3);
-            // }
-            if(imageAtomicXYZWAvg(lightDirGridL0, ivec3(clipPos.xyz), vec4(lightDir, 1.0f))) {
-                imageAtomicAddFloat(lightEnergyGridL0, ivec3(clipPos.xyz), recievedEnergy.r);
-            }
-        }
-        ivec2 upperLevelxy = xy/2;
-        if(xy - 2 * upperLevelxy == ivec2(0)) {
-            voxelPosRead = texelFetch(voxelPositionMap, upperLevelxy, 1);
-            voxelPos = voxelPosRead.xyz * voxelDim;
-            if(voxelPosRead.w != 0.0f && isWithinBoundaries(1, voxelPos)) {  
-                wcNormal = texelFetch(worldNormalMap, upperLevelxy, 1).xyz * 2.0f - 1.0f;
-                computeLightValues(voxelPos, voxelLightPos, wcNormal, lightDir, recievedEnergy);
-                clipPos = voxelToClipmapL1Mat * vec4(voxelPos, 1.0f);
-                // if(gl_GlobalInvocationID.x == 512 && gl_GlobalInvocationID.y ==512) {
-                //     logFragment(vec4(voxelPos.xyz,recievedEnergy.r), clipPos, (isWithinBoundaries(0, voxelPos)) ? 1:0, 4, 2, 3);
+            if(isWithinBoundaries(0, voxelPos)) {   
+                clipPos = voxelToClipmapL0Mat * vec4(voxelPos, 1.0f);//check if within grid
+                // if(gl_GlobalInvocationID.x >= 512 && gl_GlobalInvocationID.x < 514 && gl_GlobalInvocationID.y >=512 && gl_GlobalInvocationID.y < 514 ) {
+                //     logFragment(vec4(voxelPos.xyz,recievedEnergy.r), clipPos, (isWithinBoundaries(0, voxelPos)) ? 1:0, uint(xy.x), uint(xy.y), 3);
                 // }
-
+                if(imageAtomicXYZWAvg(lightDirGridL0, ivec3(clipPos.xyz), vec4(lightDir, 1.0f))) {
+                    imageAtomicAddFloat(lightEnergyGridL0, ivec3(clipPos.xyz), recievedEnergy.r);
+                }
+            }
+            if(isWithinBoundaries(1, voxelPos)) {
+                clipPos = voxelToClipmapL1Mat * vec4(voxelPos, 1.0f);//check if within grid
+                
                 if(imageAtomicXYZWAvg(lightDirGridL1, ivec3(clipPos.xyz), vec4(lightDir, 1.0f))) {
                     imageAtomicAddFloat(lightEnergyGridL1, ivec3(clipPos.xyz), recievedEnergy.r);
                 }
             }
-        }
-        upperLevelxy = xy/4;
-        if(xy - 4 * upperLevelxy == ivec2(0)) {
-            voxelPosRead = texelFetch(voxelPositionMap, upperLevelxy, 2);
-            voxelPos = voxelPosRead.xyz * voxelDim;
-            if(voxelPosRead.w != 0.0f && isWithinBoundaries(2, voxelPos)) {  
-                wcNormal = texelFetch(worldNormalMap, upperLevelxy, 2).xyz * 2.0f - 1.0f;
-                computeLightValues(voxelPos, voxelLightPos, wcNormal, lightDir, recievedEnergy);
-
-                clipPos = voxelToClipmapL2Mat * vec4(voxelPos, 1.0f);
+            if(isWithinBoundaries(2, voxelPos)) {
+                clipPos = voxelToClipmapL2Mat * vec4(voxelPos, 1.0f);//check if within grid
+                
                 if(imageAtomicXYZWAvg(lightDirGridL2, ivec3(clipPos.xyz), vec4(lightDir, 1.0f))) {
                     imageAtomicAddFloat(lightEnergyGridL2, ivec3(clipPos.xyz), recievedEnergy.r);
                 }
             }
         }
+
+
+        // ivec2 upperLevelxy = xy/2;
+        // if(xy - 2 * upperLevelxy == ivec2(0)) {
+        //     voxelPosRead = texelFetch(voxelPositionMap, upperLevelxy, 1);
+        //     voxelPos = voxelPosRead.xyz * voxelDim;
+        //     if(voxelPosRead.w != 0.0f && isWithinBoundaries(1, voxelPos)) {  
+        //         wcNormal = texelFetch(worldNormalMap, upperLevelxy, 1).xyz * 2.0f - 1.0f;
+        //         computeLightValues(voxelPos, voxelLightPos, wcNormal, lightDir, recievedEnergy);
+        //         clipPos = voxelToClipmapL1Mat * vec4(voxelPos, 1.0f);
+        //         // if(gl_GlobalInvocationID.x == 512 && gl_GlobalInvocationID.y ==512) {
+        //         //     logFragment(vec4(voxelPos.xyz,recievedEnergy.r), clipPos, (isWithinBoundaries(0, voxelPos)) ? 1:0, 4, 2, 3);
+        //         // }
+
+        //         if(imageAtomicXYZWAvg(lightDirGridL1, ivec3(clipPos.xyz), vec4(lightDir, 1.0f))) {
+        //             imageAtomicAddFloat(lightEnergyGridL1, ivec3(clipPos.xyz), recievedEnergy.r);
+        //         }
+        //     }
+        // }
+        // upperLevelxy = xy/4;
+        // if(xy - 4 * upperLevelxy == ivec2(0)) {
+        //     voxelPosRead = texelFetch(voxelPositionMap, upperLevelxy, 2);
+        //     voxelPos = voxelPosRead.xyz * voxelDim;
+        //     if(voxelPosRead.w != 0.0f && isWithinBoundaries(2, voxelPos)) {  
+        //         wcNormal = texelFetch(worldNormalMap, upperLevelxy, 2).xyz * 2.0f - 1.0f;
+        //         computeLightValues(voxelPos, voxelLightPos, wcNormal, lightDir, recievedEnergy);
+
+        //         clipPos = voxelToClipmapL2Mat * vec4(voxelPos, 1.0f);
+        //         if(imageAtomicXYZWAvg(lightDirGridL2, ivec3(clipPos.xyz), vec4(lightDir, 1.0f))) {
+        //             imageAtomicAddFloat(lightEnergyGridL2, ivec3(clipPos.xyz), recievedEnergy.r);
+        //         }
+        //     }
+        // }
     }
 }

@@ -29,19 +29,20 @@ void main() {
             + imageLoad(normalBrick, inputxyz + two) + imageLoad(normalBrick, inputxyz + three)
             + imageLoad(normalBrick, inputxyz + four) + imageLoad(normalBrick, inputxyz + five)
             + imageLoad(normalBrick, inputxyz + six) + imageLoad(normalBrick, inputxyz + seven);
-        imageStore(outputNormalBrick, xyz, avg/8.0f);
-        if(gl_GlobalInvocationID.x < 1 && gl_GlobalInvocationID.y < 1) {
-            logFragment(vec4(xyz, 1.0f), avg, 1, uint(gl_GlobalInvocationID.x), uint(gl_GlobalInvocationID.y), uint(gl_GlobalInvocationID.z));
-        }
+        imageStore(outputNormalBrick, xyz, avg/avg.w);
         avg = imageLoad(lightDirBrick, inputxyz) + imageLoad(lightDirBrick, inputxyz + one) 
             + imageLoad(lightDirBrick, inputxyz + two) + imageLoad(lightDirBrick, inputxyz + three)
             + imageLoad(lightDirBrick, inputxyz + four) + imageLoad(lightDirBrick, inputxyz + five)
             + imageLoad(lightDirBrick, inputxyz + six) + imageLoad(lightDirBrick, inputxyz + seven);
-        imageStore(outputLightDirBrick, xyz, avg/8.0f);
+        uint num = uint(avg.w);
+        imageStore(outputLightDirBrick, xyz, avg/avg.w);
         uvec4 e = imageLoad(lightEnergyBrick, inputxyz) + imageLoad(lightEnergyBrick, inputxyz + one) 
             + imageLoad(lightEnergyBrick, inputxyz + two) + imageLoad(lightEnergyBrick, inputxyz + three)
             + imageLoad(lightEnergyBrick, inputxyz + four) + imageLoad(lightEnergyBrick, inputxyz + five)
             + imageLoad(lightEnergyBrick, inputxyz + six) + imageLoad(lightEnergyBrick, inputxyz + seven);
-        imageStore(outputLightEnergyBrick, xyz, e/8);
+        if(num == 0) {
+            num = 1;
+        }
+        imageStore(outputLightEnergyBrick, xyz, e/num);
     }
 }
