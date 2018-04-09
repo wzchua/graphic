@@ -50,7 +50,7 @@ void imageAtomicAddFloat(layout ( r32ui ) coherent volatile uimage3D imgUI , ive
 void computeLightValues(in vec3 voxelPos, in vec3 voxelLightPos, in vec3 normal, out vec3 lightDir, out vec4 recievedEnergy) {
   if(LightPosition.w == 0.0f) {
     lightDir = -normalize(LightPosition.xyz);
-    recievedEnergy = 16.0f * LightPower;
+    recievedEnergy = LightPower;
   } else {
     vec3 lightDisplacement = voxelLightPos - voxelPos;
     lightDir = normalize(lightDisplacement);

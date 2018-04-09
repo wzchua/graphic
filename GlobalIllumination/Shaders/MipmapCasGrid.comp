@@ -24,7 +24,12 @@ void main() {
             + imageLoad(colorBrick, inputxyz + two) + imageLoad(colorBrick, inputxyz + three)
             + imageLoad(colorBrick, inputxyz + four) + imageLoad(colorBrick, inputxyz + five)
             + imageLoad(colorBrick, inputxyz + six) + imageLoad(colorBrick, inputxyz + seven);
-        imageStore(outputColorBrick, xyz, avg/8.0f);
+        avg.rgb = avg.rgb/avg.a;
+        if(avg.a != 0.0f){
+            avg.a += (8.0f - avg.a) * 0.75f;
+            avg.a = avg.a/8.0f;
+        }
+        imageStore(outputColorBrick, xyz, avg);
         avg = imageLoad(normalBrick, inputxyz) + imageLoad(normalBrick, inputxyz + one) 
             + imageLoad(normalBrick, inputxyz + two) + imageLoad(normalBrick, inputxyz + three)
             + imageLoad(normalBrick, inputxyz + four) + imageLoad(normalBrick, inputxyz + five)

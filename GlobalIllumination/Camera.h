@@ -16,7 +16,7 @@ private:
     float fovDegree = 60.0f;
     float aspect = 4.0f / 3.0f;
     float nearPlane = 0.1f;
-    float farPlane = 2000.0f;
+    float farPlane = 3000.0f;
 
     mutable bool isViewMatrixUpdated = false;
     mutable glm::mat4 viewMatrix;
@@ -29,7 +29,7 @@ public:
     void move(glm::vec3 translation);
     glm::ivec2 getResolution() { return mResolution; }
     void viewMove(int mouseXDelta, int mouseYDelta);
-    void set(glm::vec3 position, glm::vec3 forward, glm::vec3 up, float degree, glm::ivec2 res, float newFarPlane = 2000.0f);
+    void set(glm::vec3 position, glm::vec3 forward, glm::vec3 up, float degree, glm::ivec2 res, float newFarPlane = 3000.0f);
     glm::vec3 getPosition();
     glm::vec3 getForward();
     glm::vec3 getUp();
