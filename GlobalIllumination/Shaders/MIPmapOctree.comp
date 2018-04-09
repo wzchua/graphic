@@ -56,7 +56,7 @@ uint convVec4ToXYZW( vec4 val) {
 void main() {
     
   uint nodeListPtr = gl_GlobalInvocationID.x;
-    if(nodeListPtr < noOfFragments) {
+    if(nodeListPtr < leafCounter) {
         uint childPtr = leafList[nodeListPtr];
         NodeStruct child = node[childPtr];
         bool isLeaf = child.childPtr == LEAFHOST;

@@ -16,6 +16,7 @@
 #include "RenderToGrid.h"
 
 #include "Octree.h"
+#include "RenderToFragmentList.h"
 #include "RenderToOctree.h"
 #include "AddToOctree.h"
 #include "RenderLightIntoOctree.h"
@@ -57,14 +58,14 @@ private:
     int currentNumMode = 1;
     int gridDefinition = 0;
     int gridMipLevel = 0;
-    Type mType = GRID;
-    unsigned int fragCount = 1024 * 1024 * 2;
-    unsigned int nodeCount = 1024 * 1024 * 2;
+    Type mType = OCTREE;
+    unsigned int fragCount = 1024 * 1024 * 4;
+    unsigned int nodeCount = 1024 * 1024 * 4;
     int brickDim = 2;
     int texWdith = 512;
     int texHeight = 512;
-    unsigned int maxLogCount = 500;
-    bool toDumpCurrentGBuffer = false;
+    unsigned int maxLogCount = 1024 * 1024 * 4;;
+    bool toDumpCurrentGBuffer = true;
 
     GBuffer mGBuffer;
     GBufferGenerator mModuleGBufferGen;
@@ -76,14 +77,14 @@ private:
 
     VoxelizeBlock voxelMatrixData;
     GlobalsBlock globalVariablesData = { fragCount, nodeCount, nodeCount, maxLogCount };
-    const CounterBlock mZeroedCounterBlock = { 0, Octree::getInitialNodeCounterValue(), Octree::getInitialNodeValueCounterValue(), 0, 0, 0 };
-    CounterBlock mCounterBlock = mZeroedCounterBlock;
+    CounterBlock mZeroedCounterBlock = { 0, 1, 0, 0, 0, 0 };
 
     GLuint voxelMatrixUBOId;
     GLuint globalVariablesUBOId;
 
     VoxelVisualizer mModuleVoxelVisualizer;
 
+    RenderToFragmentList mModuleRenderToFragmentList;
     RenderToOctree mModuleRenderToOctree;
     AddToOctree mModuleAddToOctree;
     FilterOctree mModuleFilterOctree;

@@ -16,12 +16,13 @@ void Octree::initialize3DTextures(GLuint & textureId, GLsizei levels, GLenum int
 
 void Octree::initialize()
 {
+    //generateOctree(7);
     ssboNodeList.initialize(GL_SHADER_STORAGE_BUFFER, sizeof(NodeStruct) * nodeCount, NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_DYNAMIC_STORAGE_BIT, 0);
     ssboNodeValueList.initialize(GL_SHADER_STORAGE_BUFFER, sizeof(NodeValueStruct) * nodeCount, NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, 0);
     ssboLeafIndexList.initialize(GL_SHADER_STORAGE_BUFFER, sizeof(GLuint) * nodeCount, NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, 0);
     ssboFragList.initialize(GL_SHADER_STORAGE_BUFFER, sizeof(FragStruct) * fragCount, NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, 0);
-
-    glNamedBufferSubData(ssboNodeList.getId(), 0, pregeneratedInitialOctree.size() * sizeof(NodeStruct), pregeneratedInitialOctree.data());
+    
+    //glNamedBufferSubData(ssboNodeList.getId(), 0, pregeneratedInitialOctree.size() * sizeof(NodeStruct), pregeneratedInitialOctree.data());
     /*
     initialize3DTextures(texture3DColorList, 2, GL_RGBA8, texWdith * brickDim, texHeight * brickDim, brickDim);
     initialize3DTextures(texture3DNormalList, 2, GL_RGBA8, texWdith * brickDim, texHeight * brickDim, brickDim);
@@ -34,7 +35,7 @@ void Octree::resetData()
 {
 
     ssboNodeList.clearData();
-    glNamedBufferSubData(ssboNodeList.getId(), 0, pregeneratedInitialOctree.size() * sizeof(NodeStruct), pregeneratedInitialOctree.data());
+    //(ssboNodeList.getId(), 0, pregeneratedInitialOctree.size() * sizeof(NodeStruct), pregeneratedInitialOctree.data());
     ssboNodeValueList.clearData();
     /*
     auto node = ssboNodeList.getPtr();
@@ -73,11 +74,11 @@ GLBufferObject<FragStruct>& Octree::getFragList()
 {
     return ssboFragList;
 }
-const GLuint Octree::getInitialNodeCounterValue()
+GLuint Octree::getInitialNodeCounterValue()
 {
     return initialNodeCounterValue;
 }
-const GLuint Octree::getInitialNodeValueCounterValue()
+GLuint Octree::getInitialNodeValueCounterValue()
 {
     return initialNodeValueCounterValue;
 }
@@ -105,4 +106,44 @@ Octree::Octree()
 
 Octree::~Octree()
 {
+}
+
+void Octree::generateChildrenNodes(GLuint parentIndex, NodeStruct & parent, std::vector<NodeStruct>& list, GLuint & initialNode, GLuint & initialValue)
+{
+    parent.childPtr = initialNode; initialNode+=8;
+    parent.valueIndex = initialValue; initialValue++;
+    for (int i = 0; i < 8; i++) {
+        NodeStruct n;
+        n.parentPtr = parentIndex;
+        list.push_back(n);
+    }
+}
+
+std::vector<Octree::NodeStruct> Octree::generateOctree(int level)
+{
+    pregeneratedInitialOctree.clear();
+    initialNodeCounterValue = 1; 
+    initialNodeValueCounterValue = 0;
+    std::vector<NodeStruct> octree{ {0, 0, 0, 0, 0} };
+    std::vector<NodeStruct> pendingList;
+    generateChildrenNodes(0, octree[0], pendingList, initialNodeCounterValue, initialNodeValueCounterValue);
+    int startIndex = octree.size();
+    int count = pendingList.size();
+    for (auto & n : pendingList) {
+        octree.push_back(n);
+    }
+    pendingList.clear();
+    for (int i = 1; i < level; i++) {
+        for (int j = startIndex; j < startIndex + count; j++) {
+            generateChildrenNodes(j, octree[j], pendingList, initialNodeCounterValue, initialNodeValueCounterValue);
+        }
+        startIndex = octree.size();
+        count = pendingList.size();
+        for (auto & n : pendingList) {
+            octree.push_back(n);
+        }
+        pendingList.clear();
+    }
+    pregeneratedInitialOctree = octree;
+    return octree;
 }

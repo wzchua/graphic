@@ -1,6 +1,8 @@
 layout(binding = 4) coherent buffer FragmentListBlock2 {
     FragmentStruct fragInput[];
 };
+
+
 const vec2 size = vec2(2.0,0.0);
 const ivec3 off = ivec3(-1,0,1);
 const uint ISINPROCESS = 0 - 1;
@@ -21,15 +23,23 @@ uint checkRoot() {
 
 uint checkAndInitializeNode(uint parentNodeIndex) { 
     uint childIndex = atomicCompSwap(node[parentNodeIndex].childPtr, 0, ISINPROCESS);
+    if(childIndex == ISINPROCESS) { //node is being created
+        return ISINPROCESS;
+    }
 
     if(childIndex == 0) { //node is unintialized
-        childIndex = atomicAdd(nodeCounter, 8);     
-        node[parentNodeIndex].valueIndex = atomicAdd(brickCounter, 1);
-        for(int i = 0; i < 8; i++) {
-            node[childIndex + i].parentPtr = parentNodeIndex;
+        childIndex = atomicAdd(nodeCounter, 8);
+        if(childIndex + 8 >= maxNoOfNodes) {
+            logFragment(vec4(55.0f), vec4(55.0f), 55, 55, 55, 55);
+            //discard;
+        } else {                
+            node[parentNodeIndex].valueIndex = atomicAdd(brickCounter, 1);
+            for(int i = 0; i < 8; i++) {
+                node[childIndex + i].parentPtr = parentNodeIndex;
+            }
+            // setup inner pointers
+            atomicCompSwap(node[parentNodeIndex].childPtr, ISINPROCESS, childIndex);
         }
-        // setup inner pointers
-        atomicCompSwap(node[parentNodeIndex].childPtr, ISINPROCESS, childIndex);        
     }
     return childIndex;
 }
@@ -53,11 +63,18 @@ void deferToFragList(vec3 pos, vec4 color, vec3 normal) {
 // leaf host node host 2x2 voxels
 uint checkAndInitializeLeafHost(uint leafIndex) {
     uint leafState = atomicCompSwap(node[leafIndex].childPtr, 0, ISINPROCESS);
+    if(leafState == ISINPROCESS){
+        return ISINPROCESS;
+    }
 
     if(leafState == 0) {
         node[leafIndex].valueIndex = atomicAdd(brickCounter, 1);
         uint index = atomicAdd(leafCounter, 1);
-        leafList[index] = leafIndex;
+        if(index < maxNoOfFragments) {
+            leafList[index] = leafIndex;
+        } else {
+            atomicAdd(leafCounter, uint(-1));
+        }
         atomicCompSwap(node[leafIndex].childPtr, ISINPROCESS, LEAFHOST);
     }
     
@@ -143,9 +160,6 @@ void addToOctree(vec3 pos, vec4 color, vec3 normal) {
         refOffset = samplePos - 2 * floor(prevSamplePos);
         //check node i: 0 to 2^i
         childNodeIndex = checkAndInitializeNode(parentNodeIndex);
-        if(gl_GlobalInvocationID.x == 0) {
-            logFragment(vec4(pos, 1.0f), vec4(samplePos, 1.0f), i, childNodeIndex, getPtrOffset(ivec3(refOffset)), 0);
-        }
         if(childNodeIndex == ISINPROCESS) {
             deferToFragList(pos, color, normal);
             return;
@@ -158,24 +172,6 @@ void addToOctree(vec3 pos, vec4 color, vec3 normal) {
     }
     //add to leaf 
     uint leafState = checkAndInitializeLeafHost(parentNodeIndex);
-    if(gl_GlobalInvocationID.x == 0) {
-        logFragment(vec4(pos, 1.0f), color, 0, parentNodeIndex, leafState, 0);
-    }
-    if(leafState == ISINPROCESS) {
-        deferToFragList(pos, color, normal);
-        return;
-    }
-    prevSamplePos = samplePos;
-    samplePos = pos * levels[leafLevel];
-    refOffset = samplePos - 2 * floor(prevSamplePos);    
-    ivec3 innerFramePos = ivec3(refOffset);
-    atomicOr(node[parentNodeIndex].childBit, 1 << getPtrOffset(innerFramePos));
-
-    uint valueIndex = node[parentNodeIndex].valueIndex;
-    atomicColorAvg(valueIndex, color);
-    atomicNormalAvg(valueIndex, vec4(normal, 1.0f));
-    //atomicAdd(logCounter, 1);
-    //logFragment(vec4(pos, 1.0f), color, 0, 0, 0, 0);
 }
 
 

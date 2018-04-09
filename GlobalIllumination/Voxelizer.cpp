@@ -47,7 +47,6 @@ Voxelizer::Voxelizer()
 
     GlobalShaderComponents::initializeUBO(voxelMatrixUBOId, sizeof(VoxelizeBlock), &voxelMatrixData, GL_STATIC_DRAW);
     GlobalShaderComponents::initializeUBO(globalVariablesUBOId, sizeof(GlobalsBlock), &globalVariablesData, GL_STATIC_DRAW);
-    ssboCounterSet.initialize(GL_SHADER_STORAGE_BUFFER, sizeof(CounterBlock), &mCounterBlock, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, 0);
     ShaderLogger::initilizeLogBuffer(ssboLogList, maxLogCount);
 
     mModuleGBufferGen.initialize();
@@ -56,11 +55,11 @@ Voxelizer::Voxelizer()
     mModuleFrameMuxer.initialize();
     switch(mType) {
     case OCTREE:
+        //mModuleRenderToFragmentList.initialize();
         mOctree.initialize();
-
         mModuleRenderToOctree.initialize();
         mModuleAddToOctree.initialize();
-        //mModuleRenderLightIntoOctree.initialize();
+        mModuleRenderLightIntoOctree.initialize();
         //mModuleFilterOctree.initialize();
         //mModuleRenderVCT.initialize();
 
@@ -84,6 +83,7 @@ Voxelizer::Voxelizer()
         throw new std::exception("Invalid enum mType");
     }
 
+    ssboCounterSet.initialize(GL_SHADER_STORAGE_BUFFER, sizeof(CounterBlock), &mZeroedCounterBlock, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, 0);
     mModuleVoxelVisualizer.initialize();
 
     //bindings
@@ -133,17 +133,23 @@ void Voxelizer::render(Scene& scene)
     switch (mType) {
     case OCTREE:
     {
+       // mModuleRenderToFragmentList.run(scene, mOctree.getFragList()); timer.setTimestamp();
         mModuleRenderToOctree.run(scene, mOctree); timer.setTimestamp();
-        auto cPtr = ssboCounterSet.getPtr();
-        auto c2 = *cPtr;
-        ssboCounterSet.unMapPtr();
-        auto node = mOctree.getNodeList().getPtr();
-        std::vector<Octree::NodeStruct> nodeList;
-        for (int i = 0; i < c2.nodeCounter; i++) {
-        nodeList.push_back(node[i]);
-        }
-        mOctree.getNodeList().unMapPtr();
         mModuleAddToOctree.run(mOctree, ssboCounterSet); timer.setTimestamp();
+       /* if (toDumpCurrentGBuffer) {
+            auto cPtr = ssboCounterSet.getPtr();
+            auto c2 = *cPtr;
+            ssboCounterSet.unMapPtr();
+            std::vector<LogStruct> logs;
+            ShaderLogger::getLogs(ssboLogList, c2.logCounter, logs);
+            auto node = mOctree.getNodeList().getPtr();
+            std::vector<Octree::NodeStruct> nodeList;
+            for (int i = 0; i < c2.nodeCounter; i++) {
+                nodeList.push_back(node[i]);
+            }
+            std::sort(nodeList.begin(), nodeList.end(), [](Octree::NodeStruct& n, Octree::NodeStruct& n2) { return n.parentPtr < n2.parentPtr; });
+            mOctree.getNodeList().unMapPtr();
+        }*/
 
         // inject light
         mModuleRenderLightIntoOctree.run(scene, mOctree, voxelMatrixUBOId); timer.setTimestamp();

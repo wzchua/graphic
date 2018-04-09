@@ -20,6 +20,9 @@ void imageAtomicRGBA8Avg( layout ( r32ui ) coherent volatile uimage3D imgUI , iv
     while ( ( curStoredVal = imageAtomicCompSwap( imgUI , coords , prevStoredVal , newVal )) != prevStoredVal) {
         prevStoredVal = curStoredVal;
         vec4 rval = convRGBA8ToVec4( curStoredVal);
+        if(rval.w >= 255.0f) {          
+            return;
+        }
         rval.xyz =( rval.xyz * rval.w) ; // Denormalize
         vec4 curValF = rval + val; // Add new value
         curValF.xyz /=( curValF.w); // Renormalize

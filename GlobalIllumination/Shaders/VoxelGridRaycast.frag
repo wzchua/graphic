@@ -89,18 +89,18 @@ void main() {
     bool hasHit = false;
     bool isRayInCube = true;
     vec4 color;
-    if(gl_FragCoord.x < 1 && gl_FragCoord.y < 1) {        
-        logFragment(vec4(rayPosition, 1.0f), vec4(gl_FragCoord.xyz, 1.0f), 0, 0, height, width);
-    }
+    // if(gl_FragCoord.x < 1 && gl_FragCoord.y < 1) {        
+    //     logFragment(vec4(rayPosition, 1.0f), vec4(gl_FragCoord.xyz, 1.0f), 0, 0, height, width);
+    // }
     //ray march
     do {
         rayPosition += dir;
         isRayInCube = isRayInCubeSpace(rayPosition);
         color = imageLoad(colorGrid, ivec3(rayPosition));
         hasHit = color.a != 0.0f;
-        if(gl_FragCoord.x < 1 && gl_FragCoord.y < 1) {        
-            logFragment(vec4(rayPosition, 1.0f), color, uint(hasHit), 0, height, width);
-        }
+        // if(gl_FragCoord.x < 1 && gl_FragCoord.y < 1) {        
+        //     logFragment(vec4(rayPosition, 1.0f), color, uint(hasHit), 0, height, width);
+        // }
     } while(!hasHit && isRayInCube);
 
     if(isRayInCube) {

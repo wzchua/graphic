@@ -134,6 +134,19 @@ bool isRayInCubeSpace(vec3 rayPosition) {
         && rayPosition.z >= 0.0f && rayPosition.z <=512.0f;
 }
 
+vec4 transformEnergyToColor(uint energy) {
+    if(energy == 0) {
+        return vec4(0.0f);
+    } else if(energy <= 8388607) {
+        return vec4(0.0f, 0.0f, float(energy) / 8388607.0f, 1.0f);
+    } else if(energy <= 67108863) {
+        return vec4(0.0f, float(energy) / 67108863.0f, 0.0f, 1.0f);
+    } else if(energy <= 536870911) {
+        return vec4(float(energy) / 536870911.0f, 0.0f, 0.0f, 1.0f);
+    } else {
+        return vec4(vec3(float(energy) / 4294967295.0f), 1.0f);
+    }
+}
 layout (location = 0) out vec4 FragColor;
 void main() {    
     
@@ -150,9 +163,9 @@ void main() {
     vec3 px = x * (2 * U * halfViewWidth)/width; 
     vec3 py = y * (2 * V * halfViewHeight)/height;
     vec3 dir = normalize(viewBottomLeft + px + py - rOrigin);
-    if( x < 1 && y < 1) {
-        logFragment(vec4(px, 0f), vec4(dir, imageAspectRatio), height, width, 0, 0);
-    }
+    // if( x < 1 && y < 1) {
+    //     logFragment(vec4(px, 0f), vec4(dir, imageAspectRatio), height, width, 0, 0);
+    // }
     uint leafIndex = 0;
     vec3 rayPosition = rOrigin;
     vec3 refOffset;
@@ -160,9 +173,9 @@ void main() {
     //ray march
     do {
         
-        if( x < 1 && y < 1) {
-            logFragment(vec4(rayPosition, x), vec4(dir, y), leafIndex, 0, 0, isRayInCube ? 1 : 0);
-        }
+        // if( x < 1 && y < 1) {
+        //     logFragment(vec4(rayPosition, x), vec4(dir, y), leafIndex, 0, 0, isRayInCube ? 1 : 0);
+        // }
         rayPosition += dir;
         isRayInCube = isRayInCubeSpace(rayPosition);
         if(isRayInCube) {
@@ -176,11 +189,15 @@ void main() {
             FragColor = unpackUnorm4x8(nodeBrick[valueIndex].color);
         } else if(isEnergy == 2) {
             FragColor = unpackUnorm4x8(nodeBrick[valueIndex].normal);
+        } else if(isEnergy == 3) {
+            FragColor = unpackUnorm4x8(nodeBrick[valueIndex].lightDirection);
+        } else {
+            FragColor = transformEnergyToColor(nodeBrick[valueIndex].lightEnergy);
         }
         
-        if( x < 1 && y < 1) {
-            logFragment(vec4(rayPosition, x), FragColor, leafIndex, valueIndex, 0, isRayInCube ? 1 : 0);
-        }
+        // if( x < 1 && y < 1) {
+        //     logFragment(vec4(rayPosition, x), FragColor, leafIndex, valueIndex, 0, isRayInCube ? 1 : 0);
+        // }
 
     } else {
         discard;

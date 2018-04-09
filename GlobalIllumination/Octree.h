@@ -12,17 +12,17 @@ class Octree
 {
 public:
     struct NodeStruct {
-        GLuint parentPtr;
-        GLuint childPtr;
-        GLuint childBit;
-        GLuint lightBit;
-        GLuint valueIndex;
-        GLuint xPositive;
-        GLuint xNegative;
-        GLuint yPositive;
-        GLuint yNegative;
-        GLuint zPositive;
-        GLuint zNegative;
+        GLuint parentPtr = 0;
+        GLuint childPtr = 0;
+        GLuint childBit = 0;
+        GLuint lightBit = 0;
+        GLuint valueIndex = 0;
+        GLuint xPositive = 0;
+        GLuint xNegative = 0;
+        GLuint yPositive = 0;
+        GLuint yNegative = 0;
+        GLuint zPositive = 0;
+        GLuint zNegative = 0;
     };
     static std::string nodeStructShaderCodeString(GLuint level) {
         std::string s = R"(struct NodeStruct {
@@ -91,31 +91,22 @@ layout(binding = )" + std::to_string(level);
     GLBufferObject<GLuint> & getLeafIndexList();
     GLBufferObject<FragStruct> & getFragList();
     //GLuint getTextureIds(TexType type);
-    const static GLuint getInitialNodeCounterValue();
-    const static GLuint getInitialNodeValueCounterValue();
+    GLuint getInitialNodeCounterValue();
+    GLuint getInitialNodeValueCounterValue();
     Octree();
     ~Octree();
     private:
         unsigned int fragCount = 1024 * 1024 * 2;
-        unsigned int nodeCount = 1024 * 1024 * 2;
+        unsigned int nodeCount = 1024 * 1024 * 4;
         GLBufferObject<NodeStruct> ssboNodeList;
         GLBufferObject<NodeValueStruct> ssboNodeValueList;
         GLBufferObject<GLuint> ssboLeafIndexList;
         GLBufferObject<FragStruct> ssboFragList;
-        const std::vector<NodeStruct> pregeneratedInitialOctree //pregenerated the octree up to level 2
-        { {0, 1, 0, 0, 0}, 
-            {0, 9, 0, 0, 1}, {0, 17, 0, 0, 2}, {0, 25, 0, 0, 3}, {0, 33, 0, 0, 4}, {0, 41, 0, 0, 5},{0, 49, 0, 0, 6}, {0, 57, 0, 0, 7}, {0, 65, 0, 0, 8},
-            {1, 0, 0, 0, 0},{ 1, 0, 0, 0, 0 },{ 1, 0, 0, 0, 0 },{ 1, 0, 0, 0, 0 },{ 1, 0, 0, 0, 0 },{ 1, 0, 0, 0, 0 },{ 1, 0, 0, 0, 0 },{ 1, 0, 0, 0, 0 },
-            { 2, 0, 0, 0, 0 },{ 2, 0, 0, 0, 0 },{ 2, 0, 0, 0, 0 },{ 2, 0, 0, 0, 0 },{ 2, 0, 0, 0, 0 },{ 2, 0, 0, 0, 0 },{ 2, 0, 0, 0, 0 },{ 2, 0, 0, 0, 0 }, 
-            { 3, 0, 0, 0, 0 },{ 3, 0, 0, 0, 0 },{ 3, 0, 0, 0, 0 },{ 3, 0, 0, 0, 0 },{ 3, 0, 0, 0, 0 },{ 3, 0, 0, 0, 0 },{ 3, 0, 0, 0, 0 },{ 3, 0, 0, 0, 0 },
-            { 4, 0, 0, 0, 0 },{ 4, 0, 0, 0, 0 },{ 4, 0, 0, 0, 0 },{ 4, 0, 0, 0, 0 },{ 4, 0, 0, 0, 0 },{ 4, 0, 0, 0, 0 },{ 4, 0, 0, 0, 0 },{ 4, 0, 0, 0, 0 }, 
-            { 5, 0, 0, 0, 0 },{ 5, 0, 0, 0, 0 },{ 5, 0, 0, 0, 0 },{ 5, 0, 0, 0, 0 },{ 5, 0, 0, 0, 0 },{ 5, 0, 0, 0, 0 },{ 5, 0, 0, 0, 0 },{ 5, 0, 0, 0, 0 },
-            { 6, 0, 0, 0, 0 },{ 6, 0, 0, 0, 0 },{ 6, 0, 0, 0, 0 },{ 6, 0, 0, 0, 0 },{ 6, 0, 0, 0, 0 },{ 6, 0, 0, 0, 0 },{ 6, 0, 0, 0, 0 },{ 6, 0, 0, 0, 0 },
-            { 7, 0, 0, 0, 0 },{ 7, 0, 0, 0, 0 },{ 7, 0, 0, 0, 0 },{ 7, 0, 0, 0, 0 },{ 7, 0, 0, 0, 0 },{ 7, 0, 0, 0, 0 },{ 7, 0, 0, 0, 0 },{ 7, 0, 0, 0, 0 }, 
-            { 8, 0, 0, 0, 0 },{ 8, 0, 0, 0, 0 },{ 8, 0, 0, 0, 0 },{ 8, 0, 0, 0, 0 },{ 8, 0, 0, 0, 0 },{ 8, 0, 0, 0, 0 },{ 8, 0, 0, 0, 0 },{ 8, 0, 0, 0, 0 } };
-        const static GLuint initialNodeCounterValue = 73;
-        const static GLuint initialNodeValueCounterValue = 9;
-
+        std::vector<NodeStruct> pregeneratedInitialOctree;
+        GLuint initialNodeCounterValue;
+        GLuint initialNodeValueCounterValue;
+        void generateChildrenNodes(GLuint parentIndex, NodeStruct& parent, std::vector<NodeStruct> & list, GLuint& initialNode, GLuint& initialValue);
+        std::vector<NodeStruct> generateOctree(int level);
         /*
         int brickDim = 2;
         int texWdith = 512;

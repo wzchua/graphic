@@ -23,18 +23,14 @@ uint checkAndInitializeNode(uint parentNodeIndex) {
     }
 
     if(childIndex == 0) { //node is unintialized
-        childIndex = atomicAdd(nodeCounter, 8);
-        if(childIndex + 8 >= maxNoOfNodes) {
-            logFragment(vec4(55.0f), vec4(55.0f), 55, 55, 55, 55);
-            discard;
-        } else {                
-            node[parentNodeIndex].valueIndex = atomicAdd(brickCounter, 1);
-            for(int i = 0; i < 8; i++) {
-                node[childIndex + i].parentPtr = parentNodeIndex;
-            }
-            // setup inner pointers
-            atomicCompSwap(node[parentNodeIndex].childPtr, ISINPROCESS, childIndex);
+        childIndex = atomicAdd(nodeCounter, 8);            
+        node[parentNodeIndex].valueIndex = atomicAdd(brickCounter, 1);
+        for(int i = 0; i < 8; i++) {
+            node[childIndex + i].parentPtr = parentNodeIndex;
         }
+        // setup inner pointers
+        atomicCompSwap(node[parentNodeIndex].childPtr, ISINPROCESS, childIndex);
+    
     }
     return childIndex;
 }
@@ -44,7 +40,7 @@ void deferToFragList(vec3 pos, vec4 color, vec3 normal) {
     //uint index = atomicCounterIncrement(fragListPtr);
     if(index < maxNoOfFragments) {
         FragmentStruct f;
-        f.position = vec4(floor(pos), 1.0f);
+        f.position = vec4(pos, 1.0f);
         f.color = color;
         f.normal = vec4(normal, 1.0f);
         frag[index] = f;
@@ -202,5 +198,5 @@ void main() {
         nwcNormal = normalize(nwcNormal + cross(va, vb));
     }
     vec4 color = vec4(diffuse.rgb * texture(texDiffuse, fTexCoord).rgb, 1.0f);
-    addToOctree(wcPosition, color, nwcNormal);
+    addToOctree(floor(wcPosition), color, nwcNormal);
 }

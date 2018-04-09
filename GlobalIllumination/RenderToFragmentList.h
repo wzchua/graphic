@@ -19,7 +19,7 @@ private:
 public:
     int projectionAxis = 0;
     void initialize();
-    void run(Scene& inputScene, GLBufferObject<CounterBlock> & counterSet, GLBufferObject<FragStruct> & ssboFragList, GLuint voxelizeMatrixBlock, GLuint logUniformBlock, GLBufferObject<LogStruct> & ssboLogList);
+    void run(Scene& inputScene, GLBufferObject<FragStruct> & ssboFragList);
     RenderToFragmentList();
     ~RenderToFragmentList();
 };

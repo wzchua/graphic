@@ -15,6 +15,7 @@ void RenderLightIntoOctree::initialize()
     compShaderString << GlobalShaderComponents::getHeader() << GlobalShaderComponents::getComputeShaderInputLayout(mWorkGroupSize.x, mWorkGroupSize.y);
     compShaderString << voxelizeBlockString(GlobalShaderComponents::VOXELIZATION_MATRIX_UBO_BINDING) << Scene::getLightUBOCode(GlobalShaderComponents::LIGHT_UBO_BINDING);
     compShaderString << counterBlockBufferShaderCodeString(GlobalShaderComponents::COUNTER_SSBO_BINDING) << logFunctionAndBufferShaderCodeString(GlobalShaderComponents::LOG_SSBO_BINDING);
+    compShaderString << Octree::nodeStructShaderCodeString(GlobalCom::OCTREE_NODE_SSBO_BINDING) << Octree::nodeValueStructShaderCodeString(GlobalCom::OCTREE_NODE_VALUE_SSBO_BINDING) << Octree::leafStructShaderCodeString(GlobalCom::OCTREE_LEAF_LIST_SSBO_BINDING);
     shader.generateShader(compShaderString, "./Shaders/LightInjectionIntoOctree.comp", ShaderProgram::COMPUTE);
     shader.linkCompileValidate();;
 }
