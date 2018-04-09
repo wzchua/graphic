@@ -2,8 +2,10 @@
 #include <glad\glad.h>
 #include <glm\glm.hpp>
 #include <string>
+#include <vector>
 
 #include "GLBufferObject.h"
+#include "FragStruct.h"
 
 
 class Octree
@@ -87,7 +89,10 @@ layout(binding = )" + std::to_string(level);
     GLBufferObject<NodeStruct> & getNodeList();
     GLBufferObject<NodeValueStruct> & getNodeValueList();
     GLBufferObject<GLuint> & getLeafIndexList();
+    GLBufferObject<FragStruct> & getFragList();
     //GLuint getTextureIds(TexType type);
+    const static GLuint getInitialNodeCounterValue();
+    const static GLuint getInitialNodeValueCounterValue();
     Octree();
     ~Octree();
     private:
@@ -96,7 +101,20 @@ layout(binding = )" + std::to_string(level);
         GLBufferObject<NodeStruct> ssboNodeList;
         GLBufferObject<NodeValueStruct> ssboNodeValueList;
         GLBufferObject<GLuint> ssboLeafIndexList;
-
+        GLBufferObject<FragStruct> ssboFragList;
+        const std::vector<NodeStruct> pregeneratedInitialOctree //pregenerated the octree up to level 2
+        { {0, 1, 0, 0, 0}, 
+            {0, 9, 0, 0, 1}, {0, 17, 0, 0, 2}, {0, 25, 0, 0, 3}, {0, 33, 0, 0, 4}, {0, 41, 0, 0, 5},{0, 49, 0, 0, 6}, {0, 57, 0, 0, 7}, {0, 65, 0, 0, 8},
+            {1, 0, 0, 0, 0},{ 1, 0, 0, 0, 0 },{ 1, 0, 0, 0, 0 },{ 1, 0, 0, 0, 0 },{ 1, 0, 0, 0, 0 },{ 1, 0, 0, 0, 0 },{ 1, 0, 0, 0, 0 },{ 1, 0, 0, 0, 0 },
+            { 2, 0, 0, 0, 0 },{ 2, 0, 0, 0, 0 },{ 2, 0, 0, 0, 0 },{ 2, 0, 0, 0, 0 },{ 2, 0, 0, 0, 0 },{ 2, 0, 0, 0, 0 },{ 2, 0, 0, 0, 0 },{ 2, 0, 0, 0, 0 }, 
+            { 3, 0, 0, 0, 0 },{ 3, 0, 0, 0, 0 },{ 3, 0, 0, 0, 0 },{ 3, 0, 0, 0, 0 },{ 3, 0, 0, 0, 0 },{ 3, 0, 0, 0, 0 },{ 3, 0, 0, 0, 0 },{ 3, 0, 0, 0, 0 },
+            { 4, 0, 0, 0, 0 },{ 4, 0, 0, 0, 0 },{ 4, 0, 0, 0, 0 },{ 4, 0, 0, 0, 0 },{ 4, 0, 0, 0, 0 },{ 4, 0, 0, 0, 0 },{ 4, 0, 0, 0, 0 },{ 4, 0, 0, 0, 0 }, 
+            { 5, 0, 0, 0, 0 },{ 5, 0, 0, 0, 0 },{ 5, 0, 0, 0, 0 },{ 5, 0, 0, 0, 0 },{ 5, 0, 0, 0, 0 },{ 5, 0, 0, 0, 0 },{ 5, 0, 0, 0, 0 },{ 5, 0, 0, 0, 0 },
+            { 6, 0, 0, 0, 0 },{ 6, 0, 0, 0, 0 },{ 6, 0, 0, 0, 0 },{ 6, 0, 0, 0, 0 },{ 6, 0, 0, 0, 0 },{ 6, 0, 0, 0, 0 },{ 6, 0, 0, 0, 0 },{ 6, 0, 0, 0, 0 },
+            { 7, 0, 0, 0, 0 },{ 7, 0, 0, 0, 0 },{ 7, 0, 0, 0, 0 },{ 7, 0, 0, 0, 0 },{ 7, 0, 0, 0, 0 },{ 7, 0, 0, 0, 0 },{ 7, 0, 0, 0, 0 },{ 7, 0, 0, 0, 0 }, 
+            { 8, 0, 0, 0, 0 },{ 8, 0, 0, 0, 0 },{ 8, 0, 0, 0, 0 },{ 8, 0, 0, 0, 0 },{ 8, 0, 0, 0, 0 },{ 8, 0, 0, 0, 0 },{ 8, 0, 0, 0, 0 },{ 8, 0, 0, 0, 0 } };
+        const static GLuint initialNodeCounterValue = 73;
+        const static GLuint initialNodeValueCounterValue = 9;
 
         /*
         int brickDim = 2;

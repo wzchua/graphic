@@ -4,30 +4,25 @@
 
 in vec3 wcPosition;   // Vertex position in scaled world space.
 
-layout(binding = 0) uniform RayCastBlock {
+layout(binding = 3, std140) uniform GlobalsUniformBlock{
+    uint maxNoOfFragments;
+    uint maxNoOfNodes;
+    uint maxNoOfBricks;
+    uint maxNoOfLogs;
+};
+layout(binding = 9) uniform RayCastBlock {
     mat4 ViewToVoxelMat;
     vec4 camPosition;
     vec4 camForward;
     vec4 camUp;
     int height;
     int width;
-};
-layout(binding = 7, std140) uniform LimitsUniformBlock {
-    uint maxNoOfFragments;
-    uint maxNoOfNodes;
-    uint maxNoOfBricks;
-    uint maxNoOfLogs;
+    int isEnergy;
+    int gridDef;
+    int mipLevel;
 };
 
-layout(binding = 4, RGBA8) uniform image3D colorBrick;
-//layout(binding = 5, RGBA8) uniform image3D normalBrick;
-
-uniform uint INVALID = 0 - 1;
-const float levels[9] = float[9](0.00390625f, 0.0078125f,
-                                0.015625f, 0.03125f, 0.0625f,
-                                0.125f, 0.25f, 0.5f, 1.0f);
-
-layout(binding = 1) coherent buffer CounterBlock {
+layout(binding = 0) coherent buffer CounterBlock{
     uint fragmentCounter;
     uint nodeCounter;
     uint brickCounter;
@@ -35,13 +30,46 @@ layout(binding = 1) coherent buffer CounterBlock {
     uint logCounter;
     uint noOfFragments;
 };
+struct LogStruct {
+    vec4 position;
+    vec4 color;
+    uint nodeIndex;
+    uint brickPtr;
+    uint index1;
+    uint index2;
+};
+layout(binding = 1,std430) coherent buffer LogBlock{
+    uint maxLogCount; uint padding[3];
+    LogStruct logList[];
+};
+
+void logFragment(vec4 pos, vec4 color, uint nodeIndex, uint brickPtr, uint index1, uint index2) {
+    uint index = atomicAdd(logCounter, 1);
+    if(index < maxLogCount) {        
+        logList[index].position = pos;
+        logList[index].color = color;
+        logList[index].nodeIndex = nodeIndex;
+        logList[index].brickPtr = brickPtr;
+        logList[index].index1 = index1;
+        logList[index].index2 = index2;
+    } else {
+        atomicAdd(logCounter, uint(-1));
+    }
+}
+struct FragmentStruct {
+    vec4 position;
+    vec4 color;
+    vec4 normal;
+};
+layout(binding = 3) coherent buffer FragmentListBlock {
+    FragmentStruct frag[];
+};
 struct NodeStruct {
     uint parentPtr;
     uint childPtr;
     uint childBit;
-    uint modelBrickPtr;
     uint lightBit;
-    uint lightBrickPtr;
+    uint valueIndex;
     uint xPositive;
     uint xNegative;
     uint yPositive;
@@ -49,17 +77,29 @@ struct NodeStruct {
     uint zPositive;
     uint zNegative;
 };
-
-layout(binding = 2) coherent buffer NodeBlock {
+layout(binding = 2, std430) coherent buffer NodeBlock{
     NodeStruct node[];
 };
+struct NodeValueStruct {
+    uint color;
+    uint normal;
+    uint lightDirection;
+    uint lightEnergy;
+};
+layout(binding = 5, std430) coherent buffer NodeValueBlock{
+    NodeValueStruct nodeBrick[];
+};
+uniform uint INVALID = 0 - 1;
+const float levels[10] = float[10](0.001953125f, 0.00390625f, 0.0078125f,
+                                0.015625f, 0.03125f, 0.0625f,
+                                0.125f, 0.25f, 0.5f, 1.0f);
 
+const int leafLevel = 9;
 uint getPtrOffset(ivec3 frameOffset) {
     return min(frameOffset.x, 1) * 1 
     + min(frameOffset.y, 1) * 2 + min(frameOffset.z, 1) * 4;
 }
 
-const int leafLevel = 3;
 vec3 SearchOctree(vec3 pos, out uint nodeId) {
     nodeId = 0;
     vec3 prevSamplePos;
@@ -92,33 +132,6 @@ bool isRayInCubeSpace(vec3 rayPosition) {
     return rayPosition.x >= 0.0f && rayPosition.x <=512.0f
         && rayPosition.y >= 0.0f && rayPosition.y <=512.0f
         && rayPosition.z >= 0.0f && rayPosition.z <=512.0f;
-}
-
-struct LogStruct {
-    vec4 position;
-    vec4 color;
-    uint nodeIndex;
-    uint brickPtr;
-    uint index1;
-    uint index2;
-};
-
-layout(binding = 7) volatile buffer LogBlock {
-    LogStruct logList[];
-};
-
-void logFragment(vec4 pos, vec4 color, uint nodeIndex, uint brickPtr, uint index1, uint index2) {
-    uint index = atomicAdd(logCounter, 1);
-    if(index < maxNoOfLogs) {        
-        logList[index].position = pos;
-        logList[index].color = color;
-        logList[index].nodeIndex = nodeIndex;
-        logList[index].brickPtr = brickPtr;
-        logList[index].index1 = index1;
-        logList[index].index2 = index2;
-    } else {
-        atomicAdd(logCounter, uint(-1));
-    }
 }
 
 layout (location = 0) out vec4 FragColor;
@@ -158,13 +171,15 @@ void main() {
     } while(leafIndex == INVALID && isRayInCube);
 
     if(isRayInCube) {
-        uint brickPtr = node[leafIndex].modelBrickPtr;
-        ivec3 innerFramePos = ivec3(refOffset);
-        ivec3 brickPos = innerFramePos + ivec3((brickPtr & 0x1FF) * 2, (brickPtr >> 9) * 2, 0);
-        FragColor = imageLoad(colorBrick, brickPos); 
+        uint valueIndex = node[leafIndex].valueIndex;        
+        if(isEnergy == 1) {
+            FragColor = unpackUnorm4x8(nodeBrick[valueIndex].color);
+        } else if(isEnergy == 2) {
+            FragColor = unpackUnorm4x8(nodeBrick[valueIndex].normal);
+        }
         
         if( x < 1 && y < 1) {
-            logFragment(vec4(rayPosition, x), FragColor, leafIndex, uint(brickPos.x), uint(brickPos.y), isRayInCube ? 1 : 0);
+            logFragment(vec4(rayPosition, x), FragColor, leafIndex, valueIndex, 0, isRayInCube ? 1 : 0);
         }
 
     } else {

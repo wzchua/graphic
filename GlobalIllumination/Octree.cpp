@@ -16,10 +16,12 @@ void Octree::initialize3DTextures(GLuint & textureId, GLsizei levels, GLenum int
 
 void Octree::initialize()
 {
-    ssboNodeList.initialize(GL_SHADER_STORAGE_BUFFER, sizeof(NodeStruct) * nodeCount, NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, 0);
+    ssboNodeList.initialize(GL_SHADER_STORAGE_BUFFER, sizeof(NodeStruct) * nodeCount, NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_DYNAMIC_STORAGE_BIT, 0);
     ssboNodeValueList.initialize(GL_SHADER_STORAGE_BUFFER, sizeof(NodeValueStruct) * nodeCount, NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, 0);
     ssboLeafIndexList.initialize(GL_SHADER_STORAGE_BUFFER, sizeof(GLuint) * nodeCount, NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, 0);
+    ssboFragList.initialize(GL_SHADER_STORAGE_BUFFER, sizeof(FragStruct) * fragCount, NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, 0);
 
+    glNamedBufferSubData(ssboNodeList.getId(), 0, pregeneratedInitialOctree.size() * sizeof(NodeStruct), pregeneratedInitialOctree.data());
     /*
     initialize3DTextures(texture3DColorList, 2, GL_RGBA8, texWdith * brickDim, texHeight * brickDim, brickDim);
     initialize3DTextures(texture3DNormalList, 2, GL_RGBA8, texWdith * brickDim, texHeight * brickDim, brickDim);
@@ -32,6 +34,7 @@ void Octree::resetData()
 {
 
     ssboNodeList.clearData();
+    glNamedBufferSubData(ssboNodeList.getId(), 0, pregeneratedInitialOctree.size() * sizeof(NodeStruct), pregeneratedInitialOctree.data());
     ssboNodeValueList.clearData();
     /*
     auto node = ssboNodeList.getPtr();
@@ -65,6 +68,18 @@ GLBufferObject<Octree::NodeValueStruct>& Octree::getNodeValueList()
 GLBufferObject<GLuint>& Octree::getLeafIndexList()
 {
     return ssboLeafIndexList;
+}
+GLBufferObject<FragStruct>& Octree::getFragList()
+{
+    return ssboFragList;
+}
+const GLuint Octree::getInitialNodeCounterValue()
+{
+    return initialNodeCounterValue;
+}
+const GLuint Octree::getInitialNodeValueCounterValue()
+{
+    return initialNodeValueCounterValue;
 }
 /*
 GLuint Octree::getTextureIds(TexType type)

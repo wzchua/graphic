@@ -21,12 +21,12 @@ private:
     ShaderProgram addToOctreeShader;
     GLBufferObject<FragStruct> ssboFragList2;
     GLuint fragCount = 1024 * 512;
+    const glm::ivec3 mWorkGroupSize{ 512, 1, 1 };
 
     bool hasInitialized = false;
 public:
     void initialize();
-    void run(Octree & octree, GLBufferObject<FragStruct> & ssboFragList, GLBufferObject<CounterBlock> & counterSet,
-            GLuint logUniformBlock, GLBufferObject<LogStruct> & ssboLogList);
+    void run(Octree & octree, GLBufferObject<CounterBlock> & counterSet);
     AddToOctree();
     ~AddToOctree();
 };

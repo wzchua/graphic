@@ -14,8 +14,15 @@ void RenderToGrid::initialize()
     vertShaderString << voxelizeBlockString(GlobalCom::VOXELIZATION_MATRIX_UBO_BINDING) << counterBlockBufferShaderCodeString(GlobalCom::COUNTER_SSBO_BINDING) << logFunctionAndBufferShaderCodeString(GlobalCom::LOG_SSBO_BINDING);
 
     voxelizeGridShader.generateShader(vertShaderString, "./Shaders/Voxelize.vert", ShaderProgram::VERTEX);
-    voxelizeGridShader.generateShader("./Shaders/Voxelize.geom", ShaderProgram::GEOMETRY);
-    voxelizeGridShader.generateShader("./Shaders/VoxelizeGrid.frag", ShaderProgram::FRAGMENT);
+    std::stringstream geomShaderString;
+    geomShaderString << GlobalCom::getHeader() << GlobalCom::getGeomTripleInput() << GlobalCom::getGeomToFragTripleOutput();
+    voxelizeGridShader.generateShader(geomShaderString, "./Shaders/Voxelize.geom", ShaderProgram::GEOMETRY);
+
+    std::stringstream fragShaderString;
+    fragShaderString << GlobalCom::getHeader() << GlobalCom::getFragTripleInput();
+    fragShaderString << GlobalCom::getMaterialUBOCode() << GlobalCom::getGlobalVariablesUBOCode();
+    fragShaderString << counterBlockBufferShaderCodeString(GlobalCom::COUNTER_SSBO_BINDING) << logFunctionAndBufferShaderCodeString(GlobalCom::LOG_SSBO_BINDING);
+    voxelizeGridShader.generateShader(fragShaderString, "./Shaders/VoxelizeGrid.frag", ShaderProgram::FRAGMENT);
     voxelizeGridShader.linkCompileValidate();
 
     glGenTextures(1, &texture3DCounterList);
@@ -31,15 +38,9 @@ void RenderToGrid::initialize()
     glBindTexture(GL_TEXTURE_3D, 0);
 }
 
-void RenderToGrid::run(Scene& inputScene, GLBufferObject<CounterBlock> & ssboCounterSet, GLuint voxelizeMatrixBlock, GLuint logUniformBlock, GLBufferObject<LogStruct> & ssboLogList, GLuint texture3DColor, GLuint texture3DNormal, GLBufferObject<glm::vec4> & voxelList)
+void RenderToGrid::run(Scene& inputScene, GLBufferObject<CounterBlock> & ssboCounterSet, GLuint voxelizeMatrixBlock, GLuint logUniformBlock, GLBufferObject<LogStruct> & ssboLogList, GLuint texture3DColor, GLuint texture3DNormal)
 {
     GLuint currentShaderProgram = voxelizeGridShader.use();
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, voxelizeMatrixBlock);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 7, logUniformBlock);
-
-    ssboCounterSet.bind(1);
-    voxelList.bind(2);
-    ssboLogList.bind(7);
 
     glBindImageTexture(4, texture3DColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
     glBindImageTexture(5, texture3DNormal, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
@@ -51,8 +52,8 @@ void RenderToGrid::run(Scene& inputScene, GLBufferObject<CounterBlock> & ssboCou
     glDisable(GL_CULL_FACE);
     glDisable(GL_BLEND);
 
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     inputScene.render(currentShaderProgram);
-    glMemoryBarrier(GL_ATOMIC_COUNTER_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
 }
 
 void RenderToGrid::resetData()

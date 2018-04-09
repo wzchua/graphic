@@ -54,10 +54,10 @@ public:
     void setup();
     void dumpCurrentGBuffer();
 private:
-    int currentNumMode = 0;
+    int currentNumMode = 1;
     int gridDefinition = 0;
     int gridMipLevel = 0;
-    Type mType = CAS_GRID;
+    Type mType = GRID;
     unsigned int fragCount = 1024 * 1024 * 2;
     unsigned int nodeCount = 1024 * 1024 * 2;
     int brickDim = 2;
@@ -76,7 +76,7 @@ private:
 
     VoxelizeBlock voxelMatrixData;
     GlobalsBlock globalVariablesData = { fragCount, nodeCount, nodeCount, maxLogCount };
-    const CounterBlock mZeroedCounterBlock = { 0, 1, 0, 0, 0, 0 };
+    const CounterBlock mZeroedCounterBlock = { 0, Octree::getInitialNodeCounterValue(), Octree::getInitialNodeValueCounterValue(), 0, 0, 0 };
     CounterBlock mCounterBlock = mZeroedCounterBlock;
 
     GLuint voxelMatrixUBOId;
@@ -97,9 +97,7 @@ private:
     RenderToGrid mModuleRenderToGrid;
 
     GLBufferObject<CounterBlock> ssboCounterSet;
-    GLBufferObject<FragStruct> ssboFragmentList;
     GLBufferObject<LogStruct> ssboLogList;
-    GLBufferObject<glm::vec4> ssboVoxelList;
 
     Octree mOctree;
 

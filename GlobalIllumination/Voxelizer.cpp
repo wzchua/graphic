@@ -50,7 +50,6 @@ Voxelizer::Voxelizer()
     ssboCounterSet.initialize(GL_SHADER_STORAGE_BUFFER, sizeof(CounterBlock), &mCounterBlock, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, 0);
     ShaderLogger::initilizeLogBuffer(ssboLogList, maxLogCount);
 
-    mModuleVoxelVisualizer.initialize();
     mModuleGBufferGen.initialize();
     mModuleLightRenderer.initialize();
     mModuleComputeShadows.initialize();
@@ -64,7 +63,6 @@ Voxelizer::Voxelizer()
         //mModuleRenderLightIntoOctree.initialize();
         //mModuleFilterOctree.initialize();
         //mModuleRenderVCT.initialize();
-        ssboFragmentList.initialize(GL_SHADER_STORAGE_BUFFER, fragCount * sizeof(FragStruct), NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, 0); 
 
         break;
     case CAS_GRID:
@@ -75,7 +73,7 @@ Voxelizer::Voxelizer()
         mModuleRenderVoxelConeTraceCasGrid.initialize();
         break;
     case GRID:
-        ssboVoxelList.initialize(GL_SHADER_STORAGE_BUFFER, sizeof(glm::vec4) * 1024 * 1024 * 4, NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT);
+        //ssboVoxelList.initialize(GL_SHADER_STORAGE_BUFFER, sizeof(glm::vec4) * 1024 * 1024 * 4, NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT);
         mModuleRenderToGrid.initialize();
 
         initialize3DTextures(texture3DColorGrid, 9, GL_RGBA8, 512, 512, 512);
@@ -85,6 +83,8 @@ Voxelizer::Voxelizer()
     default:
         throw new std::exception("Invalid enum mType");
     }
+
+    mModuleVoxelVisualizer.initialize();
 
     //bindings
     GlobalShaderComponents::bindUBO(voxelMatrixUBOId, GlobalShaderComponents::UBOType::VOXELIZATION_MATRIX);
@@ -133,24 +133,23 @@ void Voxelizer::render(Scene& scene)
     switch (mType) {
     case OCTREE:
     {
-        mModuleRenderToOctree.run(scene, ssboCounterSet, voxelMatrixUBOId, globalVariablesUBOId, mOctree, ssboFragmentList, ssboLogList); timer.setTimestamp();
+        mModuleRenderToOctree.run(scene, mOctree); timer.setTimestamp();
         auto cPtr = ssboCounterSet.getPtr();
         auto c2 = *cPtr;
         ssboCounterSet.unMapPtr();
         auto node = mOctree.getNodeList().getPtr();
         std::vector<Octree::NodeStruct> nodeList;
         for (int i = 0; i < c2.nodeCounter; i++) {
-            nodeList.push_back(node[i]);
+        nodeList.push_back(node[i]);
         }
         mOctree.getNodeList().unMapPtr();
-        //mModuleAddToOctree.run(ssboNodeList, ssboFragmentList, ssboCounterSet, ssboLeafIndexList, voxelLogUniformBuffer, texture3DColorList, texture3DNormalList, ssboLogList); timer.setTimestamp();
-        mModuleVoxelVisualizer.rayCastVoxels(scene.cam, voxelMatrixData.worldToVoxelMat, mOctree, currentNumMode);
+        mModuleAddToOctree.run(mOctree, ssboCounterSet); timer.setTimestamp();
 
         // inject light
-        //mModuleRenderLightIntoOctree.run(scene, ssboNodeList, texture3DLightEnergyList, texture3DLightDirList, voxelMatrixUniformBuffer); timer.setTimestamp();
+        mModuleRenderLightIntoOctree.run(scene, mOctree, voxelMatrixUBOId); timer.setTimestamp();
 
         // filter octree geometry / light
-        //mModuleFilterOctree.run(ssboCounterSet, ssboNodeList, ssboLeafIndexList, texture3DColorList, texture3DNormalGrid, texture3DLightEnergyList, texture3DLightDirList); timer.setTimestamp();
+        mModuleFilterOctree.run(ssboCounterSet, mOctree); timer.setTimestamp();
 
         // render cam RSM and draw shading using VCT
         //mModuleRenderVCT.run(scene, ssboCounterSet, ssboNodeList, texture3DColorList, texture3DNormalGrid, texture3DLightEnergyList, texture3DLightDirList); timer.setTimestamp();
@@ -161,14 +160,7 @@ void Voxelizer::render(Scene& scene)
         mModuleRenderToCasGrid.run(scene, voxelMatrixData.worldToVoxelMat, mCascadedGrid); timer.setTimestamp();
         mModuleRenderLightIntoCasGrid.run(scene, voxelMatrixUBOId, mCascadedGrid); timer.setTimestamp();
         mModuleCasGridFilter.run(mCascadedGrid); timer.setTimestamp();
-        //mCascadedGrid.filter(); timer.setTimestamp();
         mModuleRenderVoxelConeTraceCasGrid.run(scene, ssboCounterSet, mCascadedGrid, ssboLogList, mGBuffer); timer.setTimestamp();
-    }
-    break;
-    case GRID:
-    {
-        mModuleRenderToGrid.run(scene, ssboCounterSet, voxelMatrixUBOId, globalVariablesUBOId, ssboLogList, texture3DColorGrid, texture3DNormalGrid, ssboVoxelList);
-        mModuleVoxelVisualizer.rayCastVoxelsGrid(scene.cam, voxelMatrixData.worldToVoxelMat, texture3DColorGrid, currentNumMode, gridMipLevel);
     }
     break;
     default:
@@ -202,10 +194,18 @@ void Voxelizer::render(Scene& scene)
         //if casgrid
         switch (mType) {
         case OCTREE:
+            mModuleVoxelVisualizer.rayCastVoxels(scene.cam, voxelMatrixData.worldToVoxelMat, mOctree, currentNumMode);
             break;
         case CAS_GRID:
             mModuleVoxelVisualizer.rayCastVoxels(scene.cam, voxelMatrixData.worldToVoxelMat, mCascadedGrid, currentNumMode, gridDefinition, gridMipLevel); timer.setTimestamp();
+            break;    
+        case GRID:
+            {
+                mModuleRenderToGrid.run(scene, ssboCounterSet, voxelMatrixUBOId, globalVariablesUBOId, ssboLogList, texture3DColorGrid, texture3DNormalGrid);
+                mModuleVoxelVisualizer.rayCastVoxelsGrid(scene.cam, voxelMatrixData.worldToVoxelMat, texture3DColorGrid, currentNumMode, gridMipLevel);
+            }
             break;
+
         }
 
         if (toDumpCurrentGBuffer) {

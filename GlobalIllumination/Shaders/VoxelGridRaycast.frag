@@ -16,13 +16,12 @@ layout(binding = 9) uniform RayCastBlock {
     int mipLevel;
 };
 
-layout(binding = 7, std140) uniform LimitsUniformBlock {
+layout(binding = 3, std140) uniform LimitsUniformBlock {
     uint maxNoOfFragments;
     uint maxNoOfNodes;
     uint maxNoOfBricks;
     uint maxNoOfLogs;
 };
-
 layout(binding = 4, RGBA8) uniform image3D colorGrid;
 //layout(binding = 5, RGBA8) uniform image3D normalGrid;
 
@@ -31,7 +30,7 @@ bool isRayInCubeSpace(vec3 rayPosition) {
         && rayPosition.y >= 0.0f && rayPosition.y <=512.0f
         && rayPosition.z >= 0.0f && rayPosition.z <=512.0f;
 }
-layout(binding = 1) coherent buffer CounterBlock {
+layout(binding = 0) coherent buffer CounterBlock{
     uint fragmentCounter;
     uint nodeCounter;
     uint brickCounter;
@@ -39,6 +38,7 @@ layout(binding = 1) coherent buffer CounterBlock {
     uint logCounter;
     uint noOfFragments;
 };
+
 struct LogStruct {
     vec4 position;
     vec4 color;
@@ -47,22 +47,20 @@ struct LogStruct {
     uint index1;
     uint index2;
 };
-
-layout(binding = 7) volatile buffer LogBlock {
+layout(binding = 1,std430) coherent buffer LogBlock{
+    uint maxLogCount; uint padding[3];
     LogStruct logList[];
 };
 
 void logFragment(vec4 pos, vec4 color, uint nodeIndex, uint brickPtr, uint index1, uint index2) {
     uint index = atomicAdd(logCounter, 1);
-    if(index < maxNoOfLogs) {
-        LogStruct l;
-        l.position = pos;
-        l.color = color;
-        l.nodeIndex = nodeIndex;
-        l.brickPtr = brickPtr;
-        l.index1 = index1;
-        l.index2 = index2;
-        logList[index] = l;
+    if(index < maxLogCount) {        
+        logList[index].position = pos;
+        logList[index].color = color;
+        logList[index].nodeIndex = nodeIndex;
+        logList[index].brickPtr = brickPtr;
+        logList[index].index1 = index1;
+        logList[index].index2 = index2;
     } else {
         atomicAdd(logCounter, uint(-1));
     }

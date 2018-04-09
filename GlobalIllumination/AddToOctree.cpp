@@ -1,7 +1,8 @@
 #include "AddToOctree.h"
+#include "GlobalShaderComponents.h"
 
 
-
+typedef GlobalShaderComponents GlobalCom;
 void AddToOctree::initialize()
 {
     if (hasInitialized) {
@@ -12,14 +13,21 @@ void AddToOctree::initialize()
     //computeWorkgroupShader.linkCompileValidate();
     //ssboIndirect.initialize(GL_SHADER_STORAGE_BUFFER, sizeof(Indirect), NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, 0);
 
-    addToOctreeShader.generateShader("./Shaders/AddToOctree.comp", ShaderProgram::COMPUTE);
+    std::stringstream computeShaderString;
+    computeShaderString <<  GlobalShaderComponents::getHeader() << GlobalShaderComponents::getComputeShaderInputLayout(mWorkGroupSize.x, mWorkGroupSize.y);
+    computeShaderString << GlobalCom::getGlobalVariablesUBOCode();
+    computeShaderString << counterBlockBufferShaderCodeString(GlobalCom::COUNTER_SSBO_BINDING) << logFunctionAndBufferShaderCodeString(GlobalCom::LOG_SSBO_BINDING);
+    computeShaderString << fragStructShaderCodeString(GlobalCom::FRAGMENT_LIST_SSBO_BINDING);
+    computeShaderString << Octree::nodeStructShaderCodeString(GlobalCom::OCTREE_NODE_SSBO_BINDING) << Octree::nodeValueStructShaderCodeString(GlobalCom::OCTREE_NODE_VALUE_SSBO_BINDING) << Octree::leafStructShaderCodeString(GlobalCom::OCTREE_LEAF_LIST_SSBO_BINDING);
+
+    addToOctreeShader.generateShader(computeShaderString, "./Shaders/AddToOctree.comp", ShaderProgram::COMPUTE);
     addToOctreeShader.linkCompileValidate();
     ssboFragList2.initialize(GL_SHADER_STORAGE_BUFFER, fragCount * sizeof(FragStruct), NULL, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT, 0);
 }
 
-void AddToOctree::run(Octree & octree, GLBufferObject<FragStruct>& ssboFragList, GLBufferObject<CounterBlock>& counterSet,
-                            GLuint logUniformBlock, GLBufferObject<LogStruct>& ssboLogList)
+void AddToOctree::run(Octree & octree, GLBufferObject<CounterBlock>& counterSet)
 {
+    addToOctreeShader.use();
     auto set = counterSet.getPtr();
     GLuint fragmentCount = set->fragmentCounter;
     set->noOfFragments = fragmentCount;
@@ -27,30 +35,26 @@ void AddToOctree::run(Octree & octree, GLBufferObject<FragStruct>& ssboFragList,
     counterSet.unMapPtr();
     bool isOdd = true;
 
+    auto & ssboFragList = octree.getFragList();
+
     //common bindings
-    glBindBufferBase(GL_UNIFORM_BUFFER, 7, logUniformBlock);
-    counterSet.bind(1);
-    octree.getNodeList().bind(2);
-    octree.getLeafIndexList().bind(3);
-    octree.getNodeValueList().bind(4);
-    ssboLogList.bind(7);
-    //glBindImageTexture(4, octree.getTextureIds(Octree::COLOR), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
-    //glBindImageTexture(5, octree.getTextureIds(Octree::NORMAL), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
+    octree.getNodeList().bind(GlobalCom::OCTREE_NODE_SSBO_BINDING);
+    octree.getLeafIndexList().bind(GlobalCom::OCTREE_LEAF_LIST_SSBO_BINDING);
+    octree.getNodeValueList().bind(GlobalCom::OCTREE_NODE_VALUE_SSBO_BINDING);
     
     while (fragmentCount != 0) {
-        addToOctreeShader.use();
 
         if (isOdd) {
-            ssboFragList2.bind(0); //output
-            ssboFragList.bind(4);  //input
+            ssboFragList2.bind(GlobalCom::FRAGMENT_LIST_SSBO_BINDING); //output
+            ssboFragList.bind(GlobalCom::FRAGMENT_LIST_SECONDARY_SSBO_BINDING);  //input
         }
         else {
-            ssboFragList.bind(0);  //output
-            ssboFragList2.bind(4); //input
+            ssboFragList.bind(GlobalCom::FRAGMENT_LIST_SSBO_BINDING);  //output
+            ssboFragList2.bind(GlobalCom::FRAGMENT_LIST_SECONDARY_SSBO_BINDING); //input
         }
 
-        glDispatchCompute(std::ceil(fragmentCount / 512.0), 1, 1);
-        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT); 
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+        glDispatchCompute(std::ceil(fragmentCount / mWorkGroupSize.x), 1, 1);
         
         set = counterSet.getPtr();
         fragmentCount = set->fragmentCounter;

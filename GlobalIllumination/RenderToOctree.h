@@ -7,18 +7,12 @@
 #include "FragStruct.h"
 #include "LogStruct.h"
 #include "Octree.h"
+#include "AbstractModule.h"
 
-class RenderToOctree
+class RenderToOctree : public AbstractModule
 {
-private:
-
-    ShaderProgram voxelizeOctreeShader;
-    bool hasInitialized = false;
 public:
     void initialize();
-    void run(Scene& inputScene, GLBufferObject<CounterBlock> & counterSet, GLuint voxelizeMatrixBlock, GLuint logUniformBlock, Octree & octree,
-                GLBufferObject<FragStruct> & ssboFragList, GLBufferObject<LogStruct> & ssboLogList);
-    RenderToOctree();
-    ~RenderToOctree();
+    void run(Scene& inputScene, Octree & octree);
 };
 

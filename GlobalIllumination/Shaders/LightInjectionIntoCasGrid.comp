@@ -42,7 +42,7 @@ uint convVec4ToRGBA8( vec4 val) {
     return ( uint ( val.w) &0x000000FF) <<24U | ( uint( val.z) &0x000000FF) <<16U | ( uint( val.y ) &0x000000FF) <<8U | ( uint( val.x) &0x000000FF);
 }
 void imageAtomicAddFloat(layout ( r32ui ) coherent volatile uimage3D imgUI , ivec3 coords , float val ) {
-    uint convertedVal = uint(val * 134217727.0f);
+    uint convertedVal = uint(val * 8388607.0f);
     imageAtomicAdd(imgUI, coords, convertedVal);
 }
 
@@ -50,7 +50,7 @@ void imageAtomicAddFloat(layout ( r32ui ) coherent volatile uimage3D imgUI , ive
 void computeLightValues(in vec3 voxelPos, in vec3 voxelLightPos, in vec3 normal, out vec3 lightDir, out vec4 recievedEnergy) {
   if(LightPosition.w == 0.0f) {
     lightDir = -normalize(LightPosition.xyz);
-    recievedEnergy = LightPower;
+    recievedEnergy =  8.0f *LightPower;
   } else {
     vec3 lightDisplacement = voxelLightPos - voxelPos;
     lightDir = normalize(lightDisplacement);

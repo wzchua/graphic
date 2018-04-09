@@ -1,59 +1,55 @@
 #include "RenderLightIntoOctree.h"
+#include "VoxelizeBlock.h"
+#include "LogStruct.h"
+#include "CounterBlock.h"
 
 
+typedef GlobalShaderComponents GlobalCom;
 
 void RenderLightIntoOctree::initialize()
 {
     if (hasInitialized) {
         return;
     }
-    injectLightOctreeShader.generateShader("./Shaders/RSM.vert", ShaderProgram::VERTEX);
-    injectLightOctreeShader.generateShader("./Shaders/RSMOctree.frag", ShaderProgram::FRAGMENT);
-    injectLightOctreeShader.linkCompileValidate();
+    std::stringstream compShaderString;
+    compShaderString << GlobalShaderComponents::getHeader() << GlobalShaderComponents::getComputeShaderInputLayout(mWorkGroupSize.x, mWorkGroupSize.y);
+    compShaderString << voxelizeBlockString(GlobalShaderComponents::VOXELIZATION_MATRIX_UBO_BINDING) << Scene::getLightUBOCode(GlobalShaderComponents::LIGHT_UBO_BINDING);
+    compShaderString << counterBlockBufferShaderCodeString(GlobalShaderComponents::COUNTER_SSBO_BINDING) << logFunctionAndBufferShaderCodeString(GlobalShaderComponents::LOG_SSBO_BINDING);
+    shader.generateShader(compShaderString, "./Shaders/LightInjectionIntoOctree.comp", ShaderProgram::COMPUTE);
+    shader.linkCompileValidate();;
 }
 
 void RenderLightIntoOctree::run(Scene & inputScene, Octree & octree, GLuint voxelizeMatrixBlock)
 {
-    glViewport(0, 0, 1024, 1024); // light render is done at 1024x1024
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0);
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
 
-    injectLightOctreeShader.use();
-    inputScene.updateLightMatrixBufferForPointLight(0, glm::vec3(1, 0, 0), glm::vec3(0, 1, 0));
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, inputScene.getLightMatrixBuffer()); // light as camera
-    glBindBufferBase(GL_UNIFORM_BUFFER, 2, inputScene.getLightBuffer());
-    glBindBufferBase(GL_UNIFORM_BUFFER, 3, voxelizeMatrixBlock);
+    shader.use();
 
-    octree.getNodeList().bind(2);
-    octree.getNodeValueList().bind(3);
+    octree.getNodeList().bind(GlobalCom::OCTREE_NODE_SSBO_BINDING);
+    octree.getNodeValueList().bind(GlobalCom::OCTREE_NODE_VALUE_SSBO_BINDING);
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
-    //glBindImageTexture(4, octree.getTextureIds(Octree::LIGHT_DIRECTION), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
-    //glBindImageTexture(5, octree.getTextureIds(Octree::LIGHT_ENERGY), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
+    /*int numOfPointLight = inputScene.getTotalPointLights();
 
-    inputScene.render(injectLightOctreeShader.getProgramId());
+    for (int i = 0; i < numOfPointLight; i++) {
+        glBindBufferBase(GL_UNIFORM_BUFFER, GlobalShaderComponents::LIGHT_UBO_BINDING, inputScene.getPointLightBufferId(i));
+        for (int j = 0; j < 6; j++) {
+            RSM& rsm = inputScene.getPointLightRSM(i, j);
+            auto res = rsm.getResolution();
+            glBindTextureUnit(0, rsm.getVoxelPositionMap());
+            glBindTextureUnit(1, rsm.getNormalMap());
+            glDispatchCompute(res.x / mWorkGroupSize.x, res.y / mWorkGroupSize.y, 1);
+        }
+    }*/
 
-
-    inputScene.updateLightMatrixBufferForPointLight(0, glm::vec3(-1, 0, 0), glm::vec3(0, 1, 0));
-    inputScene.render(injectLightOctreeShader.getProgramId());
-    inputScene.updateLightMatrixBufferForPointLight(0, glm::vec3(0, 0, 1), glm::vec3(0, 1, 0));
-    inputScene.render(injectLightOctreeShader.getProgramId());
-    inputScene.updateLightMatrixBufferForPointLight(0, glm::vec3(0, 0, -1), glm::vec3(0, 1, 0));
-    inputScene.render(injectLightOctreeShader.getProgramId());
-    inputScene.updateLightMatrixBufferForPointLight(0, glm::vec3(0, 1, 0), glm::vec3(1, 0, 0));
-    inputScene.render(injectLightOctreeShader.getProgramId());
-    inputScene.updateLightMatrixBufferForPointLight(0, glm::vec3(0, -1, 0), glm::vec3(1, 0, 0));
-    inputScene.render(injectLightOctreeShader.getProgramId());
+    int numOfDirectionalLight = inputScene.getTotalDirectionalLights();
+    for (int i = 0; i < numOfDirectionalLight; i++) {
+        glBindBufferBase(GL_UNIFORM_BUFFER, GlobalShaderComponents::LIGHT_UBO_BINDING, inputScene.getDirectionalLightBufferId(i));
+        RSM& rsm = inputScene.getDirectionalLightRSM(i);
+        auto res = rsm.getResolution();
+        glBindTextureUnit(0, rsm.getVoxelPositionMap());
+        glBindTextureUnit(1, rsm.getNormalMap());
+        glDispatchCompute(res.x / mWorkGroupSize.x, res.y / mWorkGroupSize.y, 1);
 
 
-}
-
-RenderLightIntoOctree::RenderLightIntoOctree()
-{
-}
-
-
-RenderLightIntoOctree::~RenderLightIntoOctree()
-{
+    }
 }

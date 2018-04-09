@@ -1,13 +1,16 @@
 #version 450
 layout (location = 0) in vec3 vPosition;  // Vertex position in voxel world space.
 
-layout(binding = 0) uniform RayCastBlock {
+layout(binding = 9) uniform RayCastBlock {
     mat4 ViewToVoxelMat;
     vec4 camPosition;
     vec4 camForward;
     vec4 camUp;
     int height;
     int width;
+    int isEnergy;
+    int gridDef;
+    int mipLevel;
 };
 
 out vec3 wcPosition;   // Vertex position in voxel world space.
