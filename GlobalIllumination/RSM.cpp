@@ -77,7 +77,7 @@ void RSM::dumpAsImage(std::string label)
         imageDepth.resize(size);
         glGetTextureImage(mDepthMap, 0, GL_DEPTH_COMPONENT, GL_FLOAT, size, imageDepth.data());
         for (int i = 0; i < image.size(); i++) {
-            image[i] = (unsigned char)(imageDepth[i] * 255.0f);
+            image[i] = (unsigned char)((imageDepth[i]*0.5f + 0.5f) * 255.0f);
         }
         filepath = baseDir + "RSMDepth_" + label + ".png";
         stbi_write_png(filepath.c_str(), mRes.x, mRes.y, 1, image.data(), 4);

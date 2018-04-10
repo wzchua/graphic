@@ -94,7 +94,7 @@ vec3 evaluateShadingFactorDiffuseSG(vec4 normal, vec4 lightDir, float energy, Ga
 }
 vec3 evaluateShadingFactorDiffusePhong(vec4 normal, vec4 lightDir, float lEnergy, GaussianLobe viewLobe) {    
 
-    return vec3(lEnergy) ;//* max(dot(normalize(normal.xyz), normalize(lightDir.xyz)), 0.0f);
+    return vec3(lEnergy) * max(dot(normalize(normal.xyz), normalize(lightDir.xyz)), 0.0f);
 }
 vec4 texelFetchInterpolated(in sampler3D clipGrid, vec3 clipPos, float lod) {
         int lodfloor = int(floor(lod));
@@ -124,13 +124,13 @@ vec4 evaluateColor(in sampler3D colorClip, in sampler3D normalClip, in sampler3D
         }
         if(c.a > 0.0f) {         
             color.a = c.a;       
-            float lEnergy = float(texelFetchInterpolatedU(lightEnergyClip, clipPos, lod).r)/8388607.0f;
+            float lEnergy = float(texelFetchInterpolatedU(lightEnergyClip, clipPos, lod).r)/8388607.0f * 0.9;
             // if(lEnergy == 0.0f) {
             //     return color;
             // }
             vec4 n = texelFetchInterpolated(normalClip, clipPos, lod);
             vec4 l =  texelFetchInterpolated(lightDirClip, clipPos, lod);
-            vec3 brdf = c.rgb / PI;
+            vec3 brdf = c.rgb;
             //vec3 convLightNormal = evaluateShadingFactorDiffuseSG(n, l, lEnergy, viewLobe);
             vec3 convLightNormal = evaluateShadingFactorDiffusePhong(n, l, lEnergy, viewLobe);
             
@@ -201,7 +201,7 @@ vec3 diffuseConeTrace(vec3 origin, vec3 dir, float angle) {
                 c = evaluateColor(colorBrickL2, normalBrickL2, lightDirBrickL2, lightEnergyBrickL2, lod, clipPos.xyz, viewLobe);
             }
         };
-        color = alpha * color + (1.0f - alpha) * c.rgb;// * ((8.0f * 8.0f) / (len * len));
+        color = alpha * color + (1.0f - alpha) * c.a * c.rgb;// * ((8.0f * 8.0f) / (len * len));
         alpha = alpha + (1.0f - alpha) * c.a;        
         rayVoxelPos += adjustedDir;
     }

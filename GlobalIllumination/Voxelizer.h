@@ -55,17 +55,17 @@ public:
     void setup();
     void dumpCurrentGBuffer();
 private:
-    int currentNumMode = 1;
+    int currentNumMode = 0;
     int gridDefinition = 0;
     int gridMipLevel = 0;
-    Type mType = OCTREE;
+    Type mType = CAS_GRID;
     unsigned int fragCount = 1024 * 1024 * 4;
     unsigned int nodeCount = 1024 * 1024 * 4;
     int brickDim = 2;
     int texWdith = 512;
     int texHeight = 512;
     unsigned int maxLogCount = 1024 * 1024 * 4;;
-    bool toDumpCurrentGBuffer = true;
+    bool toDumpCurrentGBuffer = false;
 
     GBuffer mGBuffer;
     GBufferGenerator mModuleGBufferGen;

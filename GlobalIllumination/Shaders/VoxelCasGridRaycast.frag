@@ -136,7 +136,7 @@ vec4 loadColor(vec3 pos, int level) {
         clipPos = (voxelToClipmapL0Mat * vec4(pos, 1.0f));
         clipPos.xyz /= float(1 << mipLevel);
         if(isEnergy == 1) {
-            return vec4(texelFetch(colorGridL0, ivec3(clipPos.xyz), mipLevel).a);
+            return texelFetch(colorGridL0, ivec3(clipPos.xyz), mipLevel);
         } else if(isEnergy == 2) {            
             val = texelFetch(normalGridL0, ivec3(clipPos.xyz), mipLevel);
             val.xyz *= 0.5f + 0.5f;
@@ -152,7 +152,7 @@ vec4 loadColor(vec3 pos, int level) {
         clipPos = (voxelToClipmapL1Mat * vec4(pos, 1.0f));
         clipPos.xyz /= float(1 << mipLevel);
         if(isEnergy == 1) {
-            return vec4(texelFetch(colorGridL1, ivec3(clipPos.xyz), mipLevel).a);
+            return texelFetch(colorGridL1, ivec3(clipPos.xyz), mipLevel);
         } else if(isEnergy == 2) {            
             val =  texelFetch(normalGridL1, ivec3(clipPos.xyz), mipLevel);
             val.xyz *= 0.5f + 0.5f;
@@ -171,7 +171,7 @@ vec4 loadColor(vec3 pos, int level) {
         //     return vec4(0.0f);
         // }
         if(isEnergy == 1) {
-            return vec4(texelFetch(colorGridL2, ivec3(clipPos.xyz), mipLevel).a);
+            return texelFetch(colorGridL2, ivec3(clipPos.xyz), mipLevel);
         } else if(isEnergy == 2) {            
             val = texelFetch(normalGridL2, ivec3(clipPos.xyz), mipLevel);
             val.xyz *= 0.5f + 0.5f;

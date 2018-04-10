@@ -29,7 +29,7 @@ Scene::Scene()
         glBindBuffer(GL_UNIFORM_BUFFER, 0);
         pointLightBuffers.push_back(uboId);
     }
-    directionalLights = { { { -0.0f, -1.0f, 0.0f, 0.0f },{ 1.0f, 1.0f, 1.0f, 1.0f } } };
+    directionalLights = { { { -0.0f, -1.0f, 0.6f, 0.0f },{ 1.0f, 1.0f, 1.0f, 1.0f } } };
     directionalLightMap.resize(directionalLights.size());
     for (int i = 0; i < directionalLights.size(); i++) {
         GLuint uboId;
